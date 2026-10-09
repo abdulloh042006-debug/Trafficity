@@ -3,6 +3,8 @@ import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart' show compute;
+
 /// Seed asosida deterministik relyef. Balandlik funksiyasi uzluksiz,
 /// shuning uchun suv tekshiruvi va rasm bir xil formuladan foydalanadi.
 class Terrain {
@@ -85,7 +87,7 @@ class Terrain {
     return _mix(_hill, _rock, (h - 0.70) / 0.1);
   }
 
-  Future<ui.Image> toImage({int res = 400}) async {
+  Uint8List _pixels(int res) {
     final bytes = Uint8List(res * res * 4);
     var i = 0;
     for (var y = 0; y < res; y++) {
@@ -98,8 +100,21 @@ class Terrain {
         bytes[i++] = 255;
       }
     }
+    return bytes;
+  }
+
+  /// Hisob alohida isolate'da bajariladi (ekran qotib qolmasligi uchun).
+  Future<ui.Image> toImage({int res = 256}) async {
+    Uint8List bytes;
+    try {
+      bytes = await compute(terrainBytes, [seed, res]);
+    } catch (_) {
+      bytes = _pixels(res);
+    }
     final done = Completer<ui.Image>();
     ui.decodeImageFromPixels(bytes, res, res, ui.PixelFormat.rgba8888, done.complete);
-    return done.future;
+    return done.future.timeout(const Duration(seconds: 20));
   }
 }
+
+Uint8List terrainBytes(List<int> args) => Terrain(args[0])._pixels(args[1]);

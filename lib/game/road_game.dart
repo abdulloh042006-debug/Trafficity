@@ -47,6 +47,8 @@ class RoadGame extends FlameGame {
   final ValueNotifier<int> hud = ValueNotifier<int>(0);
 
   bool loading = true;
+  String loadStatus = "Yuklanmoqda...";
+  String? loadError;
   double budget = startBudget;
   Tool tool = Tool.pan;
   RoadPlan? currentPlan;
@@ -80,21 +82,31 @@ class RoadGame extends FlameGame {
   @override
   Color backgroundColor() => const Color(0xFFBFD9EE);
 
-  @override
-  Future<void> onLoad() async {
-    await newMap(seed);
-  }
-
   // ---------------------------------------------------------------- xarita
 
+  /// Xarita yaratish. Xato bo'lsa ekranda ko'rsatiladi (qotib qolmaydi).
   Future<void> newMap(int s) async {
+    loadError = null;
+    try {
+      await _newMapImpl(s);
+    } catch (e, st) {
+      loadError = '$e\n${st.toString().split("\n").take(3).join("\n")}';
+      loading = true;
+      hud.value++;
+    }
+  }
+
+  Future<void> _newMapImpl(int s) async {
     loading = true;
+    loadStatus = "Relyef yaratilmoqda...";
     seed = s;
     stage = 0;
     currentPlan = null;
     hud.value++;
     terrain = Terrain(s);
     terrainImage = await terrain.toImage();
+    loadStatus = "Binolar joylashtirilmoqda...";
+    hud.value++;
     net.clear();
     roundabouts.clear();
     graph = LaneGraph(net);

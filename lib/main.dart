@@ -45,6 +45,8 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // yuklashni birinchi kadrdan keyin boshlaymiz: ekran darhol chiqadi, xatolar ko'rinadi
+    WidgetsBinding.instance.addPostFrameCallback((_) => game.newMap(game.seed));
   }
 
   @override
@@ -112,7 +114,25 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                     children: [
                       Align(alignment: Alignment.topCenter, child: _topBar(plan)),
                       Align(alignment: Alignment.bottomCenter, child: _bottomBar()),
-                      if (game.loading) const Center(child: CircularProgressIndicator()),
+                      if (game.loading)
+                        Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (game.loadError == null) const CircularProgressIndicator(),
+                              const SizedBox(height: 12),
+                              _chip(
+                                game.loadError == null ? game.loadStatus : "Xato: ${game.loadError}",
+                                color: game.loadError == null ? null : const Color(0xFFC0392B),
+                              ),
+                              if (game.loadError != null)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 10),
+                                  child: _btn(Icons.refresh, "Qayta urinish", () => game.newMap(game.seed)),
+                                ),
+                            ],
+                          ),
+                        ),
                     ],
                   );
                 },
