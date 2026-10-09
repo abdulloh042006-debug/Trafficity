@@ -37,8 +37,10 @@ class Road {
     required this.pts,
     required this.length,
     required this.cost,
+    this.oneWay = false,
   });
 
+  final bool oneWay;
   final int id;
   final int a; // boshlang'ich tugun
   final int b; // oxirgi tugun
@@ -53,6 +55,13 @@ class RoadHit {
   final int seg;
   final Offset point;
   final double dist;
+}
+
+class _Arm {
+  _Arm(this.roadId, this.cp, this.ang);
+  final int roadId;
+  final Offset cp;
+  final double ang;
 }
 
 class _Cut {
@@ -158,7 +167,7 @@ class RoadNetwork {
 
   RoadNode _nodeAt(Offset p) => nodeNear(p, 1.0) ?? _newNode(p);
 
-  Road? _addNodes(List<Offset> pts, RoadNode na, RoadNode nb) {
+  Road? _addNodes(List<Offset> pts, RoadNode na, RoadNode nb, {bool oneWay = false}) {
     final p = List<Offset>.of(_dedupe(pts));
     if (p.length < 2) return null;
     p[0] = na.pos;
@@ -172,6 +181,7 @@ class RoadNetwork {
       pts: p,
       length: len,
       cost: len * costPerUnit,
+      oneWay: oneWay,
     );
     roads[road.id] = road;
     na.roads.add(road.id);
@@ -180,9 +190,9 @@ class RoadNetwork {
   }
 
   /// Saqlangan yo'l bo'lagini to'g'ridan-to'g'ri qo'shadi (yuklash uchun).
-  Road? addRoadPts(List<Offset> pts) {
+  Road? addRoadPts(List<Offset> pts, {bool oneWay = false}) {
     if (pts.length < 2) return null;
-    return _addNodes(pts, _nodeAt(pts.first), _nodeAt(pts.last));
+    return _addNodes(pts, _nodeAt(pts.first), _nodeAt(pts.last), oneWay: oneWay);
   }
 
   void _detach(Road r) {
@@ -226,8 +236,8 @@ class RoadNetwork {
     final nb = nodes[r.b]!;
     _detach(r);
     final mid = _newNode(bp);
-    _addNodes(left, na, mid);
-    _addNodes(right, mid, nb);
+    _addNodes(left, na, mid, oneWay: r.oneWay);
+    _addNodes(right, mid, nb, oneWay: r.oneWay);
     return mid;
   }
 
@@ -237,6 +247,97 @@ class RoadNetwork {
     final hit = nearestRoadPoint(p, 1.5);
     if (hit != null) return splitRoadAt(hit.road.id, hit.point);
     return _newNode(p);
+  }
+
+  static Offset _pointAlong(List<Offset> pts, double d) {
+    var acc = 0.0;
+    for (var i = 1; i < pts.length; i++) {
+      final seg = (pts[i] - pts[i - 1]).distance;
+      if (seg > 0 && acc + seg >= d) return Offset.lerp(pts[i - 1], pts[i], (d - acc) / seg)!;
+      acc += seg;
+    }
+    return pts.last;
+  }
+
+  /// Chorraha tuguni o'rniga aylana chorraha quradi (soat miliga teskari harakat).
+  /// Xatolik matnini qaytaradi, muvaffaqiyatda null. [charge] sarflangan mablag'ni (+) yoki
+  /// qaytarilgan stub narxini (-) xabar qiladi.
+  String? buildRoundabout(
+    int nodeId,
+    double radius,
+    bool Function(Offset) blocked,
+    double budget,
+    void Function(double) charge,
+  ) {
+    final n = nodes[nodeId];
+    if (n == null || n.roads.length < 3) return "Kamida 3 ta yo'l kerak";
+    final c = n.pos;
+    final cutDist = radius + 16;
+    final arms = <_Arm>[];
+    for (final rid in n.roads) {
+      final r = roads[rid]!;
+      if (r.oneWay) return "Bir tomonlama yo'l bilan bo'lmaydi";
+      if (r.a == r.b) return "Yopiq halqa yo'l bilan bo'lmaydi";
+      final pts = r.a == nodeId ? r.pts : r.pts.reversed.toList();
+      if (polyLength(pts) < cutDist + 25) return "Yo'llar juda qisqa";
+      final cp = _pointAlong(pts, cutDist);
+      final dir = _pointAlong(pts, radius + 8) - c;
+      arms.add(_Arm(rid, cp, atan2(dir.dy, dir.dx)));
+    }
+    arms.sort((x, y) => y.ang.compareTo(x.ang)); // kamayish = soat miliga teskari
+    for (var i = 0; i < arms.length; i++) {
+      var d = arms[i].ang - arms[(i + 1) % arms.length].ang;
+      if (d <= 0) d += 2 * pi;
+      if (d < 0.6) return "Yo'llar orasidagi burchak juda kichik";
+    }
+    for (var k = 0; k < 24; k++) {
+      final a = k / 24 * 2 * pi;
+      if (blocked(c + Offset(cos(a), sin(a)) * (radius + 4))) return "Aylana uchun joy band";
+    }
+    final need = 150 +
+        2 * pi * radius * costPerUnit +
+        arms.length * 16 * costPerUnit -
+        arms.length * cutDist * costPerUnit;
+    if (need > budget) return "Mablag' yetarli emas";
+
+    var spent = 150.0;
+    final cutNodes = <RoadNode>[];
+    for (final a in arms) {
+      cutNodes.add(splitRoadAt(a.roadId, a.cp));
+    }
+    for (final cn in cutNodes) {
+      int? stubId;
+      for (final rid in n.roads) {
+        final r = roads[rid];
+        if (r != null && (r.a == cn.id || r.b == cn.id)) stubId = rid;
+      }
+      if (stubId != null) {
+        spent -= roads[stubId]!.cost; // stub narxi qaytariladi
+        removeRoad(stubId);
+      }
+    }
+    final ringNodes = <RoadNode>[
+      for (final a in arms) _newNode(c + Offset(cos(a.ang), sin(a.ang)) * radius)
+    ];
+    for (var i = 0; i < arms.length; i++) {
+      final conn = _addNodes([cutNodes[i].pos, ringNodes[i].pos], cutNodes[i], ringNodes[i]);
+      if (conn != null) spent += conn.cost;
+    }
+    for (var i = 0; i < arms.length; i++) {
+      final j = (i + 1) % arms.length;
+      var d = arms[i].ang - arms[j].ang;
+      if (d <= 0) d += 2 * pi;
+      final steps = max(3, (radius * d / 10).ceil());
+      final pts = <Offset>[];
+      for (var k = 0; k <= steps; k++) {
+        final ph = arms[i].ang - d * k / steps;
+        pts.add(c + Offset(cos(ph), sin(ph)) * radius);
+      }
+      final ring = _addNodes(pts, ringNodes[i], ringNodes[j], oneWay: true);
+      if (ring != null) spent += ring.cost;
+    }
+    charge(spent);
+    return null;
   }
 
   /// Yangi yo'lni quradi: uchlari yo'lga tegsa, ikkala yo'l ham bo'linadi;

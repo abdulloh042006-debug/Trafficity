@@ -10,10 +10,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'building.dart';
 import 'lane_graph.dart';
 import 'road_network.dart';
+import 'signal.dart';
 import 'terrain.dart';
 import 'traffic_sim.dart';
 
-enum Tool { pan, straight, curve, erase }
+enum Tool { pan, straight, curve, signal, roundabout, erase }
 
 class RoadPlan {
   RoadPlan(this.a, this.b, this.c, this.pts, this.length, this.cost, this.error);
@@ -51,6 +52,11 @@ class RoadGame extends FlameGame {
   RoadPlan? currentPlan;
   int noAccess = 0; // yo'lga ulanmagan binolar
   int speed = 1; // 0 pauza, 1, 2, 4
+  bool heat = false; // tirbandlik xaritasi
+  final List<Offset> roundabouts = [];
+  static const double roundaboutRadius = 30;
+  String? flash;
+  double _flashT = 0;
 
   double _acc = 0;
   double _hudTimer = 0;
@@ -90,6 +96,7 @@ class RoadGame extends FlameGame {
     terrain = Terrain(s);
     terrainImage = await terrain.toImage();
     net.clear();
+    roundabouts.clear();
     graph = LaneGraph(net);
     sim = TrafficSim(graph, buildings, s);
     budget = startBudget;
@@ -176,14 +183,24 @@ class RoadGame extends FlameGame {
       final old = sp.getString(key);
       if (old != null) await sp.setString('${key}_prev', old);
       final data = jsonEncode({
-        'v': 1,
+        'v': 2,
         'seed': seed,
         'budget': budget,
         'cam': [cam.dx, cam.dy],
         'zoom': zoom,
         'roads': [
           for (final r in net.roads.values)
-            [for (final p in r.pts) ...[p.dx, p.dy]]
+            {
+              'p': [for (final p in r.pts) ...[p.dx, p.dy]],
+              'o': r.oneWay ? 1 : 0,
+            }
+        ],
+        'signals': [
+          for (final s in sim.signals.values)
+            [graph.net.nodes[s.nodeId]!.pos.dx, graph.net.nodes[s.nodeId]!.pos.dy, s.green]
+        ],
+        'rbs': [
+          for (final c in roundabouts) [c.dx, c.dy]
         ],
       });
       await sp.setString(key, data);
@@ -205,20 +222,40 @@ class RoadGame extends FlameGame {
       if (raw == null) continue;
       try {
         final m = jsonDecode(raw) as Map<String, dynamic>;
-        if (m['v'] != 1) continue;
+        final ver = m['v'];
+        if (ver != 1 && ver != 2) continue;
         final s = m['seed'] as int;
         final bud = (m['budget'] as num).toDouble();
         final c = (m['cam'] as List).map((e) => (e as num).toDouble()).toList();
         final z = (m['zoom'] as num).toDouble();
         final roads = <List<Offset>>[];
+        final oneWays = <bool>[];
         for (final r in m['roads'] as List) {
-          final f = (r as List).map((e) => (e as num).toDouble()).toList();
+          final raw = r is Map ? r['p'] : r;
+          final f = (raw as List).map((e) => (e as num).toDouble()).toList();
           if (f.length < 4 || f.length.isOdd) throw const FormatException('road');
           roads.add([for (var i = 0; i < f.length; i += 2) Offset(f[i], f[i + 1])]);
+          oneWays.add(r is Map && r['o'] == 1);
         }
+        final sigs = <List<double>>[
+          for (final e in (m['signals'] as List? ?? const []))
+            [for (final x in e as List) (x as num).toDouble()]
+        ];
+        final rbs = <List<double>>[
+          for (final e in (m['rbs'] as List? ?? const []))
+            [for (final x in e as List) (x as num).toDouble()]
+        ];
         await newMap(s);
-        for (final pts in roads) {
-          net.addRoadPts(pts);
+        for (var i = 0; i < roads.length; i++) {
+          net.addRoadPts(roads[i], oneWay: oneWays[i]);
+        }
+        for (final r in rbs) {
+          roundabouts.add(Offset(r[0], r[1]));
+        }
+        _onNetworkChanged();
+        for (final sg in sigs) {
+          final nd = net.nodeNear(Offset(sg[0], sg[1]), 2.0);
+          if (nd != null) sim.addSignal(nd.id, sg[2]);
         }
         budget = bud;
         cam = Offset(c[0], c[1]);
@@ -357,6 +394,8 @@ class RoadGame extends FlameGame {
           _c = toWorld(pos);
         }
         break;
+      case Tool.signal:
+      case Tool.roundabout:
       case Tool.erase:
         break;
     }
@@ -399,6 +438,12 @@ class RoadGame extends FlameGame {
           }
         }
         break;
+      case Tool.signal:
+        if (!_moved) _tapSignal(toWorld(pos));
+        break;
+      case Tool.roundabout:
+        if (!_moved) _tapRoundabout(toWorld(pos));
+        break;
       case Tool.pan:
         break;
     }
@@ -420,6 +465,51 @@ class RoadGame extends FlameGame {
   }
 
   // -------------------------------------------------------------- yo'l rejasi
+
+  void flashMsg(String m) {
+    flash = m;
+    _flashT = 2.5;
+    hud.value++;
+  }
+
+  void toggleHeat() {
+    heat = !heat;
+    hud.value++;
+  }
+
+  void _tapSignal(Offset w) {
+    final n = net.nodeNear(w, 26 / zoom + 10);
+    if (n == null || n.roads.length < 3) {
+      flashMsg("Chorraha ustiga bosing (kamida 3 yo'l)");
+      return;
+    }
+    flashMsg(sim.cycleSignal(n.id));
+  }
+
+  void _tapRoundabout(Offset w) {
+    final n = net.nodeNear(w, 26 / zoom + 10);
+    if (n == null || n.roads.length < 3) {
+      flashMsg("Chorraha ustiga bosing (kamida 3 yo'l)");
+      return;
+    }
+    final center = n.pos;
+    var spent = 0.0;
+    final err = net.buildRoundabout(
+      n.id,
+      roundaboutRadius,
+      (p) => terrain.isWaterAt(p) || buildings.any((b) => (b.pos - p).distance < b.radius),
+      budget,
+      (d) => spent += d,
+    );
+    if (err != null) {
+      flashMsg(err);
+      return;
+    }
+    budget -= spent;
+    roundabouts.add(center);
+    _onNetworkChanged();
+    flashMsg("Aylana chorraha qurildi (${spent.round()})");
+  }
 
   bool _tooSharp(Offset a, Offset b, Offset c) {
     final va = a - c, vb = b - c;
@@ -465,6 +555,13 @@ class RoadGame extends FlameGame {
   void update(double dt) {
     super.update(dt);
     if (loading) return;
+    if (_flashT > 0) {
+      _flashT -= dt;
+      if (_flashT <= 0) {
+        flash = null;
+        hud.value++;
+      }
+    }
     if (speed > 0) {
       _acc += min(dt, 0.1) * speed;
       var n = 0;
@@ -500,6 +597,7 @@ class RoadGame extends FlameGame {
       b.draw(canvas);
     }
     _drawVehicles(canvas);
+    _drawSignals(canvas);
     _drawPreview(canvas);
 
     canvas.restore();
@@ -523,6 +621,40 @@ class RoadGame extends FlameGame {
     return path;
   }
 
+  static const _heatPos = [0.0, 0.2, 0.4, 0.6, 0.8, 1.0];
+  static const _heatCol = [
+    Color(0xFF7A1F1F), // juda og'ir tirbandlik
+    Color(0xFFD0392B),
+    Color(0xFFE8873A),
+    Color(0xFFE9C94A),
+    Color(0xFF8CCB5E),
+    Color(0xFF4CAF50), // erkin harakat
+  ];
+
+  Color _heatColor(double r) {
+    final x = r.clamp(0.0, 1.0).toDouble();
+    for (var i = 1; i < _heatPos.length; i++) {
+      if (x <= _heatPos[i]) {
+        final t = (x - _heatPos[i - 1]) / (_heatPos[i] - _heatPos[i - 1]);
+        return Color.lerp(_heatCol[i - 1], _heatCol[i], t)!;
+      }
+    }
+    return _heatCol.last;
+  }
+
+  double _roadRatio(Road r) {
+    final a = graph.lanes[r.id * 2];
+    final b = graph.lanes[r.id * 2 + 1];
+    final ra = a?.ratio ?? 1.0;
+    final rb = b?.ratio ?? 1.0;
+    return min(ra, rb);
+  }
+
+  bool _ringExists(Offset c) => net.roads.values.any((r) =>
+      r.oneWay &&
+      r.pts.length > 2 &&
+      ((r.pts[r.pts.length ~/ 2] - c).distance - roundaboutRadius).abs() < 3);
+
   void _drawRoads(Canvas canvas) {
     if (net.roads.isEmpty) return;
     const w = RoadNetwork.roadWidth;
@@ -536,26 +668,54 @@ class RoadGame extends FlameGame {
       ..style = PaintingStyle.stroke
       ..strokeWidth = w
       ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round
-      ..color = const Color(0xFFDADCDF);
+      ..strokeJoin = StrokeJoin.round;
     final center = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.2
       ..color = const Color(0xCCD9B85A);
 
-    final paths = [for (final r in net.roads.values) _pathOf(r.pts)];
+    final roads = net.roads.values.toList();
+    final paths = [for (final r in roads) _pathOf(r.pts)];
     for (final p in paths) {
       canvas.drawPath(p, border);
     }
-    for (final p in paths) {
-      canvas.drawPath(p, fill);
+    for (var i = 0; i < roads.length; i++) {
+      fill.color = heat ? _heatColor(_roadRatio(roads[i])) : const Color(0xFFDADCDF);
+      canvas.drawPath(paths[i], fill);
     }
-    for (final p in paths) {
-      canvas.drawPath(p, center);
+    if (!heat) {
+      for (var i = 0; i < roads.length; i++) {
+        if (!roads[i].oneWay) canvas.drawPath(paths[i], center);
+      }
+      final junction = Paint()..color = const Color(0xFFDADCDF);
+      for (final n in net.nodes.values) {
+        if (n.roads.length >= 3) canvas.drawCircle(n.pos, w * 0.7, junction);
+      }
     }
-    final junction = Paint()..color = const Color(0xFFDADCDF);
-    for (final n in net.nodes.values) {
-      if (n.roads.length >= 3) canvas.drawCircle(n.pos, w * 0.7, junction);
+    roundabouts.removeWhere((c) => !_ringExists(c));
+    for (final c in roundabouts) {
+      canvas.drawCircle(c, roundaboutRadius - 8, Paint()..color = const Color(0xFFB5CC7E));
+      canvas.drawCircle(
+        c,
+        roundaboutRadius - 8,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5
+          ..color = const Color(0xFF4A4D52),
+      );
+    }
+  }
+
+  void _drawSignals(Canvas canvas) {
+    final p = Paint();
+    for (final s in sim.signals.values) {
+      for (final l in s.incoming) {
+        final st = s.stateOfLane(l.id);
+        p.color = st == 0
+            ? const Color(0xFF3DBE5A)
+            : (st == 1 ? const Color(0xFFF2B233) : const Color(0xFFD64541));
+        canvas.drawCircle(l.pointAt(l.length - 3), 3.2, p);
+      }
     }
   }
 

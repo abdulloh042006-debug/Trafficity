@@ -59,6 +59,9 @@ class Lane extends Track {
 
   static const double speed = 22; // birlik/s (~40 km/soat)
 
+  /// O'rtacha tezlik / limit (tirbandlik o'lchovi, 1 = erkin harakat).
+  double ratio = 1.0;
+
   final int id; // roadId*2 + (fwd ? 0 : 1)
   final int roadId;
   final bool fwd;

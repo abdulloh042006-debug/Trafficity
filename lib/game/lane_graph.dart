@@ -79,6 +79,7 @@ class LaneGraph {
     final want = <int>{};
     for (final r in net.roads.values) {
       for (final fwd in [true, false]) {
+        if (!fwd && r.oneWay) continue;
         final id = r.id * 2 + (fwd ? 0 : 1);
         want.add(id);
         if (!lanes.containsKey(id)) {

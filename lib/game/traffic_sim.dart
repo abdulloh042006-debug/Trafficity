@@ -3,6 +3,7 @@ import 'dart:ui';
 
 import 'building.dart';
 import 'lane_graph.dart';
+import 'signal.dart';
 import 'traffic_model.dart';
 
 class Trip {
@@ -37,6 +38,8 @@ class TrafficSim {
   int maxVehicles = 250;
   double demandScale = 1.0;
 
+  final Map<int, Signal> signals = {};
+  double _statAcc = 0;
   final Map<int, double> _accum = {};
   final Map<int, List<Trip>> _pending = {};
   final Map<int, List<Vehicle>> _holders = {};
@@ -80,12 +83,70 @@ class TrafficSim {
       }
     }
     vehicles.removeWhere((v) => v.removed);
+    _refreshSignals();
+  }
+
+  // ------------------------------------------------------------------ svetoforlar
+
+  void _refreshSignals() {
+    signals.removeWhere((id, _) => (graph.net.nodes[id]?.roads.length ?? 0) < 3);
+    for (final s in signals.values) {
+      s.rebuild([for (final l in graph.lanes.values) if (l.toNode == s.nodeId) l]);
+    }
+  }
+
+  /// Svetofor qo'yadi, yashil vaqtini 12 -> 20 -> 30 s aylantiradi, so'ng olib tashlaydi.
+  String cycleSignal(int nodeId) {
+    final s = signals[nodeId];
+    if (s == null) {
+      signals[nodeId] = Signal(nodeId);
+      _refreshSignals();
+      return "Svetofor qo'yildi: yashil 12 s";
+    }
+    if (s.green < 15) {
+      s.green = 20;
+    } else if (s.green < 25) {
+      s.green = 30;
+    } else {
+      signals.remove(nodeId);
+      return "Svetofor olib tashlandi";
+    }
+    s.t = 0;
+    return "Yashil vaqt: ${s.green.round()} s";
+  }
+
+  void addSignal(int nodeId, double green) {
+    final s = Signal(nodeId)..green = green;
+    signals[nodeId] = s;
+    _refreshSignals();
+  }
+
+  void _updateRatios() {
+    for (final l in graph.lanes.values) {
+      var target = 1.0;
+      if (l.vehicles.isNotEmpty) {
+        var sum = 0.0;
+        for (final v in l.vehicles) {
+          sum += v.v;
+        }
+        target = min(1.0, sum / l.vehicles.length / Lane.speed);
+      }
+      l.ratio += (target - l.ratio) * 0.15;
+    }
   }
 
   // ------------------------------------------------------------------ qadam
 
   void step(double dt) {
     time += dt;
+    for (final s in signals.values) {
+      s.tick(dt);
+    }
+    _statAcc += dt;
+    if (_statAcc >= 0.5) {
+      _statAcc = 0;
+      _updateRatios();
+    }
     _spawn(dt);
     for (final v in vehicles) {
       if (v.needsReroute && v.track is Lane && v.holdConn == null) _reroute(v);
@@ -249,6 +310,8 @@ class TrafficSim {
 
   bool _tryGrant(Vehicle v, Connector c) {
     final node = c.nodeId;
+    final sg = signals[node];
+    if (sg != null && sg.stateOfLane(c.from.id) != 0) return false; // qizil/sariq
     final to = c.to;
     if (to.vehicles.isNotEmpty) {
       final f = to.vehicles.first;
@@ -260,7 +323,7 @@ class TrafficSim {
       if (c.conflicts(hc)) return false;
     }
     // adolat: uzoq kutgan mashinaga yo'l beriladi
-    for (final w in _waiters[node] ?? const <Vehicle>{}) {
+    for (final w in sg != null ? const <Vehicle>{} : (_waiters[node] ?? const <Vehicle>{})) {
       if (identical(w, v) || w.pendingConn == null) continue;
       if (w.wait > 3 && w.wait > v.wait && c.conflicts(w.pendingConn!)) return false;
     }

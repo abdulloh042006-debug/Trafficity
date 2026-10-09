@@ -29,8 +29,14 @@ flutter build apk --release  # build/app/outputs/flutter-apk/app-release.apk
 - Tahrirdan keyin mashinalar qayta marshrutlanadi (o'chirilgan yo'ldagilar "yo'qotilgan" deb sanaladi)
 - Tezlik: Pauza / 1x / 2x / 4x, Saqlash / Yuklash / avtosaqlash
 
+## 3-bosqich (tayyor, sinovdan o'tmagan)
+- Svetofor: "Svetofor" asbobi bilan 3+ yo'lli chorrahaga bosing. Qo'yiladi (yashil 12 s), keyingi bosishlarda 20 s, 30 s, so'ng olib tashlanadi. Qarama-qarshi yo'nalishlar bir fazada, boshqa o'qlar navbat bilan. Sariq 2 s, hammasi qizil 1 s
+- Aylana chorraha: "Aylana" asbobi bilan 3+ yo'lli chorrahaga bosing. Yo'llar qisqartirilib, soat miliga teskari bir tomonlama halqaga ulanadi (stub narxi qaytariladi)
+- Tirbandlik xaritasi: "Tirbandlik" tugmasi yo'llarni o'lchangan o'rtacha tezlik/limit nisbati bo'yicha bo'yaydi (yashil -> qizil -> to'q qizil)
+- Bir tomonlama yo'l modeli, saqlash formati v2 (eski v1 ham o'qiladi)
+
 ## Hali yo'q
-Svetoforlar, aylanma chorraha, ko'p polosali yo'llar, magistral, iqtisodiyot va darajalar, tirbandlik xaritasi.
+Aylanada kiruvchiga "yo'l bering" qoidasi (hozir kim birinchi so'rasa), ko'p polosali yo'llar, magistral va ramplar, iqtisodiyot va darajalar, qo'lda svetofor fazalarini tahrirlash.
 
 ## Eslatma
 Kod Flutter bo'lmagan muhitda yozilgan va kompilyatsiya qilib sinalmagan.

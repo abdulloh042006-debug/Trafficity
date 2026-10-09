@@ -77,6 +77,10 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
         return game.stage >= 2
             ? "Yo'lni egish uchun kerakli joyga barmoqni bosing"
             : "Boshidan oxirigacha sudrang, keyin eging";
+      case Tool.signal:
+        return "Chorrahaga bosing: svetofor qo'yish, vaqtini o'zgartirish yoki olib tashlash";
+      case Tool.roundabout:
+        return "Chorrahaga bosing: shu joyda aylana chorraha quriladi";
       case Tool.erase:
         return "Yo'lga tegib o'chiring (pul to'liq qaytadi)";
     }
@@ -168,7 +172,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
               color: plan.valid ? const Color(0xFF1B8FA0) : const Color(0xFFC0392B),
             )
           else
-            _chip(_hint()),
+            _chip(game.flash ?? _hint()),
         ],
       ),
     );
@@ -212,10 +216,15 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
             _btn(Icons.horizontal_rule, "To'g'ri", () => game.setTool(Tool.straight),
                 selected: game.tool == Tool.straight),
             _btn(Icons.gesture, "Egri", () => game.setTool(Tool.curve), selected: game.tool == Tool.curve),
+            _btn(Icons.traffic, "Svetofor", () => game.setTool(Tool.signal),
+                selected: game.tool == Tool.signal),
+            _btn(Icons.trip_origin, "Aylana", () => game.setTool(Tool.roundabout),
+                selected: game.tool == Tool.roundabout),
             _btn(Icons.delete_outline, "O'chirish", () => game.setTool(Tool.erase),
                 selected: game.tool == Tool.erase),
             if (game.stage != 0) _btn(Icons.close, "Bekor", game.cancel),
             _btn(game.speed == 0 ? Icons.pause : Icons.speed, speedLabel, game.cycleSpeed),
+            _btn(Icons.local_fire_department, "Tirbandlik", game.toggleHeat, selected: game.heat),
             _btn(Icons.save_outlined, "Saqlash", () async {
               final ok = await game.save();
               _toast(ok ? "Saqlandi" : "Saqlab bo'lmadi");
