@@ -35,6 +35,12 @@ flutter build apk --release  # build/app/outputs/flutter-apk/app-release.apk
 - Tirbandlik xaritasi: "Tirbandlik" tugmasi yo'llarni o'lchangan o'rtacha tezlik/limit nisbati bo'yicha bo'yaydi (yashil -> qizil -> to'q qizil)
 - Bir tomonlama yo'l modeli, saqlash formati v2 (eski v1 ham o'qiladi)
 
+## 4-bosqich (tayyor, sinovdan o'tmagan)
+- Mamnuniyat (0-100): 45% yo'lga ulanish + 25% safar vaqti + 20% oqim tezligi + 10% muvaffaqiyatli safarlar; sabab matni ko'rsatiladi
+- Shahar darajalari (1-12): mamnuniyat nishonidan yuqori bo'lsa va barcha binolar yo'lga ulangan bo'lsa 20 s ushlab turing, yangi daraja: +1500 mablag' va yangi binolar
+- Saqlashda daraja va binolar ham saqlanadi
+- Yuklash xatosi tuzatildi: relyef alohida isolate'da yaratiladi, xato ekranda ko'rinadi
+
 ## Hali yo'q
 Aylanada kiruvchiga "yo'l bering" qoidasi (hozir kim birinchi so'rasa), ko'p polosali yo'llar, magistral va ramplar, iqtisodiyot va darajalar, qo'lda svetofor fazalarini tahrirlash.
 

@@ -55,6 +55,19 @@ class RoadGame extends FlameGame {
   int noAccess = 0; // yo'lga ulanmagan binolar
   int speed = 1; // 0 pauza, 1, 2, 4
   bool heat = false; // tirbandlik xaritasi
+
+  // shahar darajasi va mamnuniyat
+  static const int maxLevel = 12;
+  static const double levelNeedSeconds = 20;
+  int level = 1;
+  double satisfaction = 50;
+  double levelTimer = 0;
+  String satNote = "";
+  int _tripsAtLevel = 0;
+  double _econTimer = 0;
+  int _nextBuildingId = 1;
+  Offset cityCenter = const Offset(1600, 1600);
+  double get satTarget => min(80.0, 55 + 3.0 * level);
   final List<Offset> roundabouts = [];
   static const double roundaboutRadius = 30;
   String? flash;
@@ -112,6 +125,11 @@ class RoadGame extends FlameGame {
     graph = LaneGraph(net);
     sim = TrafficSim(graph, buildings, s);
     budget = startBudget;
+    level = 1;
+    satisfaction = 50;
+    levelTimer = 0;
+    _tripsAtLevel = 0;
+    satNote = "";
     _placeBuildings();
     _onNetworkChanged();
     loading = false;
@@ -134,30 +152,33 @@ class RoadGame extends FlameGame {
     return true;
   }
 
+  static const _houseRoofs = [Color(0xFFC9694F), Color(0xFF7FA66B), Color(0xFFD9A441), Color(0xFF8C6E5D)];
+  static const _shopRoofs = [Color(0xFF5B8DD6), Color(0xFF4F7FC4)];
+  static const _factoryRoofs = [Color(0xFF9A9DA3), Color(0xFF8B8F96)];
+
   void _placeBuildings() {
     final rnd = Random(seed);
     buildings.clear();
-
+    _nextBuildingId = 1;
     Offset? center;
     for (var i = 0; i < 4000 && center == null; i++) {
       final p = Offset(800 + rnd.nextDouble() * 1600, 800 + rnd.nextDouble() * 1600);
       if (_landDisk(p, 300)) center = p;
     }
-    center ??= const Offset(1600, 1600);
-    cam = center;
+    cityCenter = center ?? const Offset(1600, 1600);
+    cam = cityCenter;
     zoom = 0.9;
+    _placeBatch(rnd, 14, 4, 2, 420);
+  }
 
-    const houseRoofs = [Color(0xFFC9694F), Color(0xFF7FA66B), Color(0xFFD9A441), Color(0xFF8C6E5D)];
-    const shopRoofs = [Color(0xFF5B8DD6), Color(0xFF4F7FC4)];
-    const factoryRoofs = [Color(0xFF9A9DA3), Color(0xFF8B8F96)];
-
-    var id = 1;
+  /// Yangi binolar to'plamini joylashtiradi (mavjud binolar va yo'llardan uzoqda).
+  void _placeBatch(Random rnd, int houses, int shops, int factories, double reach) {
     void place(BuildingType type, int count, Size size, List<Color> roofs) {
       for (var k = 0; k < count; k++) {
-        for (var t = 0; t < 300; t++) {
+        for (var t = 0; t < 400; t++) {
           final ang = rnd.nextDouble() * 2 * pi;
-          final dist = sqrt(rnd.nextDouble()) * 420;
-          final p = center! + Offset(cos(ang), sin(ang)) * dist;
+          final dist = sqrt(rnd.nextDouble()) * reach;
+          final p = cityCenter + Offset(cos(ang), sin(ang)) * dist;
           final r = size.longestSide / 2 + 8;
           if (!terrain.isBuildableAt(p)) continue;
           if (!terrain.isBuildableAt(p + Offset(r, 0)) ||
@@ -167,8 +188,9 @@ class RoadGame extends FlameGame {
             continue;
           }
           if (buildings.any((b) => (b.pos - p).distance < 90)) continue;
+          if (net.nearestRoadPoint(p, r + 10) != null) continue;
           buildings.add(Building(
-            id: id++,
+            id: _nextBuildingId++,
             type: type,
             pos: p,
             angle: rnd.nextInt(4) * pi / 2 + (rnd.nextDouble() - 0.5) * 0.3,
@@ -180,9 +202,54 @@ class RoadGame extends FlameGame {
       }
     }
 
-    place(BuildingType.house, 14, const Size(34, 26), houseRoofs);
-    place(BuildingType.shop, 4, const Size(52, 34), shopRoofs);
-    place(BuildingType.factory, 2, const Size(70, 46), factoryRoofs);
+    place(BuildingType.house, houses, const Size(34, 26), _houseRoofs);
+    place(BuildingType.shop, shops, const Size(52, 34), _shopRoofs);
+    place(BuildingType.factory, factories, const Size(70, 46), _factoryRoofs);
+  }
+
+  // ------------------------------------------------------- mamnuniyat va darajalar
+
+  /// Mamnuniyat (0-100) = 45% yo'lga ulanish + 25% safar vaqti + 20% oqim tezligi + 10% muvaffaqiyatli safarlar.
+  void _econTick() {
+    final total = buildings.length;
+    final access = total == 0 ? 0.0 : (total - noAccess) / total;
+    final commute = sim.completed < 3
+        ? 0.5
+        : (1 - (sim.avgTrip - 20) / 80).clamp(0.0, 1.0).toDouble();
+    var sum = 0.0;
+    for (final l in graph.lanes.values) {
+      sum += l.ratio;
+    }
+    final flow = graph.lanes.isEmpty ? 0.0 : sum / graph.lanes.length;
+    final failFrac = sim.failed / (sim.failed + sim.completed + 1);
+    final raw = 100 * (0.45 * access + 0.25 * commute + 0.20 * flow + 0.10 * (1 - failFrac));
+    satisfaction += (raw - satisfaction) * 0.15;
+
+    if (noAccess > 0) {
+      satNote = "Yo'lga ulanmagan binolar: $noAccess";
+    } else if (commute < 0.5) {
+      satNote = "Safarlar juda uzoq davom etyapti";
+    } else if (flow < 0.6) {
+      satNote = "Tirbandlik mamnuniyatni pasaytiryapti";
+    } else {
+      satNote = "Tarmoq yaxshi ishlayapti";
+    }
+
+    final ok = satisfaction >= satTarget && noAccess == 0 && (sim.completed - _tripsAtLevel) >= 6;
+    levelTimer = ok ? levelTimer + 1 : max(0.0, levelTimer - 1);
+    if (levelTimer >= levelNeedSeconds && level < maxLevel) _levelUp();
+  }
+
+  void _levelUp() {
+    level++;
+    levelTimer = 0;
+    budget += 1500;
+    _tripsAtLevel = sim.completed;
+    final before = buildings.length;
+    _placeBatch(Random(seed * 31 + level), 3 + level ~/ 2, level.isEven ? 1 : 0,
+        level % 3 == 0 ? 1 : 0, 420 + 50.0 * level);
+    _onNetworkChanged();
+    flashMsg("Daraja $level! +1500 mablag', yangi binolar: ${buildings.length - before}");
   }
 
   // ---------------------------------------------------------- saqlash/yuklash
@@ -198,6 +265,8 @@ class RoadGame extends FlameGame {
         'v': 2,
         'seed': seed,
         'budget': budget,
+        'level': level,
+        'buildings': [for (final b in buildings) b.toJson()],
         'cam': [cam.dx, cam.dy],
         'zoom': zoom,
         'roads': [
@@ -238,6 +307,12 @@ class RoadGame extends FlameGame {
         if (ver != 1 && ver != 2) continue;
         final s = m['seed'] as int;
         final bud = (m['budget'] as num).toDouble();
+        final lvl = (m['level'] as num?)?.toInt() ?? 1;
+        final savedB = <Building>[];
+        var bid = 1;
+        for (final e in (m['buildings'] as List? ?? const [])) {
+          savedB.add(Building.fromJson(bid++, e as Map<String, dynamic>));
+        }
         final c = (m['cam'] as List).map((e) => (e as num).toDouble()).toList();
         final z = (m['zoom'] as num).toDouble();
         final roads = <List<Offset>>[];
@@ -269,6 +344,13 @@ class RoadGame extends FlameGame {
           final nd = net.nodeNear(Offset(sg[0], sg[1]), 2.0);
           if (nd != null) sim.addSignal(nd.id, sg[2]);
         }
+        if (savedB.isNotEmpty) {
+          buildings
+            ..clear()
+            ..addAll(savedB);
+          _nextBuildingId = savedB.length + 1;
+        }
+        level = lvl;
         budget = bud;
         cam = Offset(c[0], c[1]);
         zoom = z.clamp(minZoom, maxZoom).toDouble();
@@ -583,6 +665,13 @@ class RoadGame extends FlameGame {
         n++;
       }
       if (_acc > _simStep) _acc = 0; // qurilma ulgurmasa, tezlikni pasaytiramiz
+    }
+    if (speed > 0) {
+      _econTimer += dt;
+      if (_econTimer >= 1.0) {
+        _econTimer -= 1.0;
+        _econTick();
+      }
     }
     _hudTimer += dt;
     if (_hudTimer > 0.3) {

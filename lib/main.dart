@@ -173,6 +173,12 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
             children: [
               _chip("Mablag': ${game.budget.round()}"),
               _chip("Yo'llar: ${game.net.roads.length}"),
+              _chip("Daraja: ${game.level}"),
+              _chip(
+                "Mamnuniyat: ${game.satisfaction.round()}/${game.satTarget.round()}"
+                "${game.levelTimer > 0 ? '  (${game.levelTimer.round()}/${RoadGame.levelNeedSeconds.round()} s)' : ''}",
+                color: game.satisfaction >= game.satTarget ? const Color(0xFF2E8B3E) : null,
+              ),
               if (sim != null) ...[
                 _chip("Mashina: ${sim.vehicles.length}"),
                 _chip("Yetib bordi: ${sim.completed}"),
@@ -185,6 +191,10 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
               ],
             ],
           ),
+          if (!game.loading && game.satNote.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            _chip(game.satNote),
+          ],
           const SizedBox(height: 6),
           if (plan != null)
             _chip(
