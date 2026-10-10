@@ -418,6 +418,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
             _btn(Icons.info_outline, "Ma'lumot", () => game.setTool(Tool.inspect),
                 selected: game.tool == Tool.inspect),
             _btn(Icons.alt_route, game.roadType == 1 ? "Katta yo'l" : "Oddiy yo'l", game.cycleRoadType),
+            _btn(Icons.layers, game.roadLayer == 1 ? "Estakada" : "Yer usti", game.cycleRoadLayer, selected: game.roadLayer == 1),
             if (game.sandbox) ...[
               _btn(Icons.home_work, ["Uy", "Do'kon", "Zavod"][game.buildType], () {
                 if (game.tool == Tool.building) {

@@ -39,8 +39,10 @@ class Road {
     required this.cost,
     this.oneWay = false,
     this.type = 0,
+    this.layer = 0,
   });
 
+  final int layer; // 0 yer usti, 1 estakada/ko'prik (boshqa yo'llar bilan kesishmaydi)
   final bool oneWay;
   final int type; // 0 oddiy, 1 katta (tez) yo'l
   final int id;
@@ -142,10 +144,11 @@ class RoadNetwork {
     return best;
   }
 
-  RoadHit? nearestRoadPoint(Offset p, double radius) {
+  RoadHit? nearestRoadPoint(Offset p, double radius, {int? layer}) {
     RoadHit? best;
     var bestD = radius;
     for (final r in roads.values) {
+      if (layer != null && r.layer != layer) continue;
       for (var i = 1; i < r.pts.length; i++) {
         final q = closestOnSegment(p, r.pts[i - 1], r.pts[i]);
         final d = (q - p).distance;
@@ -170,7 +173,7 @@ class RoadNetwork {
 
   RoadNode _nodeAt(Offset p) => nodeNear(p, 1.0) ?? _newNode(p);
 
-  Road? _addNodes(List<Offset> pts, RoadNode na, RoadNode nb, {bool oneWay = false, int type = 0}) {
+  Road? _addNodes(List<Offset> pts, RoadNode na, RoadNode nb, {bool oneWay = false, int type = 0, int layer = 0}) {
     final p = List<Offset>.of(_dedupe(pts));
     if (p.length < 2) return null;
     p[0] = na.pos;
@@ -183,9 +186,10 @@ class RoadNetwork {
       b: nb.id,
       pts: p,
       length: len,
-      cost: len * costPerUnit * costFactor(type),
+      cost: len * costPerUnit * costFactor(type) * (layer == 1 ? 1.5 : 1.0),
       oneWay: oneWay,
       type: type,
+      layer: layer,
     );
     roads[road.id] = road;
     na.roads.add(road.id);
@@ -194,9 +198,9 @@ class RoadNetwork {
   }
 
   /// Saqlangan yo'l bo'lagini to'g'ridan-to'g'ri qo'shadi (yuklash uchun).
-  Road? addRoadPts(List<Offset> pts, {bool oneWay = false, int type = 0}) {
+  Road? addRoadPts(List<Offset> pts, {bool oneWay = false, int type = 0, int layer = 0}) {
     if (pts.length < 2) return null;
-    return _addNodes(pts, _nodeAt(pts.first), _nodeAt(pts.last), oneWay: oneWay, type: type);
+    return _addNodes(pts, _nodeAt(pts.first), _nodeAt(pts.last), oneWay: oneWay, type: type, layer: layer);
   }
 
   void _detach(Road r) {
@@ -240,15 +244,18 @@ class RoadNetwork {
     final nb = nodes[r.b]!;
     _detach(r);
     final mid = _newNode(bp);
-    _addNodes(left, na, mid, oneWay: r.oneWay, type: r.type);
-    _addNodes(right, mid, nb, oneWay: r.oneWay, type: r.type);
+    _addNodes(left, na, mid, oneWay: r.oneWay, type: r.type, layer: r.layer);
+    _addNodes(right, mid, nb, oneWay: r.oneWay, type: r.type, layer: r.layer);
     return mid;
   }
 
-  RoadNode _attachEnd(Offset p) {
+  /// Yo'l uchi: yaqin tugunga yoki yo'lga ulanadi. Estakada uchi yer usti yo'liga ham tushishi mumkin (rampa),
+  /// lekin yer usti yo'li estakada o'rtasiga ulanmaydi.
+  RoadNode _attachEnd(Offset p, int layer) {
     final n = nodeNear(p, 14);
     if (n != null) return n;
-    final hit = nearestRoadPoint(p, 12);
+    var hit = nearestRoadPoint(p, 12, layer: layer);
+    if (hit == null && layer == 1) hit = nearestRoadPoint(p, 12, layer: 0);
     if (hit != null) return splitRoadAt(hit.road.id, hit.point);
     return _newNode(p);
   }
@@ -356,7 +363,7 @@ class RoadNetwork {
       if (r.a == drop.id) pts[0] = keep.pos;
       if (r.b == drop.id) pts[pts.length - 1] = keep.pos;
       _detach(r);
-      if (na.id != nb.id) _addNodes(pts, na, nb, oneWay: r.oneWay, type: r.type);
+      if (na.id != nb.id) _addNodes(pts, na, nb, oneWay: r.oneWay, type: r.type, layer: r.layer);
     }
     nodes.remove(drop.id);
   }
@@ -390,12 +397,12 @@ class RoadNetwork {
 
   /// Yangi yo'lni quradi: uchlari yo'lga tegsa, ikkala yo'l ham bo'linadi;
   /// boshqa yo'llarni kesib o'tsa, har bir kesishuvda chorraha hosil bo'ladi.
-  void connectRoad(List<Offset> raw, {int type = 0}) {
+  void connectRoad(List<Offset> raw, {int type = 0, int layer = 0}) {
     final path = List<Offset>.of(_dedupe(raw));
     if (path.length < 2) return;
 
-    final startNode = _attachEnd(path.first);
-    final endNode = _attachEnd(path.last);
+    final startNode = _attachEnd(path.first, layer);
+    final endNode = _attachEnd(path.last, layer);
     path[0] = startNode.pos;
     path[path.length - 1] = endNode.pos;
 
@@ -408,6 +415,7 @@ class RoadNetwork {
     final cuts = <_Cut>[];
     for (var i = 1; i < path.length; i++) {
       for (final r in roads.values) {
+        if (r.layer != layer) continue; // estakada yer usti yo'llari bilan kesishmaydi
         for (var j = 1; j < r.pts.length; j++) {
           final x = _segInter(path[i - 1], path[i], r.pts[j - 1], r.pts[j]);
           if (x == null) continue;
@@ -422,7 +430,7 @@ class RoadNetwork {
     final stops = <_Cut>[_Cut(0, startNode.pos, node: startNode)];
     for (final c in cuts) {
       if (c.d - stops.last.d < 4) continue;
-      final hit = nearestRoadPoint(c.p, 2.0);
+      final hit = nearestRoadPoint(c.p, 2.0, layer: layer);
       if (hit == null) continue;
       c.node = splitRoadAt(hit.road.id, c.p);
       stops.add(c);
@@ -436,7 +444,7 @@ class RoadNetwork {
         if (cum[i] > d0 + 0.5 && cum[i] < d1 - 0.5) piece.add(path[i]);
       }
       piece.add(stops[k].node!.pos);
-      _addNodes(piece, stops[k - 1].node!, stops[k].node!, type: type);
+      _addNodes(piece, stops[k - 1].node!, stops[k].node!, type: type, layer: layer);
     }
     mergeCloseNodes();
   }

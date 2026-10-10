@@ -83,6 +83,13 @@ flutter build apk --release  # build/app/outputs/flutter-apk/app-release.apk
 - "Ekologiya" tugmasi: zavod atrofida ifloslanish doirasi, uylarda yashil -> qizil belgi; "Ma'lumot" bilan uyga bossangiz yuki ko'rinadi
 - Yuqori chip: "Ekologiya: n%"
 
+## 11-bosqich: estakada va ko'priklar (tayyor, sinovdan o'tmagan)
+- Pastdagi "Yer usti / Estakada" tugmasi: estakada yo'li boshqa yo'llar bilan KESISHMAYDI (ustidan o'tadi), faqat uchlari bilan ulanadi (rampa)
+- Estakada uchi yer usti yo'liga yoki chorrahaga tushsa, ulanadi; yer usti yo'li estakada o'rtasiga ulana olmaydi
+- Estakada daryo/ko'l ustidan o'ta oladi (uchlari quruqlikda bo'lishi kerak), 1.5x narx; soyasi bilan yuqorida chiziladi
+- Binolar estakadaga to'g'ridan-to'g'ri chiqmaydi; saqlashda qatlam saqlanadi
+- Shu bilan ko'p qavatli chorrahalar (rampali) qurish mumkin
+
 ## Hali yo'q
 Aylanada kiruvchiga "yo'l bering" qoidasi (hozir kim birinchi so'rasa), ko'p polosali yo'llar, magistral va ramplar, iqtisodiyot va darajalar, qo'lda svetofor fazalarini tahrirlash.
 

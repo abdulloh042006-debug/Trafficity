@@ -187,6 +187,7 @@ class LaneGraph {
       var bestS = 0.0;
       for (final l in lanes.values) {
         if (l.length < 50) continue;
+        if ((net.roads[l.roadId]?.layer ?? 0) == 1) continue; // estakadaga bino to'g'ridan-to'g'ri chiqmaydi
         for (var i = 1; i < l.pts.length; i++) {
           final q = closestOnSegment(b.pos, l.pts[i - 1], l.pts[i]);
           final d = (q - b.pos).distance;

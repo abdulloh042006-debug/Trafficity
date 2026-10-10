@@ -75,6 +75,7 @@ class RoadGame extends FlameGame {
   int difficulty = 1; // 0 oson, 1 oddiy, 2 qiyin
   bool sandbox = false;
   int roadType = 0; // 0 oddiy, 1 katta yo'l
+  int roadLayer = 0; // 0 yer usti, 1 estakada/ko'prik
   int buildType = 0; // sandbox: 0 uy, 1 do'kon, 2 zavod
   double demand = 1.0; // sandbox: talab ko'paytmasi
   Vehicle? selected;
@@ -403,6 +404,7 @@ class RoadGame extends FlameGame {
               'p': [for (final p in r.pts) ...[p.dx, p.dy]],
               'o': r.oneWay ? 1 : 0,
               't': r.type,
+              'l': r.layer,
             }
         ],
         'signals': [
@@ -450,6 +452,7 @@ class RoadGame extends FlameGame {
         final roads = <List<Offset>>[];
         final oneWays = <bool>[];
         final types = <int>[];
+        final layers = <int>[];
         for (final r in m['roads'] as List) {
           final raw = r is Map ? r['p'] : r;
           final f = (raw as List).map((e) => (e as num).toDouble()).toList();
@@ -457,6 +460,7 @@ class RoadGame extends FlameGame {
           roads.add([for (var i = 0; i < f.length; i += 2) Offset(f[i], f[i + 1])]);
           oneWays.add(r is Map && r['o'] == 1);
           types.add(r is Map ? ((r['t'] as num?)?.toInt() ?? 0) : 0);
+          layers.add(r is Map ? ((r['l'] as num?)?.toInt() ?? 0) : 0);
         }
         final sigs = <List<double>>[
           for (final e in (m['signals'] as List? ?? const []))
@@ -468,7 +472,7 @@ class RoadGame extends FlameGame {
         ];
         await newMap(s, biome: bio, difficulty: dif, sandbox: sbx);
         for (var i = 0; i < roads.length; i++) {
-          net.addRoadPts(roads[i], oneWay: oneWays[i], type: types[i]);
+          net.addRoadPts(roads[i], oneWay: oneWays[i], type: types[i], layer: layers[i]);
         }
         for (final r in rbs) {
           roundabouts.add(Offset(r[0], r[1]));
@@ -629,7 +633,8 @@ class RoadGame extends FlameGame {
       }
     }
     if (bb != null) return bb.frontPoint;
-    final h = net.nearestRoadPoint(w, 28 / zoom);
+    var h = net.nearestRoadPoint(w, 28 / zoom, layer: roadLayer);
+    if (h == null && roadLayer == 1) h = net.nearestRoadPoint(w, 28 / zoom, layer: 0);
     return h?.point ?? w;
   }
 
@@ -764,7 +769,7 @@ class RoadGame extends FlameGame {
   }
 
   void _eraseAt(Offset w) {
-    final r = net.roadNear(w, 14 / zoom + 8);
+    final r = (net.nearestRoadPoint(w, 14 / zoom + 8, layer: 1) ?? net.nearestRoadPoint(w, 14 / zoom + 8))?.road;
     if (r == null) return;
     budget += r.cost; // to'liq qaytarish
     net.removeRoad(r.id);
@@ -778,13 +783,18 @@ class RoadGame extends FlameGame {
       final atBuilding = buildings.any((b) => (b.frontPoint - e).distance < 3);
       if (!joined && !atBuilding && net.nearestRoadPoint(e, 45) != null) loose = true;
     }
-    net.connectRoad(p.pts, type: roadType);
+    net.connectRoad(p.pts, type: roadType, layer: roadLayer);
     budget -= p.cost;
     _onNetworkChanged();
     if (loose) flashMsg("Diqqat: yo'l uchi yaqin yo'lga ulanmadi. Uchini yo'lga yaqinlashtiring");
   }
 
   // -------------------------------------------------------------- yo'l rejasi
+
+  void cycleRoadLayer() {
+    roadLayer = 1 - roadLayer;
+    _notify();
+  }
 
   void cycleRoadType() {
     roadType = 1 - roadType;
@@ -1028,14 +1038,14 @@ class RoadGame extends FlameGame {
   RoadPlan _buildPlan(Offset a, Offset b, Offset? c) {
     final pts = RoadNetwork.sample(a, b, c);
     final len = RoadNetwork.polyLength(pts);
-    final cost = len * RoadNetwork.costPerUnit * RoadNetwork.costFactor(roadType);
+    final cost = len * RoadNetwork.costPerUnit * RoadNetwork.costFactor(roadType) * (roadLayer == 1 ? 1.5 : 1.0);
     String? err;
     if (len < minRoadLength) {
       err = "Juda qisqa";
     } else if (c != null && _tooSharp(a, b, c)) {
       err = "Burchak juda keskin";
-    } else if (pts.any(terrain.isWaterAt)) {
-      err = "Suv ustiga yo'l qurib bo'lmaydi";
+    } else if (roadLayer == 1 ? (terrain.isWaterAt(a) || terrain.isWaterAt(b)) : pts.any(terrain.isWaterAt)) {
+      err = roadLayer == 1 ? "Ko'prik uchlari quruqlikda bo'lishi kerak" : "Suv ustiga yo'l qurib bo'lmaydi";
     } else if (_hitsBuilding(pts)) {
       err = "Yo'l binoga tegmoqda";
     } else if (cost > budget) {
@@ -1212,8 +1222,23 @@ class RoadGame extends FlameGame {
       ..strokeWidth = 1.2
       ..color = const Color(0xCCD9B85A);
 
-    final roads = net.roads.values.toList();
+    for (final layer in const [0, 1]) {
+    final roads = net.roads.values.where((r) => r.layer == layer).toList();
+    if (roads.isEmpty) continue;
     final paths = [for (final r in roads) _pathOf(r.pts)];
+    if (layer == 1) {
+      // estakada/ko'prik: pastdagi yo'llar ustida, soyasi bilan
+      final shadow = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round
+        ..color = const Color(0x50000000)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+      for (var i = 0; i < roads.length; i++) {
+        shadow.strokeWidth = (roads[i].type == 1 ? w * 2 + 5 : w + 5) + 4;
+        canvas.drawPath(paths[i].shift(const Offset(4, 6)), shadow);
+      }
+    }
     for (var i = 0; i < roads.length; i++) {
       border.strokeWidth = roads[i].type == 1 ? w * 2 + 5 : w + 5;
       canvas.drawPath(paths[i], border);
@@ -1238,6 +1263,9 @@ class RoadGame extends FlameGame {
           canvas.drawPath(_pathOf(LaneGraph.offsetPath(rd.pts, off)), laneLine);
         }
       }
+    }
+    }
+    if (!heat) {
       final junction = Paint()..color = const Color(0xFFDADCDF);
       for (final n in net.nodes.values) {
         if (n.roads.length >= 3) canvas.drawCircle(n.pos, w * 0.7, junction);

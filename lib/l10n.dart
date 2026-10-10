@@ -58,6 +58,9 @@ class L {
     ["ekologik yuk", "экологическая нагрузка", "environmental load"],
     ["yo'lga ulangan", "подключено к дороге", "road access"],
     ["Ekologiya", "Экология", "Ecology"],
+    ["Ko'prik uchlari quruqlikda bo'lishi kerak", "Концы моста должны быть на суше", "Bridge ends must be on land"],
+    ["Estakada", "Эстакада", "Overpass"],
+    ["Yer usti", "Земля", "Ground"],
     // --- o'rgatuvchi vazifalar
     ["Kamerani suring, kattalashtiring yoki buring (2 barmoq)", "Двигайте, масштабируйте или вращайте карту (2 пальца)", "Pan, zoom or rotate the map (2 fingers)"],
     ["«To'g'ri» asbobi bilan birinchi yo'lni chizing", "Проведите первую дорогу инструментом «Прямая»", "Draw your first road with the «Straight» tool"],
