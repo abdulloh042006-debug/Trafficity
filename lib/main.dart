@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:ui' show PlatformDispatcher;
 
 import 'package:flame/game.dart';
 import 'package:flutter/gestures.dart';
@@ -7,8 +8,18 @@ import 'package:flutter/services.dart';
 
 import 'game/road_game.dart';
 
+/// Oxirgi xatoni ekranda ko'rsatish uchun (release rejimida xatolar sezilmay qolmasligi uchun).
+class AppErr {
+  static String? last;
+}
+
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  FlutterError.onError = (d) => AppErr.last = d.exceptionAsString();
+  PlatformDispatcher.instance.onError = (e, s) {
+    AppErr.last = '$e';
+    return true;
+  };
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.landscapeLeft,
     DeviceOrientation.landscapeRight,
@@ -251,6 +262,23 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
               ],
             ],
           ),
+          if (AppErr.last != null) ...[
+            const SizedBox(height: 6),
+            GestureDetector(
+              onTap: () => AppErr.last = null,
+              child: _chip(
+                "Xato: ${AppErr.last!.length > 160 ? AppErr.last!.substring(0, 160) : AppErr.last}",
+                color: const Color(0xFFC0392B),
+              ),
+            ),
+          ],
+          if (game.tutorial && !game.loading && game.tutStep < RoadGame.tutorialTexts.length) ...[
+            const SizedBox(height: 6),
+            _chip(
+              "Vazifa ${game.tutStep + 1}/${RoadGame.tutorialTexts.length}: ${RoadGame.tutorialTexts[game.tutStep]}",
+              color: const Color(0xFF1B6EA0),
+            ),
+          ],
           if (!game.loading && game.satNote.isNotEmpty) ...[
             const SizedBox(height: 6),
             _chip(game.satNote),
@@ -326,6 +354,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
               _btn(Icons.groups, "Talab x${game.demand}", game.cycleDemand),
             ],
             if (game.stage != 0) _btn(Icons.close, "Bekor", game.cancel),
+            if (game.tutorial) _btn(Icons.school, "O'tkazish", game.skipTutorial),
             _btn(game.speed == 0 ? Icons.pause : Icons.speed, speedLabel, game.cycleSpeed),
             _btn(Icons.local_fire_department, "Tirbandlik", game.toggleHeat, selected: game.heat),
             _btn(Icons.save_outlined, "Saqlash", () async {

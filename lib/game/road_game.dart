@@ -78,6 +78,23 @@ class RoadGame extends FlameGame {
   int buildType = 0; // sandbox: 0 uy, 1 do'kon, 2 zavod
   double demand = 1.0; // sandbox: talab ko'paytmasi
   Vehicle? selected;
+
+  // o'rgatuvchi vazifalar (haqiqiy o'yin holatidan aniqlanadi)
+  bool tutorial = true;
+  int tutStep = 0;
+  bool _heatSeen = false;
+  Offset _camStart = Offset.zero;
+  double _zoomStart = 1;
+  static const tutorialTexts = [
+    "Kamerani suring va kattalashtiring (2 barmoq)",
+    "«To'g'ri» asbobi bilan birinchi yo'lni chizing",
+    "Barcha binolarni yo'lga ulang",
+    "Mashinalar yurishini kuzating (kamida 3 safar)",
+    "«Tirbandlik» tugmasi bilan yo'l yuklanishini ko'ring",
+    "«Svetofor» bilan chorrahaga svetofor qo'ying",
+    "«Aylana» bilan aylana chorraha quring",
+    "Mamnuniyatni oshirib 2-darajaga chiqing",
+  ];
   double get _startBudgetFor => const [4500.0, 3000.0, 2000.0][difficulty];
   final List<Offset> roundabouts = [];
   static const double roundaboutRadius = 30;
@@ -147,7 +164,12 @@ class RoadGame extends FlameGame {
     levelTimer = 0;
     _tripsAtLevel = 0;
     satNote = "";
+    tutorial = !sandbox;
+    tutStep = 0;
+    _heatSeen = false;
     _placeBuildings();
+    _camStart = cam;
+    _zoomStart = zoom;
     _onNetworkChanged();
     loading = false;
     _notify();
@@ -381,6 +403,7 @@ class RoadGame extends FlameGame {
           _nextBuildingId = savedB.length + 1;
         }
         level = lvl;
+        tutorial = false;
         budget = bud;
         cam = Offset(c[0], c[1]);
         zoom = z.clamp(minZoom, maxZoom).toDouble();
@@ -678,6 +701,43 @@ class RoadGame extends FlameGame {
     flashMsg("Bu yerda ma'lumot yo'q");
   }
 
+  bool _tutDone(int i) {
+    switch (i) {
+      case 0:
+        return (cam - _camStart).distance > 80 || (zoom - _zoomStart).abs() > 0.15;
+      case 1:
+        return net.roads.isNotEmpty;
+      case 2:
+        return net.roads.isNotEmpty && noAccess == 0;
+      case 3:
+        return sim.completed >= 3;
+      case 4:
+        return _heatSeen;
+      case 5:
+        return sim.signals.isNotEmpty;
+      case 6:
+        return roundabouts.isNotEmpty;
+      default:
+        return level >= 2;
+    }
+  }
+
+  void _tutTick() {
+    if (!tutorial || loading) return;
+    while (tutStep < tutorialTexts.length && _tutDone(tutStep)) {
+      tutStep++;
+    }
+    if (tutStep >= tutorialTexts.length) {
+      tutorial = false;
+      flashMsg("O'rgatish tugadi. Omad!");
+    }
+  }
+
+  void skipTutorial() {
+    tutorial = false;
+    hud.value++;
+  }
+
   void flashMsg(String m) {
     flash = m;
     _flashT = 2.5;
@@ -686,6 +746,7 @@ class RoadGame extends FlameGame {
 
   void toggleHeat() {
     heat = !heat;
+    if (heat) _heatSeen = true;
     hud.value++;
   }
 
@@ -794,6 +855,7 @@ class RoadGame extends FlameGame {
     _hudTimer += dt;
     if (_hudTimer > 0.3) {
       _hudTimer = 0;
+      _tutTick();
       hud.value++;
     }
   }

@@ -48,6 +48,10 @@ flutter build apk --release  # build/app/outputs/flutter-apk/app-release.apk
 - Yo'l turlari: oddiy (40 km/s) va katta yo'l (60 km/s, 1.6x narx); marshrut tezroq yo'lni tanlaydi
 - Ikonka: `assets/icon/icon.png` va `flutter_launcher_icons` sozlamasi (workflow'ga 2 qadam qo'shilsa ulanadi)
 
+## 6-bosqich qismi (tayyor, sinovdan o'tmagan)
+- O'rgatuvchi vazifalar (8 ta): kamera, birinchi yo'l, hamma binoni ulash, mashinalar, tirbandlik xaritasi, svetofor, aylana, 2-daraja. Bajarilganligi haqiqiy o'yin holatidan aniqlanadi, "O'tkazish" tugmasi bor
+- Xatolar ekranda qizil chiplarda ko'rinadi (bosib yopiladi)
+
 ## Hali yo'q
 Aylanada kiruvchiga "yo'l bering" qoidasi (hozir kim birinchi so'rasa), ko'p polosali yo'llar, magistral va ramplar, iqtisodiyot va darajalar, qo'lda svetofor fazalarini tahrirlash.
 
