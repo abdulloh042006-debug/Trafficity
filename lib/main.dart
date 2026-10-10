@@ -5,8 +5,10 @@ import 'package:flame/game.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'game/road_game.dart';
+import 'l10n.dart';
 
 /// Oxirgi xatoni ekranda ko'rsatish uchun (release rejimida xatolar sezilmay qolmasligi uchun).
 class AppErr {
@@ -58,6 +60,13 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     // yuklashni birinchi kadrdan keyin boshlaymiz: ekran darhol chiqadi, xatolar ko'rinadi
     WidgetsBinding.instance.addPostFrameCallback((_) => game.newMap(game.seed));
+    SharedPreferences.getInstance().then((p) {
+      final v = p.getInt('lang');
+      if (v != null && v >= 0 && v < 3 && mounted) {
+        setState(() => L.lang = v);
+        game.hud.value++;
+      }
+    }).catchError((_) {});
   }
 
   @override
@@ -77,7 +86,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   void _toast(String text) {
     ScaffoldMessenger.of(context)
       ..clearSnackBars()
-      ..showSnackBar(SnackBar(content: Text(text), duration: const Duration(seconds: 2)));
+      ..showSnackBar(SnackBar(content: Text(L.t(text)), duration: const Duration(seconds: 2)));
   }
 
   Future<void> _newGameDialog() async {
@@ -91,27 +100,27 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
               children: [
                 for (var i = 0; i < names.length; i++)
                   ChoiceChip(
-                    label: Text(names[i]),
+                    label: Text(L.t(names[i])),
                     selected: sel == i,
                     onSelected: (_) => setS(() => on(i)),
                   ),
               ],
             );
         return AlertDialog(
-          title: const Text("Yangi o'yin"),
+          title: Text(L.t("Yangi o'yin")),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text("Biom"),
+                Text(L.t("Biom")),
                 chips(const ["Tekislik", "Daryo deltasi", "Tog' vodiysi", "Orollar"], biome, (i) => biome = i),
                 const SizedBox(height: 12),
-                const Text("Qiyinlik"),
+                Text(L.t("Qiyinlik")),
                 chips(const ["Oson", "Oddiy", "Qiyin"], diff, (i) => diff = i),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text("Sandbox (cheksiz mablag')"),
+                  title: Text(L.t("Sandbox (cheksiz mablag')")),
                   value: sbx,
                   onChanged: (v) => setS(() => sbx = v),
                 ),
@@ -124,8 +133,8 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text("Bekor")),
-            FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text("Boshlash")),
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(L.t("Bekor"))),
+            FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(L.t("Boshlash"))),
           ],
         );
       }),
@@ -229,7 +238,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
           children: [
             SizedBox(
               width: 128,
-              child: Text("$label: ${fmt(cur)}",
+              child: Text(L.t("$label: ${fmt(cur)}"),
                   style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
             ),
             Expanded(
@@ -259,7 +268,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
             child: TextButton.icon(
               onPressed: game.focusBottleneck,
               icon: const Icon(Icons.my_location, size: 18),
-              label: const Text("Eng og'ir joyni ko'rsat"),
+              label: Text(L.t("Eng og'ir joyni ko'rsat")),
             ),
           ),
         ],
@@ -275,7 +284,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
-        text,
+        L.t(text),
         style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: color ?? const Color(0xFF2B2E33)),
       ),
     );
@@ -362,7 +371,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(icon, size: 21, color: fg),
-                Text(label, style: TextStyle(fontSize: 10.5, color: fg)),
+                Text(L.t(label), style: TextStyle(fontSize: 10.5, color: fg)),
               ],
             ),
           ),
@@ -416,6 +425,15 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
             _btn(Icons.folder_open, "Yuklash", () async {
               final ok = await game.load();
               _toast(ok ? "Yuklandi" : "Saqlangan o'yin topilmadi");
+            }),
+            _btn(Icons.language, ["UZ", "RU", "EN"][L.lang], () async {
+              L.lang = (L.lang + 1) % 3;
+              setState(() {});
+              game.hud.value++;
+              try {
+                final p = await SharedPreferences.getInstance();
+                await p.setInt('lang', L.lang);
+              } catch (_) {}
             }),
             _btn(Icons.refresh, "Yangi", _newGameDialog),
           ],

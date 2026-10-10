@@ -59,6 +59,10 @@ flutter build apk --release  # build/app/outputs/flutter-apk/app-release.apk
 - Yo'l bo'linganda mashinalar yo'qolmasdan yangi polosaga ko'chadi
 - Yo'l uchi yaqin yo'lga ulanmasa ogohlantiradi
 
+## 8-bosqich: tillar (tayyor, sinovdan o'tmagan)
+- Til tugmasi (UZ / RU / EN): interfeys, xabarlar va o'rgatuvchi vazifalar tarjima qilinadi, tanlov saqlanadi
+- Android ikonkasi `android/app/src/main/res/mipmap-*` ichida (workflow o'zgartirilmasa ham ishlaydi)
+
 ## Hali yo'q
 Aylanada kiruvchiga "yo'l bering" qoidasi (hozir kim birinchi so'rasa), ko'p polosali yo'llar, magistral va ramplar, iqtisodiyot va darajalar, qo'lda svetofor fazalarini tahrirlash.
 
