@@ -63,6 +63,12 @@ flutter build apk --release  # build/app/outputs/flutter-apk/app-release.apk
 - Til tugmasi (UZ / RU / EN): interfeys, xabarlar va o'rgatuvchi vazifalar tarjima qilinadi, tanlov saqlanadi
 - Android ikonkasi `android/app/src/main/res/mipmap-*` ichida (workflow o'zgartirilmasa ham ishlaydi)
 
+## 9-bosqich: ko'p polosali yo'llar (tayyor, sinovdan o'tmagan)
+- "Katta yo'l" (60 km/s) har yo'nalishda 2 polosa, 2.2x narx; polosa chiziqlari chiziladi
+- Mashinalar polosani chorrahada marshrut orqali tanlaydi (tirbandlikni hisobga olib); o'ngga ichki, chapga tashqi polosadan burilish jarimalanadi
+- Polosalar soni bo'yicha chorraha to'qnashuvlari geometriyadan hisoblanadi (parallel polosalar to'qnashmaydi, kesishganlari navbat bilan o'tadi)
+- Hali yo'q: yo'l o'rtasida polosa almashtirish (quvib o'tish)
+
 ## Hali yo'q
 Aylanada kiruvchiga "yo'l bering" qoidasi (hozir kim birinchi so'rasa), ko'p polosali yo'llar, magistral va ramplar, iqtisodiyot va darajalar, qo'lda svetofor fazalarini tahrirlash.
 

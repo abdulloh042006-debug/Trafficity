@@ -80,19 +80,24 @@ class LaneGraph {
     for (final r in net.roads.values) {
       for (final fwd in [true, false]) {
         if (!fwd && r.oneWay) continue;
-        final id = r.id * 2 + (fwd ? 0 : 1);
-        want.add(id);
-        if (!lanes.containsKey(id)) {
-          final base = fwd ? r.pts : r.pts.reversed.toList();
-          lanes[id] = Lane(
-            _offset(base),
-            id: id,
-            roadId: r.id,
-            fwd: fwd,
-            fromNode: fwd ? r.a : r.b,
-            toNode: fwd ? r.b : r.a,
-            speedLimit: r.type == 1 ? 33.0 : 22.0,
-          );
+        final count = r.type == 1 ? 2 : 1; // katta yo'lda har yo'nalishda 2 polosa
+        for (var k = 0; k < count; k++) {
+          final id = Lane.idFor(r.id, fwd, k);
+          want.add(id);
+          if (!lanes.containsKey(id)) {
+            final base = fwd ? r.pts : r.pts.reversed.toList();
+            lanes[id] = Lane(
+              offsetPath(base, laneOffset + k * 7.0),
+              id: id,
+              roadId: r.id,
+              fwd: fwd,
+              fromNode: fwd ? r.a : r.b,
+              toNode: fwd ? r.b : r.a,
+              speedLimit: r.type == 1 ? 33.0 : 22.0,
+              laneIdx: k,
+              laneCount: count,
+            );
+          }
         }
       }
     }
@@ -109,7 +114,7 @@ class LaneGraph {
     }
   }
 
-  List<Offset> _offset(List<Offset> p) {
+  static List<Offset> offsetPath(List<Offset> p, double off) {
     final n = p.length;
     final out = <Offset>[];
     for (var i = 0; i < n; i++) {
@@ -123,7 +128,7 @@ class LaneGraph {
       }
       final l = t.distance;
       t = l < 1e-9 ? const Offset(1, 0) : t / l;
-      out.add(p[i] + Offset(-t.dy, t.dx) * laneOffset);
+      out.add(p[i] + Offset(-t.dy, t.dx) * off);
     }
     return out;
   }
@@ -163,6 +168,11 @@ class LaneGraph {
     });
   }
 
+  List<Lane> lanesOf(int roadId) => [
+        for (var i = 0; i < 4; i++)
+          if (lanes.containsKey(roadId * 4 + i)) lanes[roadId * 4 + i]!
+      ];
+
   /// Har bir bino uchun eng yaqin polosa nuqtasini topadi (yo'l kirish joyi).
   void computeAccess(List<Building> buildings) {
     access.clear();
@@ -195,7 +205,7 @@ class LaneGraph {
     if (out == null) return;
     final deg = net.nodes[from.toNode]?.roads.length ?? 0;
     for (final s in out) {
-      if (s.id == from.oppositeId && deg > 1) continue; // U-burilish faqat boshi berk yo'lda
+      if (s.roadId == from.roadId && s.fwd != from.fwd && deg > 1) continue; // U-burilish faqat boshi berk yo'lda
       yield s;
     }
   }
@@ -203,7 +213,13 @@ class LaneGraph {
   double _turn(Lane from, Lane to) {
     final a = from.dirAt(from.length), b = to.dirAt(0);
     final dot = (a.dx * b.dx + a.dy * b.dy).clamp(-1.0, 1.0).toDouble();
-    return 0.5 + acos(dot) * 1.2;
+    final cross = a.dx * b.dy - a.dy * b.dx; // > 0: o'ngga burilish
+    var pen = 0.5 + acos(dot) * 1.2;
+    if (from.laneCount > 1) {
+      if (cross > 0.5 && from.laneIdx > 0) pen += 2.0; // o'ngga ichki polosadan
+      if (cross < -0.5 && from.laneIdx == 0) pen += 2.0; // chapga tashqi polosadan
+    }
+    return pen;
   }
 
   /// A*: generalized cost = yurish vaqti + burilish jarimasi + navbat (tirbandlik) taxmini.

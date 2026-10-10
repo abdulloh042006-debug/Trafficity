@@ -76,7 +76,7 @@ class _Cut {
 /// Chizishdan mustaqil yo'l topologiyasi.
 class RoadNetwork {
   static const double costPerUnit = 0.5;
-  static double costFactor(int type) => type == 1 ? 1.6 : 1.0;
+  static double costFactor(int type) => type == 1 ? 2.2 : 1.0;
   static const double roadWidth = 14;
 
   final Map<int, RoadNode> nodes = {};

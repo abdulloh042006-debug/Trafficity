@@ -787,10 +787,9 @@ class RoadGame extends FlameGame {
     final hit = net.nearestRoadPoint(w, 14 / zoom + 8);
     if (hit != null) {
       final rd = hit.road;
-      final a = graph.lanes[rd.id * 2];
-      final b = graph.lanes[rd.id * 2 + 1];
-      final cnt = (a?.vehicles.length ?? 0) + (b?.vehicles.length ?? 0);
-      final limit = ((a ?? b)?.speedLimit ?? 22) * 1.8;
+      final ls = graph.lanesOf(rd.id);
+      final cnt = ls.fold<int>(0, (s, l) => s + l.vehicles.length);
+      final limit = (ls.isEmpty ? 22.0 : ls.first.speedLimit) * 1.8;
       flashMsg("${rd.type == 1 ? 'Katta yo\'l' : 'Oddiy yo\'l'}: limit ${limit.round()} km/s, oqim ${(_roadRatio(rd) * 100).round()}%, mashinalar: $cnt, uzunligi ${rd.length.round()} m");
       return;
     }
@@ -844,9 +843,7 @@ class RoadGame extends FlameGame {
     Road? best;
     var bestScore = 0.0;
     for (final r in net.roads.values) {
-      final a = graph.lanes[r.id * 2];
-      final b = graph.lanes[r.id * 2 + 1];
-      final cnt = (a?.vehicles.length ?? 0) + (b?.vehicles.length ?? 0);
+      final cnt = graph.lanesOf(r.id).fold<int>(0, (s, l) => s + l.vehicles.length);
       if (cnt < 4) continue;
       final score = cnt * (1 - _roadRatio(r));
       if (score > bestScore) {
@@ -867,9 +864,7 @@ class RoadGame extends FlameGame {
     zoom = 1.6;
     heat = true;
     _clampCam();
-    final a = graph.lanes[r.id * 2];
-    final b = graph.lanes[r.id * 2 + 1];
-    final cnt = (a?.vehicles.length ?? 0) + (b?.vehicles.length ?? 0);
+    final cnt = graph.lanesOf(r.id).fold<int>(0, (s, l) => s + l.vehicles.length);
     flashMsg("Eng og'ir joy: $cnt mashina, oqim ${(_roadRatio(r) * 100).round()}%");
   }
 
@@ -938,7 +933,7 @@ class RoadGame extends FlameGame {
       err = "Burchak juda keskin";
     } else if (pts.any(terrain.isWaterAt)) {
       err = "Suv ustiga yo'l qurib bo'lmaydi";
-    } else if (buildings.any((bd) => pts.any((p) => bd.containsPoint(p, 5)))) {
+    } else if (buildings.any((bd) => pts.any((p) => bd.containsPoint(p, roadType == 1 ? 15 : 5)))) {
       err = "Yo'l binoga tegmoqda";
     } else if (cost > budget) {
       err = "Mablag' yetarli emas";
@@ -1081,11 +1076,11 @@ class RoadGame extends FlameGame {
   }
 
   double _roadRatio(Road r) {
-    final a = graph.lanes[r.id * 2];
-    final b = graph.lanes[r.id * 2 + 1];
-    final ra = a?.ratio ?? 1.0;
-    final rb = b?.ratio ?? 1.0;
-    return min(ra, rb);
+    var m = 1.0;
+    for (final l in graph.lanesOf(r.id)) {
+      if (l.ratio < m) m = l.ratio;
+    }
+    return m;
   }
 
   bool _ringExists(Offset c) => net.roads.values.any((r) =>
@@ -1115,17 +1110,28 @@ class RoadGame extends FlameGame {
     final roads = net.roads.values.toList();
     final paths = [for (final r in roads) _pathOf(r.pts)];
     for (var i = 0; i < roads.length; i++) {
-      border.strokeWidth = roads[i].type == 1 ? w + 8 : w + 5;
+      border.strokeWidth = roads[i].type == 1 ? w * 2 + 5 : w + 5;
       canvas.drawPath(paths[i], border);
     }
     for (var i = 0; i < roads.length; i++) {
-      fill.strokeWidth = roads[i].type == 1 ? w + 3 : w;
+      fill.strokeWidth = roads[i].type == 1 ? w * 2 : w;
       fill.color = heat ? _heatColor(_roadRatio(roads[i])) : const Color(0xFFDADCDF);
       canvas.drawPath(paths[i], fill);
     }
     if (!heat) {
       for (var i = 0; i < roads.length; i++) {
         if (!roads[i].oneWay) canvas.drawPath(paths[i], center);
+      }
+      // ko'p polosali yo'llarda polosa chiziqlari
+      final laneLine = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1
+        ..color = const Color(0xAAFFFFFF);
+      for (final rd in roads) {
+        if (rd.type != 1) continue;
+        for (final off in const [-7.0, 7.0]) {
+          canvas.drawPath(_pathOf(LaneGraph.offsetPath(rd.pts, off)), laneLine);
+        }
       }
       final junction = Paint()..color = const Color(0xFFDADCDF);
       for (final n in net.nodes.values) {

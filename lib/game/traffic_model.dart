@@ -56,7 +56,12 @@ class Lane extends Track {
     required this.fromNode,
     required this.toNode,
     this.speedLimit = 22,
+    this.laneIdx = 0,
+    this.laneCount = 1,
   });
+
+  final int laneIdx; // 0 tashqi (o'ng), 1 ichki
+  final int laneCount; // shu yo'nalishdagi polosalar soni
 
   final double speedLimit; // birlik/s
 
@@ -65,13 +70,13 @@ class Lane extends Track {
   /// O'rtacha tezlik / limit (tirbandlik o'lchovi, 1 = erkin harakat).
   double ratio = 1.0;
 
-  final int id; // roadId*2 + (fwd ? 0 : 1)
+  final int id; // roadId*4 + (fwd ? 0 : 2) + laneIdx
   final int roadId;
   final bool fwd;
   final int fromNode;
   final int toNode;
 
-  int get oppositeId => id ^ 1;
+  static int idFor(int roadId, bool fwd, int lane) => roadId * 4 + (fwd ? 0 : 2) + lane;
 }
 
 class Connector extends Track {
