@@ -220,7 +220,7 @@ class LaneGraph {
 
     void expand(Lane from, double baseG, int fromKey) {
       for (final s in _successors(from)) {
-        final cost = baseG + s.length / s.speedLimit + _turn(from, s) + s.vehicles.length * 0.3;
+        final cost = baseG + s.length / s.speedLimit + _turn(from, s) + min(s.vehicles.length * 0.3, s.length / s.speedLimit * 0.8);
         if (cost < (g[s.id] ?? double.infinity)) {
           g[s.id] = cost;
           prev[s.id] = fromKey;

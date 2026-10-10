@@ -246,9 +246,9 @@ class RoadNetwork {
   }
 
   RoadNode _attachEnd(Offset p) {
-    final n = nodeNear(p, 1.5);
+    final n = nodeNear(p, 14);
     if (n != null) return n;
-    final hit = nearestRoadPoint(p, 1.5);
+    final hit = nearestRoadPoint(p, 12);
     if (hit != null) return splitRoadAt(hit.road.id, hit.point);
     return _newNode(p);
   }
@@ -344,6 +344,50 @@ class RoadNetwork {
     return null;
   }
 
+  bool _touchesOneWay(RoadNode n) => n.roads.any((id) => roads[id]?.oneWay ?? false);
+
+  void _mergeInto(RoadNode keep, RoadNode drop) {
+    for (final rid in drop.roads.toList()) {
+      final r = roads[rid];
+      if (r == null) continue;
+      final na = r.a == drop.id ? keep : nodes[r.a]!;
+      final nb = r.b == drop.id ? keep : nodes[r.b]!;
+      final pts = List<Offset>.of(r.pts);
+      if (r.a == drop.id) pts[0] = keep.pos;
+      if (r.b == drop.id) pts[pts.length - 1] = keep.pos;
+      _detach(r);
+      if (na.id != nb.id) _addNodes(pts, na, nb, oneWay: r.oneWay, type: r.type);
+    }
+    nodes.remove(drop.id);
+  }
+
+  /// Bir-biriga juda yaqin (dist dan kam) tugunlarni bitta chorrahaga birlashtiradi,
+  /// ular orasidagi qisqa yo'l bo'lagi yo'qoladi. Aylana chorraha tugunlariga tegmaydi.
+  void mergeCloseNodes([double dist = 30]) {
+    for (var guard = 0; guard < 30; guard++) {
+      RoadNode? keep;
+      RoadNode? drop;
+      final list = nodes.values.toList();
+      outer:
+      for (var i = 0; i < list.length; i++) {
+        for (var j = i + 1; j < list.length; j++) {
+          if ((list[i].pos - list[j].pos).distance >= dist) continue;
+          if (_touchesOneWay(list[i]) || _touchesOneWay(list[j])) continue;
+          if (list[i].roads.length >= list[j].roads.length) {
+            keep = list[i];
+            drop = list[j];
+          } else {
+            keep = list[j];
+            drop = list[i];
+          }
+          break outer;
+        }
+      }
+      if (keep == null || drop == null) return;
+      _mergeInto(keep, drop);
+    }
+  }
+
   /// Yangi yo'lni quradi: uchlari yo'lga tegsa, ikkala yo'l ham bo'linadi;
   /// boshqa yo'llarni kesib o'tsa, har bir kesishuvda chorraha hosil bo'ladi.
   void connectRoad(List<Offset> raw, {int type = 0}) {
@@ -394,5 +438,6 @@ class RoadNetwork {
       piece.add(stops[k].node!.pos);
       _addNodes(piece, stops[k - 1].node!, stops[k].node!, type: type);
     }
+    mergeCloseNodes();
   }
 }

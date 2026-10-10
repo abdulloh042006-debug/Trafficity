@@ -52,6 +52,13 @@ flutter build apk --release  # build/app/outputs/flutter-apk/app-release.apk
 - O'rgatuvchi vazifalar (8 ta): kamera, birinchi yo'l, hamma binoni ulash, mashinalar, tirbandlik xaritasi, svetofor, aylana, 2-daraja. Bajarilganligi haqiqiy o'yin holatidan aniqlanadi, "O'tkazish" tugmasi bor
 - Xatolar ekranda qizil chiplarda ko'rinadi (bosib yopiladi)
 
+## 7-bosqich: diagnostika (tayyor, sinovdan o'tmagan)
+- "Grafik" paneli: mashinalar, mamnuniyat, o'rtacha safar vaqti, tirband yo'llar ulushi (oxirgi ~3 daqiqa)
+- "Eng og'ir joyni ko'rsat": eng ko'p mashina va eng past oqimli yo'lga kamerani olib boradi
+- Xarita aylantirish (2 barmoq), binoga yaqinlashganda yo'l old tomonga tushadi, yaqin tugunlar birlashadi, chizayotganda chetga yetsa xarita suriladi
+- Yo'l bo'linganda mashinalar yo'qolmasdan yangi polosaga ko'chadi
+- Yo'l uchi yaqin yo'lga ulanmasa ogohlantiradi
+
 ## Hali yo'q
 Aylanada kiruvchiga "yo'l bering" qoidasi (hozir kim birinchi so'rasa), ko'p polosali yo'llar, magistral va ramplar, iqtisodiyot va darajalar, qo'lda svetofor fazalarini tahrirlash.
 

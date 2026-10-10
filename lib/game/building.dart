@@ -22,6 +22,18 @@ class Building {
 
   double get radius => size.longestSide / 2 + 8;
 
+  /// Bino "old" tomoni (yo'l ulanadigan joy).
+  Offset get frontPoint => pos + Offset(-sin(angle), cos(angle)) * (size.height / 2 + 12);
+
+  /// Nuqta bino maydonida (pad qadar kengaytirilgan) yotadimi.
+  bool containsPoint(Offset p, double pad) {
+    final d = p - pos;
+    final c = cos(-angle), s = sin(-angle);
+    final lx = d.dx * c - d.dy * s;
+    final ly = d.dx * s + d.dy * c;
+    return lx.abs() <= size.width / 2 + pad && ly.abs() <= size.height / 2 + pad;
+  }
+
   static const List<Color> roofPalette = [
     Color(0xFFC9694F), Color(0xFF7FA66B), Color(0xFFD9A441), Color(0xFF8C6E5D),
     Color(0xFF5B8DD6), Color(0xFF4F7FC4), Color(0xFF9A9DA3), Color(0xFF8B8F96),

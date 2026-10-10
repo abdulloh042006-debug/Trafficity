@@ -139,7 +139,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   String _hint() {
     switch (game.tool) {
       case Tool.pan:
-        return "Xaritani suring, 2 barmoq bilan kattalashtiring";
+        return "Xaritani suring; 2 barmoq bilan kattalashtiring va buring";
       case Tool.straight:
         return "Barmoqni bosib sudrang: to'g'ri yo'l shu yerda quriladi";
       case Tool.curve:
@@ -184,6 +184,11 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                   return Stack(
                     children: [
                       Align(alignment: Alignment.topCenter, child: _topBar(plan)),
+                      if (game.showCharts && !game.loading)
+                        Align(
+                          alignment: Alignment.bottomCenter,
+                          child: Padding(padding: const EdgeInsets.only(bottom: 100), child: _chartPanel()),
+                        ),
                       Align(alignment: Alignment.bottomCenter, child: _bottomBar()),
                       if (game.loading)
                         Center(
@@ -208,6 +213,53 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                   );
                 },
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _chartPanel() {
+    Widget row(String label, List<double> data, Color color, String Function(double) fmt) {
+      final cur = data.isEmpty ? 0.0 : data.last;
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 3),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 128,
+              child: Text("$label: ${fmt(cur)}",
+                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
+            ),
+            Expanded(
+              child: SizedBox(height: 30, child: CustomPaint(painter: _SparkPainter(data, color))),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 8),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: const Color(0xF2FFFFFF),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          row("Mashinalar", game.histVeh, const Color(0xFF5B8DD6), (v) => v.round().toString()),
+          row("Mamnuniyat", game.histSat, const Color(0xFF3DBE5A), (v) => "${v.round()}%"),
+          row("Safar vaqti", game.histTrip, const Color(0xFFE8873A), (v) => "${v.round()} s"),
+          row("Tirband yo'llar", game.histCong, const Color(0xFFD64541), (v) => "${v.round()}%"),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              onPressed: game.focusBottleneck,
+              icon: const Icon(Icons.my_location, size: 18),
+              label: const Text("Eng og'ir joyni ko'rsat"),
             ),
           ),
         ],
@@ -254,8 +306,6 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                 _chip("Mashina: ${sim.vehicles.length}"),
                 _chip("Yetib bordi: ${sim.completed}"),
                 _chip("O'rtacha: ${sim.avgTrip.round()} s"),
-                if (game.noAccess > 0)
-                  _chip("Yo'lsiz bino: ${game.noAccess}", color: const Color(0xFFC0392B)),
                 if (sim.failed > 0)
                   _chip("Yo'l topilmadi: ${sim.failed}", color: const Color(0xFFC0392B)),
                 if (sim.lost > 0) _chip("Yo'qotilgan: ${sim.lost}"),
@@ -331,6 +381,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
           mainAxisSize: MainAxisSize.min,
           children: [
             _btn(Icons.open_with, "Kamera", () => game.setTool(Tool.pan), selected: game.tool == Tool.pan),
+            if (game.rot.abs() > 0.01) _btn(Icons.explore, "Shimol", game.resetRotation),
             _btn(Icons.horizontal_rule, "To'g'ri", () => game.setTool(Tool.straight),
                 selected: game.tool == Tool.straight),
             _btn(Icons.gesture, "Egri", () => game.setTool(Tool.curve), selected: game.tool == Tool.curve),
@@ -357,6 +408,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
             if (game.tutorial) _btn(Icons.school, "O'tkazish", game.skipTutorial),
             _btn(game.speed == 0 ? Icons.pause : Icons.speed, speedLabel, game.cycleSpeed),
             _btn(Icons.local_fire_department, "Tirbandlik", game.toggleHeat, selected: game.heat),
+            _btn(Icons.show_chart, "Grafik", game.toggleCharts, selected: game.showCharts),
             _btn(Icons.save_outlined, "Saqlash", () async {
               final ok = await game.save();
               _toast(ok ? "Saqlandi" : "Saqlab bo'lmadi");
@@ -371,4 +423,40 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
       ),
     );
   }
+}
+
+class _SparkPainter extends CustomPainter {
+  _SparkPainter(this.data, this.color);
+
+  final List<double> data;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (data.length < 2) return;
+    var hi = 1.0;
+    for (final v in data) {
+      if (v > hi) hi = v;
+    }
+    final path = Path();
+    for (var i = 0; i < data.length; i++) {
+      final x = size.width * i / (data.length - 1);
+      final y = size.height - size.height * (data[i] / hi).clamp(0.0, 1.0).toDouble();
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+    canvas.drawPath(
+      path,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2
+        ..color = color,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _SparkPainter old) => true;
 }

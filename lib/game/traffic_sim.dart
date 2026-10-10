@@ -3,6 +3,7 @@ import 'dart:ui';
 
 import 'building.dart';
 import 'lane_graph.dart';
+import 'road_network.dart' show closestOnSegment;
 import 'signal.dart';
 import 'traffic_model.dart';
 
@@ -76,14 +77,52 @@ class TrafficSim {
         dead = true;
       }
       if (dead) {
-        _remove(v);
-        lost++;
+        if (!_relocate(v)) {
+          _remove(v);
+          lost++;
+        }
       } else {
         v.needsReroute = true;
       }
     }
     vehicles.removeWhere((v) => v.removed);
     _refreshSignals();
+  }
+
+  /// Yo'l bo'linganda mashinani xuddi shu joydagi yangi polosaga ko'chiradi (yo'qolib ketmasin).
+  bool _relocate(Vehicle v) {
+    final pos = v.track.pointAt(v.s);
+    final dir = v.track.dirAt(v.s);
+    Lane? best;
+    var bestD = 9.0;
+    var bestS = 0.0;
+    for (final l in graph.lanes.values) {
+      for (var i = 1; i < l.pts.length; i++) {
+        final a = l.pts[i - 1], b = l.pts[i];
+        final q = closestOnSegment(pos, a, b);
+        final d = (q - pos).distance;
+        if (d >= bestD) continue;
+        final sd = b - a;
+        final len = sd.distance;
+        if (len < 1e-6) continue;
+        if ((sd.dx * dir.dx + sd.dy * dir.dy) / len < 0.7) continue;
+        bestD = d;
+        best = l;
+        bestS = l.cum[i - 1] + (q - a).distance;
+      }
+    }
+    if (best == null) return false;
+    _release(v);
+    final pc = v.pendingConn;
+    if (pc != null) _waiters[pc.nodeId]?.remove(v);
+    v.pendingConn = null;
+    v.track = best;
+    v.s = bestS;
+    v.route = [best];
+    v.routeIdx = 0;
+    v.needsReroute = true;
+    best.vehicles.add(v);
+    return true;
   }
 
   // ------------------------------------------------------------------ svetoforlar
@@ -380,6 +419,10 @@ class TrafficSim {
           final dreq = v.v * v.v / (2 * v.bComf) + 20;
           if (endDist <= dreq && !_tryGrant(v, conn)) {
             if (v.v < 1.0 && endDist < 15) v.wait += dt;
+            if (v.wait > 25) {
+              v.wait = 8; // uzoq qotib qolsa, tirbandlikni hisobga olib yangi marshrut qidiradi
+              v.needsReroute = true;
+            }
             v.pendingConn = conn;
             _waiters.putIfAbsent(conn.nodeId, () => {}).add(v);
             final sg = endDist - 1.0;

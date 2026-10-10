@@ -79,6 +79,21 @@ class RoadGame extends FlameGame {
   double demand = 1.0; // sandbox: talab ko'paytmasi
   Vehicle? selected;
 
+  // grafiklar (chegaralangan tarix)
+  final List<double> histVeh = [];
+  final List<double> histSat = [];
+  final List<double> histTrip = [];
+  final List<double> histCong = [];
+  double _histT = 0;
+  bool showCharts = false;
+
+  // xarita aylantirish (ikki barmoq bilan burash)
+  double rot = 0;
+  double _twist = 0;
+  bool _rotating = false;
+  double _lastAng = 0;
+  Offset? _dragScreen; // chizish paytida barmoq joyi (chetga yetganda xarita suriladi)
+
   // o'rgatuvchi vazifalar (haqiqiy o'yin holatidan aniqlanadi)
   bool tutorial = true;
   int tutStep = 0;
@@ -86,7 +101,7 @@ class RoadGame extends FlameGame {
   Offset _camStart = Offset.zero;
   double _zoomStart = 1;
   static const tutorialTexts = [
-    "Kamerani suring va kattalashtiring (2 barmoq)",
+    "Kamerani suring, kattalashtiring yoki buring (2 barmoq)",
     "«To'g'ri» asbobi bilan birinchi yo'lni chizing",
     "Barcha binolarni yo'lga ulang",
     "Mashinalar yurishini kuzating (kamida 3 safar)",
@@ -159,6 +174,11 @@ class RoadGame extends FlameGame {
     budget = sandbox ? 1e9 : _startBudgetFor;
     demand = 1.0;
     selected = null;
+    rot = 0;
+    histVeh.clear();
+    histSat.clear();
+    histTrip.clear();
+    histCong.clear();
     level = 1;
     satisfaction = 50;
     levelTimer = 0;
@@ -252,7 +272,29 @@ class RoadGame extends FlameGame {
   // ------------------------------------------------------- mamnuniyat va darajalar
 
   /// Mamnuniyat (0-100) = 45% yo'lga ulanish + 25% safar vaqti + 20% oqim tezligi + 10% muvaffaqiyatli safarlar.
+  void _push(List<double> l, double v) {
+    l.add(v);
+    if (l.length > 90) l.removeAt(0);
+  }
+
   void _econTick() {
+    _histT += 1;
+    if (_histT >= 2) {
+      _histT = 0;
+      _push(histVeh, sim.vehicles.length.toDouble());
+      _push(histSat, satisfaction);
+      _push(histTrip, sim.avgTrip);
+      var withV = 0, bad = 0;
+      for (final l in graph.lanes.values) {
+        if (l.vehicles.isNotEmpty) {
+          withV++;
+          if (l.ratio < 0.4) bad++;
+        }
+      }
+      _push(histCong, withV == 0 ? 0.0 : 100.0 * bad / withV);
+    }
+    // mashinalar soni darajaga qarab o'sadi (tarmoq ortiqcha yuklanib qotib qolmasin)
+    sim.maxVehicles = sandbox ? 250 : min(250, 100 + 25 * level);
     final total = buildings.length;
     final access = total == 0 ? 0.0 : (total - noAccess) / total;
     final commute = sim.completed < 3
@@ -419,8 +461,23 @@ class RoadGame extends FlameGame {
 
   // ---------------------------------------------------------------- kamera
 
+  Offset _rot(Offset v, double a) {
+    final c = cos(a), s = sin(a);
+    return Offset(v.dx * c - v.dy * s, v.dx * s + v.dy * c);
+  }
+
   Offset toWorld(Offset s) =>
-      Offset((s.dx - size.x / 2) / zoom + cam.dx, (s.dy - size.y / 2) / zoom + cam.dy);
+      cam + _rot(Offset((s.dx - size.x / 2) / zoom, (s.dy - size.y / 2) / zoom), -rot);
+
+  /// Dunyo nuqtasi w ekrandagi s joyda qolishi uchun kamerani moslaydi.
+  void _anchor(Offset w, Offset s) {
+    cam = w - _rot(Offset((s.dx - size.x / 2) / zoom, (s.dy - size.y / 2) / zoom), -rot);
+  }
+
+  void resetRotation() {
+    rot = 0;
+    hud.value++;
+  }
 
   void _clampCam() {
     cam = Offset(
@@ -432,7 +489,7 @@ class RoadGame extends FlameGame {
   void wheel(Offset pos, double dy) {
     final before = toWorld(pos);
     zoom = (zoom * exp(-dy * 0.0015)).clamp(minZoom, maxZoom).toDouble();
-    cam = before - Offset((pos.dx - size.x / 2) / zoom, (pos.dy - size.y / 2) / zoom);
+    _anchor(before, pos);
     _clampCam();
   }
 
@@ -440,19 +497,34 @@ class RoadGame extends FlameGame {
     final p = _ptrs.values.take(2).toList();
     _lastMid = (p[0] + p[1]) / 2;
     _lastDist = (p[0] - p[1]).distance;
+    _lastAng = atan2(p[1].dy - p[0].dy, p[1].dx - p[0].dx);
+    _twist = 0;
+    _rotating = false;
   }
 
   void _pinch() {
     final p = _ptrs.values.take(2).toList();
     final mid = (p[0] + p[1]) / 2;
     final dist = (p[0] - p[1]).distance;
+    final ang = atan2(p[1].dy - p[0].dy, p[1].dx - p[0].dx);
     if (_lastDist > 0 && dist > 0) {
       final before = toWorld(_lastMid);
       zoom = (zoom * dist / _lastDist).clamp(minZoom, maxZoom).toDouble();
-      cam = before - Offset((mid.dx - size.x / 2) / zoom, (mid.dy - size.y / 2) / zoom);
+      var da = ang - _lastAng;
+      while (da > pi) {
+        da -= 2 * pi;
+      }
+      while (da < -pi) {
+        da += 2 * pi;
+      }
+      _twist += da;
+      if (!_rotating && _twist.abs() > 0.15) _rotating = true; // tasodifiy burilishdan himoya
+      if (_rotating && dist > 60) rot += da;
+      _anchor(before, mid);
     }
     _lastMid = mid;
     _lastDist = dist;
+    _lastAng = ang;
     _clampCam();
   }
 
@@ -475,9 +547,22 @@ class RoadGame extends FlameGame {
   }
 
   Offset _snap(Offset w) {
-    final n = net.nodeNear(w, 26 / zoom + 6);
+    final n = net.nodeNear(w, 40 / zoom);
     if (n != null) return n.pos;
-    final h = net.nearestRoadPoint(w, 16 / zoom + 6);
+    // binoga yaqinlashsa, avtomatik uning old tomoniga tushadi
+    Building? bb;
+    var bdist = double.infinity;
+    final pad = max(20.0, 34 / zoom);
+    for (final b in buildings) {
+      if (!b.containsPoint(w, pad)) continue;
+      final d = (b.pos - w).distance;
+      if (d < bdist) {
+        bdist = d;
+        bb = b;
+      }
+    }
+    if (bb != null) return bb.frontPoint;
+    final h = net.nearestRoadPoint(w, 28 / zoom);
     return h?.point ?? w;
   }
 
@@ -486,6 +571,7 @@ class RoadGame extends FlameGame {
     _ptrs[id] = pos;
     if (_ptrs.length >= 2) {
       _multi = true;
+      _dragScreen = null;
       if (stage == 1) stage = 0;
       if (stage == 3) stage = 2;
       _initPinch();
@@ -494,6 +580,7 @@ class RoadGame extends FlameGame {
     }
     _multi = false;
     _downPos = pos;
+    _dragScreen = pos;
     _moved = false;
     final w = toWorld(pos);
     switch (tool) {
@@ -528,9 +615,10 @@ class RoadGame extends FlameGame {
     }
     if (_multi) return;
     if ((pos - _downPos).distance > 8) _moved = true;
+    _dragScreen = pos;
     switch (tool) {
       case Tool.pan:
-        cam -= (pos - prev) / zoom;
+        cam -= _rot((pos - prev) / zoom, -rot);
         _clampCam();
         break;
       case Tool.straight:
@@ -554,6 +642,7 @@ class RoadGame extends FlameGame {
   void pointerUp(int id) {
     final pos = _ptrs.remove(id);
     if (pos == null) return;
+    _dragScreen = null;
     if (_multi) {
       if (_ptrs.isEmpty) _multi = false;
       return;
@@ -614,9 +703,16 @@ class RoadGame extends FlameGame {
   }
 
   void _commit(RoadPlan p) {
+    var loose = false;
+    for (final e in [p.a, p.b]) {
+      final joined = net.nodeNear(e, 14) != null || net.nearestRoadPoint(e, 12) != null;
+      final atBuilding = buildings.any((b) => (b.frontPoint - e).distance < 3);
+      if (!joined && !atBuilding && net.nearestRoadPoint(e, 45) != null) loose = true;
+    }
     net.connectRoad(p.pts, type: roadType);
     budget -= p.cost;
     _onNetworkChanged();
+    if (loose) flashMsg("Diqqat: yo'l uchi yaqin yo'lga ulanmadi. Uchini yo'lga yaqinlashtiring");
   }
 
   // -------------------------------------------------------------- yo'l rejasi
@@ -704,7 +800,7 @@ class RoadGame extends FlameGame {
   bool _tutDone(int i) {
     switch (i) {
       case 0:
-        return (cam - _camStart).distance > 80 || (zoom - _zoomStart).abs() > 0.15;
+        return (cam - _camStart).distance > 80 || (zoom - _zoomStart).abs() > 0.15 || rot.abs() > 0.2;
       case 1:
         return net.roads.isNotEmpty;
       case 2:
@@ -736,6 +832,45 @@ class RoadGame extends FlameGame {
   void skipTutorial() {
     tutorial = false;
     hud.value++;
+  }
+
+  void toggleCharts() {
+    showCharts = !showCharts;
+    hud.value++;
+  }
+
+  /// Eng og'ir tirbandlik joyi: ko'p mashina va past oqim tezligi.
+  Road? worstRoad() {
+    Road? best;
+    var bestScore = 0.0;
+    for (final r in net.roads.values) {
+      final a = graph.lanes[r.id * 2];
+      final b = graph.lanes[r.id * 2 + 1];
+      final cnt = (a?.vehicles.length ?? 0) + (b?.vehicles.length ?? 0);
+      if (cnt < 4) continue;
+      final score = cnt * (1 - _roadRatio(r));
+      if (score > bestScore) {
+        bestScore = score;
+        best = r;
+      }
+    }
+    return best;
+  }
+
+  void focusBottleneck() {
+    final r = worstRoad();
+    if (r == null) {
+      flashMsg("Jiddiy tirbandlik topilmadi");
+      return;
+    }
+    cam = r.pts[r.pts.length ~/ 2];
+    zoom = 1.6;
+    heat = true;
+    _clampCam();
+    final a = graph.lanes[r.id * 2];
+    final b = graph.lanes[r.id * 2 + 1];
+    final cnt = (a?.vehicles.length ?? 0) + (b?.vehicles.length ?? 0);
+    flashMsg("Eng og'ir joy: $cnt mashina, oqim ${(_roadRatio(r) * 100).round()}%");
   }
 
   void flashMsg(String m) {
@@ -803,7 +938,7 @@ class RoadGame extends FlameGame {
       err = "Burchak juda keskin";
     } else if (pts.any(terrain.isWaterAt)) {
       err = "Suv ustiga yo'l qurib bo'lmaydi";
-    } else if (buildings.any((bd) => pts.any((p) => (p - bd.pos).distance < bd.radius))) {
+    } else if (buildings.any((bd) => pts.any((p) => bd.containsPoint(p, 5)))) {
       err = "Yo'l binoga tegmoqda";
     } else if (cost > budget) {
       err = "Mablag' yetarli emas";
@@ -828,6 +963,26 @@ class RoadGame extends FlameGame {
   void update(double dt) {
     super.update(dt);
     if (loading) return;
+    final ds = _dragScreen;
+    if (ds != null && (stage == 1 || stage == 3)) {
+      // chizayotganda barmoq ekran chetiga yetsa, xarita o'zi suriladi
+      const side = 60.0, top = 160.0, bottom = 240.0;
+      var vx = 0.0, vy = 0.0;
+      if (ds.dx < side) vx = -(side - ds.dx) / side;
+      if (ds.dx > size.x - side) vx = (ds.dx - (size.x - side)) / side;
+      if (ds.dy < top) vy = -(top - ds.dy) / top;
+      if (ds.dy > size.y - bottom) vy = (ds.dy - (size.y - bottom)) / bottom;
+      if (vx != 0 || vy != 0) {
+        cam += _rot(Offset(vx, vy) * (450 / zoom * dt), -rot);
+        _clampCam();
+        if (stage == 1) {
+          _b = _snap(toWorld(ds));
+        } else {
+          _c = toWorld(ds);
+        }
+        _notify();
+      }
+    }
     if (_flashT > 0) {
       _flashT -= dt;
       if (_flashT <= 0) {
@@ -870,6 +1025,7 @@ class RoadGame extends FlameGame {
     canvas.save();
     canvas.translate(size.x / 2, size.y / 2);
     canvas.scale(zoom);
+    canvas.rotate(rot);
     canvas.translate(-cam.dx, -cam.dy);
 
     _drawTerrain(canvas);
