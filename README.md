@@ -77,6 +77,12 @@ flutter build apk --release  # build/app/outputs/flutter-apk/app-release.apk
 - Yo'l-bino to'qnashuvi: har 4 birlikda, yo'l yarim kengligi bilan (oddiy 6.5, katta 13)
 - Bino uchun ikkala yo'nalish va barcha polosalar nishon: mashina qulay tomondan keladi (keraksiz aylanmaydi)
 
+## 10-bosqich: ekologiya (tayyor, sinovdan o'tmagan)
+- Ifloslanish: zavodgacha masofa (250 birlik gacha), shovqin: uy yaqinidagi mashinalar (yuk mashinasi 2x, 110 birlik gacha)
+- Har bir uyning ekologik yuki hisoblanadi; mamnuniyatning 12% i ekologiyadan (0.40 ulanish, 0.22 safar, 0.18 oqim, 0.08 muvaffaqiyat, 0.12 ekologiya)
+- "Ekologiya" tugmasi: zavod atrofida ifloslanish doirasi, uylarda yashil -> qizil belgi; "Ma'lumot" bilan uyga bossangiz yuki ko'rinadi
+- Yuqori chip: "Ekologiya: n%"
+
 ## Hali yo'q
 Aylanada kiruvchiga "yo'l bering" qoidasi (hozir kim birinchi so'rasa), ko'p polosali yo'llar, magistral va ramplar, iqtisodiyot va darajalar, qo'lda svetofor fazalarini tahrirlash.
 

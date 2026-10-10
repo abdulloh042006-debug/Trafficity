@@ -316,6 +316,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
               _chip(game.sandbox ? "Sandbox: cheksiz mablag'" : "Mablag': ${game.budget.round()}"),
               _chip("Yo'llar: ${game.net.roads.length}"),
               _chip("Daraja: ${game.level}"),
+              _chip("Ekologiya: ${(game.env * 100).round()}%"),
               _chip(
                 "Mamnuniyat: ${game.satisfaction.round()}/${game.satTarget.round()}"
                 "${game.levelTimer > 0 ? '  (${game.levelTimer.round()}/${RoadGame.levelNeedSeconds.round()} s)' : ''}",
@@ -432,6 +433,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
             _btn(game.speed == 0 ? Icons.pause : Icons.speed, speedLabel, game.cycleSpeed),
             _btn(Icons.local_fire_department, "Tirbandlik", game.toggleHeat, selected: game.heat),
             _btn(Icons.show_chart, "Grafik", game.toggleCharts, selected: game.showCharts),
+            _btn(Icons.eco, "Ekologiya", game.toggleEnv, selected: game.showEnv),
             _btn(Icons.bug_report, "Debug", game.toggleDebug, selected: game.debug),
             _btn(Icons.save_outlined, "Saqlash", () async {
               final ok = await game.save();

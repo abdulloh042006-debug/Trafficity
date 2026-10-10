@@ -53,6 +53,11 @@ class L {
     ["Saqlangan o'yin topilmadi", "Сохранение не найдено", "No saved game found"],
     ["Saqlandi", "Сохранено", "Saved"],
     ["Yuklandi", "Загружено", "Loaded"],
+    ["Zavod ifloslanishi va shovqin uylarni bezovta qilyapti", "Загрязнение от заводов и шум беспокоят жителей", "Factory pollution and noise are bothering residents"],
+    ["Zavod: ifloslanish manbai (250 birlik atrofida)", "Завод: источник загрязнения (радиус 250)", "Factory: pollution source (radius 250)"],
+    ["ekologik yuk", "экологическая нагрузка", "environmental load"],
+    ["yo'lga ulangan", "подключено к дороге", "road access"],
+    ["Ekologiya", "Экология", "Ecology"],
     // --- o'rgatuvchi vazifalar
     ["Kamerani suring, kattalashtiring yoki buring (2 barmoq)", "Двигайте, масштабируйте или вращайте карту (2 пальца)", "Pan, zoom or rotate the map (2 fingers)"],
     ["«To'g'ri» asbobi bilan birinchi yo'lni chizing", "Проведите первую дорогу инструментом «Прямая»", "Draw your first road with the «Straight» tool"],

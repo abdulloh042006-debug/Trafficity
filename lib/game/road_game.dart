@@ -79,6 +79,11 @@ class RoadGame extends FlameGame {
   double demand = 1.0; // sandbox: talab ko'paytmasi
   Vehicle? selected;
 
+  // ekologiya: zavod ifloslanishi + transport shovqini
+  double env = 1.0; // 1 = toza va tinch
+  bool showEnv = false;
+  final Map<int, double> envExpo = {}; // uy id -> ekologik yuk 0..1
+
   // koordinata tekshiruvi (debug)
   bool debug = false;
   Offset? _lastTouch;
@@ -302,6 +307,32 @@ class RoadGame extends FlameGame {
     }
     // mashinalar soni darajaga qarab o'sadi (tarmoq ortiqcha yuklanib qotib qolmasin)
     sim.maxVehicles = sandbox ? 250 : min(250, 100 + 25 * level);
+
+    // ekologiya: ifloslanish (zavodgacha masofa) va shovqin (yaqin mashinalar, yuk mashinasi 2x)
+    final factories = buildings.where((b) => b.type == BuildingType.factory).toList();
+    final vpos = [for (final v in sim.vehicles) (v.track.pointAt(v.s), v.type == VType.truck ? 2.0 : 1.0)];
+    var expoSum = 0.0;
+    var houses = 0;
+    envExpo.clear();
+    for (final b in buildings) {
+      if (b.type != BuildingType.house) continue;
+      var pol = 0.0;
+      for (final f in factories) {
+        final d = (f.pos - b.pos).distance;
+        if (d < 250) pol += 1 - d / 250;
+      }
+      var noise = 0.0;
+      for (final p in vpos) {
+        final d = (p.$1 - b.pos).distance;
+        if (d < 110) noise += (1 - d / 110) * p.$2;
+      }
+      final e = min(1.0, 0.6 * min(1.0, pol) + 0.4 * min(1.0, noise / 3.0));
+      envExpo[b.id] = e;
+      expoSum += e;
+      houses++;
+    }
+    env = houses == 0 ? 1.0 : 1 - expoSum / houses;
+
     final total = buildings.length;
     final access = total == 0 ? 0.0 : (total - noAccess) / total;
     final commute = sim.completed < 3
@@ -313,7 +344,7 @@ class RoadGame extends FlameGame {
     }
     final flow = graph.lanes.isEmpty ? 0.0 : sum / graph.lanes.length;
     final failFrac = sim.failed / (sim.failed + sim.completed + 1);
-    final raw = 100 * (0.45 * access + 0.25 * commute + 0.20 * flow + 0.10 * (1 - failFrac));
+    final raw = 100 * (0.40 * access + 0.22 * commute + 0.18 * flow + 0.08 * (1 - failFrac) + 0.12 * env);
     satisfaction += (raw - satisfaction) * 0.15;
 
     if (noAccess > 0) {
@@ -322,6 +353,8 @@ class RoadGame extends FlameGame {
       satNote = "Safarlar juda uzoq davom etyapti";
     } else if (flow < 0.6) {
       satNote = "Tirbandlik mamnuniyatni pasaytiryapti";
+    } else if (env < 0.6) {
+      satNote = "Zavod ifloslanishi va shovqin uylarni bezovta qilyapti";
     } else {
       satNote = "Tarmoq yaxshi ishlayapti";
     }
@@ -495,6 +528,11 @@ class RoadGame extends FlameGame {
     return "touch (${f(t.dx)}, ${f(t.dy)}) -> world (${f(w.dx)}, ${f(w.dy)}) -> back (${f(back.dx)}, ${f(back.dy)})  d=${f((back - t).distance, 3)}\n"
         "global-local d=${g == null ? '-' : f((g - t).distance)} | game ${f(size.x, 0)}x${f(size.y, 0)} widget ${f(widgetSize.width, 0)}x${f(widgetSize.height, 0)} | dpr ${f(dpr, 2)}\n"
         "cam (${cam.dx.round()}, ${cam.dy.round()}) zoom ${f(zoom, 2)} rot ${f(rot, 2)}";
+  }
+
+  void toggleEnv() {
+    showEnv = !showEnv;
+    hud.value++;
   }
 
   void toggleDebug() {
@@ -809,6 +847,22 @@ class RoadGame extends FlameGame {
       flashMsg("Mashina #${bv.id}: ${(bv.v * 1.8).round()} km/s, safar ${(sim.time - bv.born).round()} s, manzil: bino #${bv.destB}");
       return;
     }
+    for (final b in buildings) {
+      if (!b.containsPoint(w, 4)) continue;
+      final linked = graph.access.containsKey(b.id) ? 'bor' : "yo'q";
+      switch (b.type) {
+        case BuildingType.house:
+          flashMsg("Uy: ekologik yuk ${((envExpo[b.id] ?? 0) * 100).round()}%, yo'lga ulangan: $linked");
+          break;
+        case BuildingType.shop:
+          flashMsg("Do'kon: yo'lga ulangan: $linked");
+          break;
+        case BuildingType.factory:
+          flashMsg("Zavod: ifloslanish manbai (250 birlik atrofida), yo'lga ulangan: $linked");
+          break;
+      }
+      return;
+    }
     final node = net.nodeNear(w, 26 / zoom + 10);
     if (node != null && node.roads.length >= 3) {
       final sg = sim.signals[node.id];
@@ -1077,6 +1131,7 @@ class RoadGame extends FlameGame {
     for (final b in buildings) {
       b.draw(canvas);
     }
+    _drawEnv(canvas);
     _drawVehicles(canvas);
     _drawSignals(canvas);
     _drawSelected(canvas);
@@ -1198,6 +1253,34 @@ class RoadGame extends FlameGame {
           ..style = PaintingStyle.stroke
           ..strokeWidth = 1.5
           ..color = const Color(0xFF4A4D52),
+      );
+    }
+  }
+
+  /// Ekologiya qatlami: zavod atrofida ifloslanish, uylarda ekologik yuk (yashil -> qizil).
+  void _drawEnv(Canvas canvas) {
+    if (!showEnv) return;
+    for (final f in buildings) {
+      if (f.type != BuildingType.factory) continue;
+      canvas.drawCircle(
+        f.pos,
+        250,
+        Paint()..shader = Gradient.radial(f.pos, 250, const [Color(0x66A05A2C), Color(0x00A05A2C)]),
+      );
+    }
+    final p = Paint();
+    for (final b in buildings) {
+      if (b.type != BuildingType.house) continue;
+      final e = envExpo[b.id] ?? 0.0;
+      p.color = Color.lerp(const Color(0xFF3DBE5A), const Color(0xFFD64541), e)!;
+      canvas.drawCircle(b.pos, 9, p);
+      canvas.drawCircle(
+        b.pos,
+        9,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5
+          ..color = const Color(0xFFFFFFFF),
       );
     }
   }
