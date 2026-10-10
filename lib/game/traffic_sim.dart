@@ -284,7 +284,7 @@ class TrafficSim {
     for (final u in lane.vehicles) {
       if (u.s >= s0 - len - 8 && u.s - u.length <= s0 + 8) return false;
     }
-    final route = graph.findRoute(lane, s0, da.lane, da.s);
+    final route = graph.findRoute(lane, s0, da.lane, da.s, goals: da.goals);
     if (route == null) {
       failed++;
       return true;
@@ -300,7 +300,7 @@ class TrafficSim {
       route: route,
       originB: trip.originB,
       destB: trip.destB,
-      destS: da.s,
+      destS: da.goals[route.last.id] ?? da.s,
       isReturn: trip.isReturn,
       born: time,
       color: color,
@@ -314,7 +314,7 @@ class TrafficSim {
   void _reroute(Vehicle v) {
     final lane = v.track as Lane;
     final ad = graph.access[v.destB];
-    final route = ad == null ? null : graph.findRoute(lane, v.s, ad.lane, ad.s);
+    final route = ad == null ? null : graph.findRoute(lane, v.s, ad.lane, ad.s, goals: ad.goals);
     if (ad == null || route == null) {
       _remove(v);
       lost++;
@@ -322,7 +322,7 @@ class TrafficSim {
     }
     v.route = route;
     v.routeIdx = 0;
-    v.destS = ad.s;
+    v.destS = ad.goals[route.last.id] ?? ad.s;
     v.needsReroute = false;
   }
 

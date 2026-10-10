@@ -6,9 +6,14 @@ import 'road_network.dart';
 import 'traffic_model.dart';
 
 class Access {
-  Access(this.lane, this.s);
-  final Lane lane;
+  Access(this.lane, this.s, [Map<int, double>? goals]) : goals = goals ?? {lane.id: s};
+
+  final Lane lane; // eng yaqin polosa (mashina shu yerdan chiqadi)
   final double s;
+
+  /// Binoga yetib borish mumkin bo'lgan polosalar: laneId -> s.
+  /// Ikkala yo'nalish va barcha polosalar, shuning uchun mashina uchun qulay tomondan keladi.
+  final Map<int, double> goals;
 }
 
 class _Heap {
@@ -193,7 +198,23 @@ class LaneGraph {
         }
       }
       if (best != null) {
-        access[b.id] = Access(best, bestS.clamp(30.0, best.length - 14).toDouble());
+        final goals = <int, double>{};
+        for (final l in lanesOf(best.roadId)) {
+          if (l.length < 50) continue;
+          var ls = 0.0;
+          var ld = double.infinity;
+          for (var i = 1; i < l.pts.length; i++) {
+            final q = closestOnSegment(b.pos, l.pts[i - 1], l.pts[i]);
+            final d = (q - b.pos).distance;
+            if (d < ld) {
+              ld = d;
+              ls = l.cum[i - 1] + (q - l.pts[i - 1]).distance;
+            }
+          }
+          goals[l.id] = ls.clamp(30.0, l.length - 14).toDouble();
+        }
+        final s0 = bestS.clamp(30.0, best.length - 14).toDouble();
+        access[b.id] = Access(best, s0, goals.isEmpty ? null : goals);
       }
     }
   }
@@ -223,16 +244,28 @@ class LaneGraph {
   }
 
   /// A*: generalized cost = yurish vaqti + burilish jarimasi + navbat (tirbandlik) taxmini.
-  List<Lane>? findRoute(Lane start, double startS, Lane goal, double goalS) {
-    if (!lanes.containsKey(start.id) || !lanes.containsKey(goal.id)) return null;
-    if (start.id == goal.id && goalS > startS + 8) return [start];
+  List<Lane>? findRoute(Lane start, double startS, Lane goal, double goalS, {Map<int, double>? goals}) {
+    final gm = <int, double>{
+      for (final e in (goals ?? {goal.id: goalS}).entries)
+        if (lanes.containsKey(e.key)) e.key: e.value
+    };
+    if (gm.isEmpty || !lanes.containsKey(start.id)) return null;
+    final direct = gm[start.id];
+    if (direct != null && direct > startS + 8) return [start];
 
     final g = <int, double>{};
     final prev = <int, int>{};
     final closed = <int>{};
     final heap = _Heap();
-    final goalPt = goal.pointAt(goalS);
-    double h(Lane l) => (l.pts.last - goalPt).distance / 33.0;
+    final goalPts = [for (final e in gm.entries) lanes[e.key]!.pointAt(e.value)];
+    double h(Lane l) {
+      var m = double.infinity;
+      for (final p in goalPts) {
+        final d = (l.pts.last - p).distance;
+        if (d < m) m = d;
+      }
+      return m / 33.0;
+    }
 
     void expand(Lane from, double baseG, int fromKey) {
       for (final s in _successors(from)) {
@@ -250,7 +283,7 @@ class LaneGraph {
     while (!heap.isEmpty && iter++ < 20000) {
       final id = heap.pop();
       if (!closed.add(id)) continue;
-      if (id == goal.id) {
+      if (gm.containsKey(id)) {
         final path = <Lane>[];
         var cur = id;
         while (cur != -1) {

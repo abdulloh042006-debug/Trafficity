@@ -79,6 +79,13 @@ class RoadGame extends FlameGame {
   double demand = 1.0; // sandbox: talab ko'paytmasi
   Vehicle? selected;
 
+  // koordinata tekshiruvi (debug)
+  bool debug = false;
+  Offset? _lastTouch;
+  Offset? lastGlobal;
+  double dpr = 1;
+  Size widgetSize = Size.zero;
+
   // grafiklar (chegaralangan tarix)
   final List<double> histVeh = [];
   final List<double> histSat = [];
@@ -474,6 +481,27 @@ class RoadGame extends FlameGame {
     cam = w - _rot(Offset((s.dx - size.x / 2) / zoom, (s.dy - size.y / 2) / zoom), -rot);
   }
 
+  /// Dunyo nuqtasi -> ekran (render bilan bir xil: translate, scale, rotate, translate).
+  Offset worldToScreen(Offset w) =>
+      Offset(size.x / 2, size.y / 2) + _rot(w - cam, rot) * zoom;
+
+  String debugText() {
+    final t = _lastTouch;
+    if (t == null) return "DEBUG: ekranga tegib ko'ring";
+    final w = toWorld(t);
+    final back = worldToScreen(w);
+    final g = lastGlobal;
+    String f(double v, [int d = 1]) => v.toStringAsFixed(d);
+    return "touch (${f(t.dx)}, ${f(t.dy)}) -> world (${f(w.dx)}, ${f(w.dy)}) -> back (${f(back.dx)}, ${f(back.dy)})  d=${f((back - t).distance, 3)}\n"
+        "global-local d=${g == null ? '-' : f((g - t).distance)} | game ${f(size.x, 0)}x${f(size.y, 0)} widget ${f(widgetSize.width, 0)}x${f(widgetSize.height, 0)} | dpr ${f(dpr, 2)}\n"
+        "cam (${cam.dx.round()}, ${cam.dy.round()}) zoom ${f(zoom, 2)} rot ${f(rot, 2)}";
+  }
+
+  void toggleDebug() {
+    debug = !debug;
+    hud.value++;
+  }
+
   void resetRotation() {
     rot = 0;
     hud.value++;
@@ -552,7 +580,8 @@ class RoadGame extends FlameGame {
     // binoga yaqinlashsa, avtomatik uning old tomoniga tushadi
     Building? bb;
     var bdist = double.infinity;
-    final pad = max(20.0, 34 / zoom);
+    // radius ekran pikselida (34 px): dunyo birligida emas, shuning uchun zoom'da barmoqdan uzoqqa sakramaydi
+    final pad = min(120.0, max(6.0, 34 / zoom));
     for (final b in buildings) {
       if (!b.containsPoint(w, pad)) continue;
       final d = (b.pos - w).distance;
@@ -581,6 +610,7 @@ class RoadGame extends FlameGame {
     _multi = false;
     _downPos = pos;
     _dragScreen = pos;
+    _lastTouch = pos;
     _moved = false;
     final w = toWorld(pos);
     switch (tool) {
@@ -616,6 +646,7 @@ class RoadGame extends FlameGame {
     if (_multi) return;
     if ((pos - _downPos).distance > 8) _moved = true;
     _dragScreen = pos;
+    _lastTouch = pos;
     switch (tool) {
       case Tool.pan:
         cam -= _rot((pos - prev) / zoom, -rot);
@@ -922,6 +953,24 @@ class RoadGame extends FlameGame {
     return acos(cosA) < 0.9; // ~52 daraja
   }
 
+  /// Yo'l markaz chizig'i (yarim kenglik bilan) bino maydoniga tegadimi: haqiqiy geometriya,
+  /// har 4 birlikda tekshiriladi (oraliqdagi burchakni o'tkazib yubormaydi).
+  bool _hitsBuilding(List<Offset> pts) {
+    final pad = roadType == 1 ? 13.0 : 6.5;
+    for (final bd in buildings) {
+      for (var i = 0; i < pts.length; i++) {
+        if (bd.containsPoint(pts[i], pad)) return true;
+        if (i == 0) continue;
+        final d = (pts[i] - pts[i - 1]).distance;
+        final n = (d / 4).ceil();
+        for (var k = 1; k < n; k++) {
+          if (bd.containsPoint(Offset.lerp(pts[i - 1], pts[i], k / n)!, pad)) return true;
+        }
+      }
+    }
+    return false;
+  }
+
   RoadPlan _buildPlan(Offset a, Offset b, Offset? c) {
     final pts = RoadNetwork.sample(a, b, c);
     final len = RoadNetwork.polyLength(pts);
@@ -933,7 +982,7 @@ class RoadGame extends FlameGame {
       err = "Burchak juda keskin";
     } else if (pts.any(terrain.isWaterAt)) {
       err = "Suv ustiga yo'l qurib bo'lmaydi";
-    } else if (buildings.any((bd) => pts.any((p) => bd.containsPoint(p, roadType == 1 ? 15 : 5)))) {
+    } else if (_hitsBuilding(pts)) {
       err = "Yo'l binoga tegmoqda";
     } else if (cost > budget) {
       err = "Mablag' yetarli emas";
@@ -1034,6 +1083,7 @@ class RoadGame extends FlameGame {
     _drawPreview(canvas);
 
     canvas.restore();
+    _drawDebug(canvas);
   }
 
   void _drawTerrain(Canvas canvas) {
@@ -1152,6 +1202,31 @@ class RoadGame extends FlameGame {
     }
   }
 
+  /// Debug: qizil = barmoq (ekran), sariq = dunyo nuqtasidan ekranga qaytarilgan joy. Mos tushishi kerak.
+  void _drawDebug(Canvas canvas) {
+    final t = _lastTouch;
+    if (!debug || t == null) return;
+    final back = worldToScreen(toWorld(t));
+    canvas.drawCircle(
+      t,
+      18,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2
+        ..color = const Color(0xFFE02020),
+    );
+    canvas.drawLine(t - const Offset(26, 0), t + const Offset(26, 0), Paint()..color = const Color(0xFFE02020));
+    canvas.drawLine(t - const Offset(0, 26), t + const Offset(0, 26), Paint()..color = const Color(0xFFE02020));
+    canvas.drawCircle(
+      back,
+      9,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3
+        ..color = const Color(0xFFF2D020),
+    );
+  }
+
   void _drawSelected(Canvas canvas) {
     final v = selected;
     if (v == null) return;
@@ -1234,6 +1309,29 @@ class RoadGame extends FlameGame {
     canvas.drawCircle(plan.b, 5, dot);
     if (plan.c != null && stage >= 2) {
       canvas.drawCircle(plan.c!, 6, Paint()..color = const Color(0xFFF2A33A));
+    }
+    // barmoqning haqiqiy joyi (to'q sariq halqa) va avtomatik ulangan nuqta orasidagi chiziq
+    final ds = _dragScreen;
+    if (ds != null && (stage == 1 || stage == 3)) {
+      final raw = toWorld(ds);
+      final target = stage == 1 ? _b : _c;
+      canvas.drawCircle(
+        raw,
+        10 / zoom,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2 / zoom
+          ..color = const Color(0xFFF2A33A),
+      );
+      if (target != null && (target - raw).distance > 4 / zoom) {
+        canvas.drawLine(
+          raw,
+          target,
+          Paint()
+            ..strokeWidth = 1.5 / zoom
+            ..color = const Color(0x99F2A33A),
+        );
+      }
     }
   }
 }

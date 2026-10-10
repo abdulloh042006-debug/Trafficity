@@ -23,7 +23,7 @@ class Building {
   double get radius => size.longestSide / 2 + 8;
 
   /// Bino "old" tomoni (yo'l ulanadigan joy).
-  Offset get frontPoint => pos + Offset(-sin(angle), cos(angle)) * (size.height / 2 + 12);
+  Offset get frontPoint => pos + Offset(-sin(angle), cos(angle)) * (size.height / 2 + 18);
 
   /// Nuqta bino maydonida (pad qadar kengaytirilgan) yotadimi.
   bool containsPoint(Offset p, double pad) {

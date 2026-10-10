@@ -170,20 +170,30 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    game.dpr = MediaQuery.of(context).devicePixelRatio;
     return Scaffold(
       body: Stack(
         children: [
-          Listener(
-            behavior: HitTestBehavior.opaque,
-            onPointerDown: (e) => game.pointerDown(e.pointer, e.localPosition),
-            onPointerMove: (e) => game.pointerMove(e.pointer, e.localPosition),
-            onPointerUp: (e) => game.pointerUp(e.pointer),
-            onPointerCancel: (e) => game.pointerUp(e.pointer),
-            onPointerSignal: (e) {
-              if (e is PointerScrollEvent) game.wheel(e.localPosition, e.scrollDelta.dy);
-            },
-            child: GameWidget(game: game),
-          ),
+          LayoutBuilder(builder: (context, c) {
+            game.widgetSize = Size(c.maxWidth, c.maxHeight);
+            return Listener(
+              behavior: HitTestBehavior.opaque,
+              onPointerDown: (e) {
+                game.lastGlobal = e.position;
+                game.pointerDown(e.pointer, e.localPosition);
+              },
+              onPointerMove: (e) {
+                game.lastGlobal = e.position;
+                game.pointerMove(e.pointer, e.localPosition);
+              },
+              onPointerUp: (e) => game.pointerUp(e.pointer),
+              onPointerCancel: (e) => game.pointerUp(e.pointer),
+              onPointerSignal: (e) {
+                if (e is PointerScrollEvent) game.wheel(e.localPosition, e.scrollDelta.dy);
+              },
+              child: GameWidget(game: game),
+            );
+          }),
           Positioned.fill(
             child: SafeArea(
               child: ValueListenableBuilder<int>(
@@ -321,6 +331,10 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
               ],
             ],
           ),
+          if (game.debug) ...[
+            _chip(game.debugText()),
+            const SizedBox(height: 6),
+          ],
           if (AppErr.last != null) ...[
             const SizedBox(height: 6),
             GestureDetector(
@@ -418,6 +432,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
             _btn(game.speed == 0 ? Icons.pause : Icons.speed, speedLabel, game.cycleSpeed),
             _btn(Icons.local_fire_department, "Tirbandlik", game.toggleHeat, selected: game.heat),
             _btn(Icons.show_chart, "Grafik", game.toggleCharts, selected: game.showCharts),
+            _btn(Icons.bug_report, "Debug", game.toggleDebug, selected: game.debug),
             _btn(Icons.save_outlined, "Saqlash", () async {
               final ok = await game.save();
               _toast(ok ? "Saqlandi" : "Saqlab bo'lmadi");

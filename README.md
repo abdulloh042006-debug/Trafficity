@@ -69,6 +69,14 @@ flutter build apk --release  # build/app/outputs/flutter-apk/app-release.apk
 - Polosalar soni bo'yicha chorraha to'qnashuvlari geometriyadan hisoblanadi (parallel polosalar to'qnashmaydi, kesishganlari navbat bilan o'tadi)
 - Hali yo'q: yo'l o'rtasida polosa almashtirish (quvib o'tish)
 
+## Koordinata tekshiruvi va yo'l tuzatishlari
+- Ekran -> dunyo formulalari (pan, zoom, burish, pinch) raqamli tekshirildi: xatolik ~1e-12. Barcha asboblar bitta `toWorld` dan foydalanadi
+- Binoga avtomatik tushish radiusi endi ekran pikselida (34 px); oldin dunyo birligida bo'lib, katta zoom'da barmoqdan ~160 px uzoqqa sakrardi
+- Chizayotganda barmoqning haqiqiy joyi to'q sariq halqa, ulangan nuqta bilan chiziq bilan ko'rsatiladi
+- "Debug" tugmasi: qizil = barmoq, sariq = dunyo nuqtasidan ekranga qaytarilgan joy (mos tushishi kerak), ustida raqamlar (touch/world/dpr/o'lchamlar)
+- Yo'l-bino to'qnashuvi: har 4 birlikda, yo'l yarim kengligi bilan (oddiy 6.5, katta 13)
+- Bino uchun ikkala yo'nalish va barcha polosalar nishon: mashina qulay tomondan keladi (keraksiz aylanmaydi)
+
 ## Hali yo'q
 Aylanada kiruvchiga "yo'l bering" qoidasi (hozir kim birinchi so'rasa), ko'p polosali yo'llar, magistral va ramplar, iqtisodiyot va darajalar, qo'lda svetofor fazalarini tahrirlash.
 
