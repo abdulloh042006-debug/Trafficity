@@ -91,6 +91,7 @@ class LaneGraph {
             fwd: fwd,
             fromNode: fwd ? r.a : r.b,
             toNode: fwd ? r.b : r.a,
+            speedLimit: r.type == 1 ? 33.0 : 22.0,
           );
         }
       }
@@ -155,7 +156,7 @@ class LaneGraph {
         from: a,
         to: b,
         nodeId: a.toNode,
-        vmax: Lane.speed * (1 - 0.75 * ang / pi),
+        vmax: a.speedLimit * (1 - 0.75 * ang / pi),
       );
       connectorsFrom.putIfAbsent(a.id, () => []).add(c);
       return c;
@@ -215,11 +216,11 @@ class LaneGraph {
     final closed = <int>{};
     final heap = _Heap();
     final goalPt = goal.pointAt(goalS);
-    double h(Lane l) => (l.pts.last - goalPt).distance / Lane.speed;
+    double h(Lane l) => (l.pts.last - goalPt).distance / 33.0;
 
     void expand(Lane from, double baseG, int fromKey) {
       for (final s in _successors(from)) {
-        final cost = baseG + s.length / Lane.speed + _turn(from, s) + s.vehicles.length * 0.3;
+        final cost = baseG + s.length / s.speedLimit + _turn(from, s) + s.vehicles.length * 0.3;
         if (cost < (g[s.id] ?? double.infinity)) {
           g[s.id] = cost;
           prev[s.id] = fromKey;
@@ -228,7 +229,7 @@ class LaneGraph {
       }
     }
 
-    expand(start, (start.length - startS) / Lane.speed, -1);
+    expand(start, (start.length - startS) / start.speedLimit, -1);
     var iter = 0;
     while (!heap.isEmpty && iter++ < 20000) {
       final id = heap.pop();

@@ -55,7 +55,10 @@ class Lane extends Track {
     required this.fwd,
     required this.fromNode,
     required this.toNode,
+    this.speedLimit = 22,
   });
+
+  final double speedLimit; // birlik/s
 
   static const double speed = 22; // birlik/s (~40 km/soat)
 
@@ -124,7 +127,7 @@ class Vehicle {
         width = type == VType.truck ? 6.0 : 4.4,
         aMax = type == VType.truck ? 3.0 : 6.0,
         bComf = type == VType.truck ? 6.0 : 8.0,
-        vMaxSelf = type == VType.truck ? 18.0 : 26.0;
+        vMaxSelf = type == VType.truck ? 24.0 : 36.0;
 
   final int id;
   final VType type;

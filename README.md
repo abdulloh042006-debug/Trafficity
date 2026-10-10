@@ -41,6 +41,13 @@ flutter build apk --release  # build/app/outputs/flutter-apk/app-release.apk
 - Saqlashda daraja va binolar ham saqlanadi
 - Yuklash xatosi tuzatildi: relyef alohida isolate'da yaratiladi, xato ekranda ko'rinadi
 
+## 5-bosqich (tayyor, sinovdan o'tmagan)
+- Yangi o'yin oynasi: 4 biom (tekislik, daryo deltasi, tog' vodiysi, orollar), 3 qiyinlik (boshlang'ich mablag', talab, mamnuniyat nishoni), seed, sandbox
+- Sandbox: cheksiz mablag', bino qo'yish asbobi (uy/do'kon/zavod), talab ko'paytmasi (x0.5 ... x4)
+- "Ma'lumot" asbobi: mashina (tezlik, safar vaqti, marshrut yoritiladi), chorraha (svetofor, kutayotganlar), yo'l (limit, oqim, mashinalar)
+- Yo'l turlari: oddiy (40 km/s) va katta yo'l (60 km/s, 1.6x narx); marshrut tezroq yo'lni tanlaydi
+- Ikonka: `assets/icon/icon.png` va `flutter_launcher_icons` sozlamasi (workflow'ga 2 qadam qo'shilsa ulanadi)
+
 ## Hali yo'q
 Aylanada kiruvchiga "yo'l bering" qoidasi (hozir kim birinchi so'rasa), ko'p polosali yo'llar, magistral va ramplar, iqtisodiyot va darajalar, qo'lda svetofor fazalarini tahrirlash.
 

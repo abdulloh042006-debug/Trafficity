@@ -12,9 +12,10 @@ import 'lane_graph.dart';
 import 'road_network.dart';
 import 'signal.dart';
 import 'terrain.dart';
+import 'traffic_model.dart';
 import 'traffic_sim.dart';
 
-enum Tool { pan, straight, curve, signal, roundabout, erase }
+enum Tool { pan, straight, curve, signal, roundabout, erase, building, inspect }
 
 class RoadPlan {
   RoadPlan(this.a, this.b, this.c, this.pts, this.length, this.cost, this.error);
@@ -67,7 +68,17 @@ class RoadGame extends FlameGame {
   double _econTimer = 0;
   int _nextBuildingId = 1;
   Offset cityCenter = const Offset(1600, 1600);
-  double get satTarget => min(80.0, 55 + 3.0 * level);
+  double get satTarget => min(85.0, 55 + 3.0 * level + (difficulty - 1) * 5);
+
+  // o'yin sozlamalari
+  int biome = 0; // 0 tekislik, 1 daryo deltasi, 2 tog' vodiysi, 3 orollar
+  int difficulty = 1; // 0 oson, 1 oddiy, 2 qiyin
+  bool sandbox = false;
+  int roadType = 0; // 0 oddiy, 1 katta yo'l
+  int buildType = 0; // sandbox: 0 uy, 1 do'kon, 2 zavod
+  double demand = 1.0; // sandbox: talab ko'paytmasi
+  Vehicle? selected;
+  double get _startBudgetFor => const [4500.0, 3000.0, 2000.0][difficulty];
   final List<Offset> roundabouts = [];
   static const double roundaboutRadius = 30;
   String? flash;
@@ -98,7 +109,10 @@ class RoadGame extends FlameGame {
   // ---------------------------------------------------------------- xarita
 
   /// Xarita yaratish. Xato bo'lsa ekranda ko'rsatiladi (qotib qolmaydi).
-  Future<void> newMap(int s) async {
+  Future<void> newMap(int s, {int? biome, int? difficulty, bool? sandbox}) async {
+    if (biome != null) this.biome = biome;
+    if (difficulty != null) this.difficulty = difficulty;
+    if (sandbox != null) this.sandbox = sandbox;
     loadError = null;
     try {
       await _newMapImpl(s);
@@ -116,7 +130,7 @@ class RoadGame extends FlameGame {
     stage = 0;
     currentPlan = null;
     hud.value++;
-    terrain = Terrain(s);
+    terrain = Terrain(s, biome);
     terrainImage = await terrain.toImage();
     loadStatus = "Binolar joylashtirilmoqda...";
     hud.value++;
@@ -124,7 +138,10 @@ class RoadGame extends FlameGame {
     roundabouts.clear();
     graph = LaneGraph(net);
     sim = TrafficSim(graph, buildings, s);
-    budget = startBudget;
+    sim.demandScale = const [0.7, 1.0, 1.4][difficulty];
+    budget = sandbox ? 1e9 : _startBudgetFor;
+    demand = 1.0;
+    selected = null;
     level = 1;
     satisfaction = 50;
     levelTimer = 0;
@@ -161,9 +178,12 @@ class RoadGame extends FlameGame {
     buildings.clear();
     _nextBuildingId = 1;
     Offset? center;
-    for (var i = 0; i < 4000 && center == null; i++) {
-      final p = Offset(800 + rnd.nextDouble() * 1600, 800 + rnd.nextDouble() * 1600);
-      if (_landDisk(p, 300)) center = p;
+    for (final rad in const [300.0, 220.0, 150.0, 100.0]) {
+      for (var i = 0; i < 3000 && center == null; i++) {
+        final p = Offset(800 + rnd.nextDouble() * 1600, 800 + rnd.nextDouble() * 1600);
+        if (_landDisk(p, rad)) center = p;
+      }
+      if (center != null) break;
     }
     cityCenter = center ?? const Offset(1600, 1600);
     cam = cityCenter;
@@ -237,19 +257,20 @@ class RoadGame extends FlameGame {
 
     final ok = satisfaction >= satTarget && noAccess == 0 && (sim.completed - _tripsAtLevel) >= 6;
     levelTimer = ok ? levelTimer + 1 : max(0.0, levelTimer - 1);
-    if (levelTimer >= levelNeedSeconds && level < maxLevel) _levelUp();
+    if (levelTimer >= levelNeedSeconds && level < maxLevel && !sandbox) _levelUp();
   }
 
   void _levelUp() {
     level++;
     levelTimer = 0;
-    budget += 1500;
+    final bonus = const [2000.0, 1500.0, 1000.0][difficulty];
+    budget += bonus;
     _tripsAtLevel = sim.completed;
     final before = buildings.length;
     _placeBatch(Random(seed * 31 + level), 3 + level ~/ 2, level.isEven ? 1 : 0,
         level % 3 == 0 ? 1 : 0, 420 + 50.0 * level);
     _onNetworkChanged();
-    flashMsg("Daraja $level! +1500 mablag', yangi binolar: ${buildings.length - before}");
+    flashMsg("Daraja $level! +${bonus.round()} mablag', yangi binolar: ${buildings.length - before}");
   }
 
   // ---------------------------------------------------------- saqlash/yuklash
@@ -266,6 +287,9 @@ class RoadGame extends FlameGame {
         'seed': seed,
         'budget': budget,
         'level': level,
+        'biome': biome,
+        'diff': difficulty,
+        'sbx': sandbox ? 1 : 0,
         'buildings': [for (final b in buildings) b.toJson()],
         'cam': [cam.dx, cam.dy],
         'zoom': zoom,
@@ -274,6 +298,7 @@ class RoadGame extends FlameGame {
             {
               'p': [for (final p in r.pts) ...[p.dx, p.dy]],
               'o': r.oneWay ? 1 : 0,
+              't': r.type,
             }
         ],
         'signals': [
@@ -308,6 +333,9 @@ class RoadGame extends FlameGame {
         final s = m['seed'] as int;
         final bud = (m['budget'] as num).toDouble();
         final lvl = (m['level'] as num?)?.toInt() ?? 1;
+        final bio = (m['biome'] as num?)?.toInt() ?? 0;
+        final dif = (m['diff'] as num?)?.toInt() ?? 1;
+        final sbx = (m['sbx'] as num?)?.toInt() == 1;
         final savedB = <Building>[];
         var bid = 1;
         for (final e in (m['buildings'] as List? ?? const [])) {
@@ -317,12 +345,14 @@ class RoadGame extends FlameGame {
         final z = (m['zoom'] as num).toDouble();
         final roads = <List<Offset>>[];
         final oneWays = <bool>[];
+        final types = <int>[];
         for (final r in m['roads'] as List) {
           final raw = r is Map ? r['p'] : r;
           final f = (raw as List).map((e) => (e as num).toDouble()).toList();
           if (f.length < 4 || f.length.isOdd) throw const FormatException('road');
           roads.add([for (var i = 0; i < f.length; i += 2) Offset(f[i], f[i + 1])]);
           oneWays.add(r is Map && r['o'] == 1);
+          types.add(r is Map ? ((r['t'] as num?)?.toInt() ?? 0) : 0);
         }
         final sigs = <List<double>>[
           for (final e in (m['signals'] as List? ?? const []))
@@ -332,9 +362,9 @@ class RoadGame extends FlameGame {
           for (final e in (m['rbs'] as List? ?? const []))
             [for (final x in e as List) (x as num).toDouble()]
         ];
-        await newMap(s);
+        await newMap(s, biome: bio, difficulty: dif, sandbox: sbx);
         for (var i = 0; i < roads.length; i++) {
-          net.addRoadPts(roads[i], oneWay: oneWays[i]);
+          net.addRoadPts(roads[i], oneWay: oneWays[i], type: types[i]);
         }
         for (final r in rbs) {
           roundabouts.add(Offset(r[0], r[1]));
@@ -491,6 +521,8 @@ class RoadGame extends FlameGame {
       case Tool.signal:
       case Tool.roundabout:
       case Tool.erase:
+      case Tool.building:
+      case Tool.inspect:
         break;
     }
     _notify();
@@ -538,6 +570,12 @@ class RoadGame extends FlameGame {
       case Tool.roundabout:
         if (!_moved) _tapRoundabout(toWorld(pos));
         break;
+      case Tool.building:
+        if (!_moved) _tapBuilding(toWorld(pos));
+        break;
+      case Tool.inspect:
+        if (!_moved) _tapInspect(toWorld(pos));
+        break;
       case Tool.pan:
         break;
     }
@@ -553,12 +591,92 @@ class RoadGame extends FlameGame {
   }
 
   void _commit(RoadPlan p) {
-    net.connectRoad(p.pts);
+    net.connectRoad(p.pts, type: roadType);
     budget -= p.cost;
     _onNetworkChanged();
   }
 
   // -------------------------------------------------------------- yo'l rejasi
+
+  void cycleRoadType() {
+    roadType = 1 - roadType;
+    _notify();
+  }
+
+  void cycleBuildType() {
+    buildType = (buildType + 1) % 3;
+    hud.value++;
+  }
+
+  void cycleDemand() {
+    const opts = [0.5, 1.0, 2.0, 4.0];
+    final i = opts.indexOf(demand);
+    demand = opts[(i + 1) % opts.length];
+    sim.demandScale = const [0.7, 1.0, 1.4][difficulty] * demand;
+    hud.value++;
+  }
+
+  void _tapBuilding(Offset w) {
+    final size = const [Size(34, 26), Size(52, 34), Size(70, 46)][buildType];
+    final r = size.longestSide / 2 + 8;
+    if (!terrain.isBuildableAt(w) ||
+        !terrain.isBuildableAt(w + Offset(r, 0)) ||
+        !terrain.isBuildableAt(w + Offset(-r, 0)) ||
+        !terrain.isBuildableAt(w + Offset(0, r)) ||
+        !terrain.isBuildableAt(w + Offset(0, -r))) {
+      flashMsg("Bu yerga bino qurib bo'lmaydi");
+      return;
+    }
+    if (buildings.any((b) => (b.pos - w).distance < 90) || net.nearestRoadPoint(w, r + 10) != null) {
+      flashMsg("Joy band yoki yo'l juda yaqin");
+      return;
+    }
+    buildings.add(Building(
+      id: _nextBuildingId++,
+      type: BuildingType.values[buildType],
+      pos: w,
+      angle: 0,
+      size: size,
+      roof: [_houseRoofs[0], _shopRoofs[0], _factoryRoofs[0]][buildType],
+    ));
+    _onNetworkChanged();
+  }
+
+  /// Mashina, chorraha yoki yo'l haqida ma'lumot (haqiqiy simulyatsiya ma'lumotlari).
+  void _tapInspect(Offset w) {
+    selected = null;
+    Vehicle? bv;
+    var bd = 14 / zoom + 10;
+    for (final v in sim.vehicles) {
+      final d = (v.track.pointAt(v.s) - w).distance;
+      if (d < bd) {
+        bd = d;
+        bv = v;
+      }
+    }
+    if (bv != null) {
+      selected = bv;
+      flashMsg("Mashina #${bv.id}: ${(bv.v * 1.8).round()} km/s, safar ${(sim.time - bv.born).round()} s, manzil: bino #${bv.destB}");
+      return;
+    }
+    final node = net.nodeNear(w, 26 / zoom + 10);
+    if (node != null && node.roads.length >= 3) {
+      final sg = sim.signals[node.id];
+      flashMsg("Chorraha: ${node.roads.length} yo'l, svetofor: ${sg != null ? 'bor (yashil ${sg.green.round()} s)' : 'yo\'q'}, kutayotgan mashinalar: ${sim.waitingAt(node.id)}");
+      return;
+    }
+    final hit = net.nearestRoadPoint(w, 14 / zoom + 8);
+    if (hit != null) {
+      final rd = hit.road;
+      final a = graph.lanes[rd.id * 2];
+      final b = graph.lanes[rd.id * 2 + 1];
+      final cnt = (a?.vehicles.length ?? 0) + (b?.vehicles.length ?? 0);
+      final limit = ((a ?? b)?.speedLimit ?? 22) * 1.8;
+      flashMsg("${rd.type == 1 ? 'Katta yo\'l' : 'Oddiy yo\'l'}: limit ${limit.round()} km/s, oqim ${(_roadRatio(rd) * 100).round()}%, mashinalar: $cnt, uzunligi ${rd.length.round()} m");
+      return;
+    }
+    flashMsg("Bu yerda ma'lumot yo'q");
+  }
 
   void flashMsg(String m) {
     flash = m;
@@ -616,7 +734,7 @@ class RoadGame extends FlameGame {
   RoadPlan _buildPlan(Offset a, Offset b, Offset? c) {
     final pts = RoadNetwork.sample(a, b, c);
     final len = RoadNetwork.polyLength(pts);
-    final cost = len * RoadNetwork.costPerUnit;
+    final cost = len * RoadNetwork.costPerUnit * RoadNetwork.costFactor(roadType);
     String? err;
     if (len < minRoadLength) {
       err = "Juda qisqa";
@@ -699,6 +817,7 @@ class RoadGame extends FlameGame {
     }
     _drawVehicles(canvas);
     _drawSignals(canvas);
+    _drawSelected(canvas);
     _drawPreview(canvas);
 
     canvas.restore();
@@ -777,10 +896,12 @@ class RoadGame extends FlameGame {
 
     final roads = net.roads.values.toList();
     final paths = [for (final r in roads) _pathOf(r.pts)];
-    for (final p in paths) {
-      canvas.drawPath(p, border);
+    for (var i = 0; i < roads.length; i++) {
+      border.strokeWidth = roads[i].type == 1 ? w + 8 : w + 5;
+      canvas.drawPath(paths[i], border);
     }
     for (var i = 0; i < roads.length; i++) {
+      fill.strokeWidth = roads[i].type == 1 ? w + 3 : w;
       fill.color = heat ? _heatColor(_roadRatio(roads[i])) : const Color(0xFFDADCDF);
       canvas.drawPath(paths[i], fill);
     }
@@ -805,6 +926,32 @@ class RoadGame extends FlameGame {
           ..color = const Color(0xFF4A4D52),
       );
     }
+  }
+
+  void _drawSelected(Canvas canvas) {
+    final v = selected;
+    if (v == null) return;
+    if (v.removed) {
+      selected = null;
+      return;
+    }
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3
+      ..strokeCap = StrokeCap.round
+      ..color = const Color(0xCC1B8FA0);
+    for (var i = v.routeIdx; i < v.route.length; i++) {
+      final l = v.route[i];
+      if (graph.lanes.containsKey(l.id)) canvas.drawPath(_pathOf(l.pts), paint);
+    }
+    canvas.drawCircle(
+      v.track.pointAt(v.s),
+      9,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2
+        ..color = const Color(0xFF1B8FA0),
+    );
   }
 
   void _drawSignals(Canvas canvas) {

@@ -115,6 +115,8 @@ class TrafficSim {
     return "Yashil vaqt: ${s.green.round()} s";
   }
 
+  int waitingAt(int nodeId) => _waiters[nodeId]?.length ?? 0;
+
   void addSignal(int nodeId, double green) {
     final s = Signal(nodeId)..green = green;
     signals[nodeId] = s;
@@ -129,7 +131,7 @@ class TrafficSim {
         for (final v in l.vehicles) {
           sum += v.v;
         }
-        target = min(1.0, sum / l.vehicles.length / Lane.speed);
+        target = min(1.0, sum / l.vehicles.length / l.speedLimit);
       }
       l.ratio += (target - l.ratio) * 0.15;
     }
@@ -338,7 +340,7 @@ class TrafficSim {
   void _computeAccel(Vehicle v, double dt) {
     final tr = v.track;
     final route = v.route;
-    var v0 = tr is Lane ? Lane.speed : (tr as Connector).vmax;
+    var v0 = tr is Lane ? tr.speedLimit : (tr as Connector).vmax;
     v0 = min(v0, v.vMaxSelf);
     var gap = double.infinity;
     var vl = 0.0;

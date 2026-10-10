@@ -8,9 +8,10 @@ import 'package:flutter/foundation.dart' show compute;
 /// Seed asosida deterministik relyef. Balandlik funksiyasi uzluksiz,
 /// shuning uchun suv tekshiruvi va rasm bir xil formuladan foydalanadi.
 class Terrain {
-  Terrain(this.seed);
+  Terrain(this.seed, [this.biome = 0]);
 
   final int seed;
+  final int biome; // 0 tekislik, 1 daryo deltasi, 2 tog' vodiysi, 3 orollar
   static const double worldSize = 3200;
   static const double waterLevel = 0.30;
 
@@ -49,8 +50,22 @@ class Terrain {
     if (nx < 0 || ny < 0 || nx > 1 || ny > 1) return -1;
     final dx = nx - 0.5, dy = ny - 0.5;
     final d = sqrt(dx * dx + dy * dy) * 2;
-    final n = (_fbm(nx * 5, ny * 5) - 0.5) * 1.6 + 0.5;
-    return n - 0.45 * d * d * d;
+    switch (biome) {
+      case 1: // daryo deltasi: egri-bugri daryolar
+        var n = (_fbm(nx * 5, ny * 5) - 0.5) * 1.6 + 0.5;
+        final r = (_fbm(nx * 3 + 9.1, ny * 3 + 4.7) - 0.5).abs();
+        if (r < 0.04) n -= 0.4 * (1 - r / 0.04);
+        return n - 0.40 * d * d * d;
+      case 2: // tog' vodiysi: ko'p qiyalik, tor tekis joylar
+        final n = (_fbm(nx * 5, ny * 5) - 0.5) * 2.3 + 0.58;
+        return n - 0.30 * d * d * d;
+      case 3: // orollar
+        final n = (_fbm(nx * 6.5, ny * 6.5) - 0.5) * 1.8 + 0.42;
+        return n - 0.55 * d * d;
+      default:
+        final n = (_fbm(nx * 5, ny * 5) - 0.5) * 1.6 + 0.5;
+        return n - 0.45 * d * d * d;
+    }
   }
 
   bool isWaterAt(ui.Offset p) => heightAt(p.dx, p.dy) < waterLevel;
@@ -107,7 +122,7 @@ class Terrain {
   Future<ui.Image> toImage({int res = 256}) async {
     Uint8List bytes;
     try {
-      bytes = await compute(terrainBytes, [seed, res]);
+      bytes = await compute(terrainBytes, [seed, res, biome]);
     } catch (_) {
       bytes = _pixels(res);
     }
@@ -117,4 +132,4 @@ class Terrain {
   }
 }
 
-Uint8List terrainBytes(List<int> args) => Terrain(args[0])._pixels(args[1]);
+Uint8List terrainBytes(List<int> args) => Terrain(args[0], args[2])._pixels(args[1]);

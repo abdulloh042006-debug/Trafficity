@@ -38,9 +38,11 @@ class Road {
     required this.length,
     required this.cost,
     this.oneWay = false,
+    this.type = 0,
   });
 
   final bool oneWay;
+  final int type; // 0 oddiy, 1 katta (tez) yo'l
   final int id;
   final int a; // boshlang'ich tugun
   final int b; // oxirgi tugun
@@ -74,6 +76,7 @@ class _Cut {
 /// Chizishdan mustaqil yo'l topologiyasi.
 class RoadNetwork {
   static const double costPerUnit = 0.5;
+  static double costFactor(int type) => type == 1 ? 1.6 : 1.0;
   static const double roadWidth = 14;
 
   final Map<int, RoadNode> nodes = {};
@@ -167,7 +170,7 @@ class RoadNetwork {
 
   RoadNode _nodeAt(Offset p) => nodeNear(p, 1.0) ?? _newNode(p);
 
-  Road? _addNodes(List<Offset> pts, RoadNode na, RoadNode nb, {bool oneWay = false}) {
+  Road? _addNodes(List<Offset> pts, RoadNode na, RoadNode nb, {bool oneWay = false, int type = 0}) {
     final p = List<Offset>.of(_dedupe(pts));
     if (p.length < 2) return null;
     p[0] = na.pos;
@@ -180,8 +183,9 @@ class RoadNetwork {
       b: nb.id,
       pts: p,
       length: len,
-      cost: len * costPerUnit,
+      cost: len * costPerUnit * costFactor(type),
       oneWay: oneWay,
+      type: type,
     );
     roads[road.id] = road;
     na.roads.add(road.id);
@@ -190,9 +194,9 @@ class RoadNetwork {
   }
 
   /// Saqlangan yo'l bo'lagini to'g'ridan-to'g'ri qo'shadi (yuklash uchun).
-  Road? addRoadPts(List<Offset> pts, {bool oneWay = false}) {
+  Road? addRoadPts(List<Offset> pts, {bool oneWay = false, int type = 0}) {
     if (pts.length < 2) return null;
-    return _addNodes(pts, _nodeAt(pts.first), _nodeAt(pts.last), oneWay: oneWay);
+    return _addNodes(pts, _nodeAt(pts.first), _nodeAt(pts.last), oneWay: oneWay, type: type);
   }
 
   void _detach(Road r) {
@@ -236,8 +240,8 @@ class RoadNetwork {
     final nb = nodes[r.b]!;
     _detach(r);
     final mid = _newNode(bp);
-    _addNodes(left, na, mid, oneWay: r.oneWay);
-    _addNodes(right, mid, nb, oneWay: r.oneWay);
+    _addNodes(left, na, mid, oneWay: r.oneWay, type: r.type);
+    _addNodes(right, mid, nb, oneWay: r.oneWay, type: r.type);
     return mid;
   }
 
@@ -342,7 +346,7 @@ class RoadNetwork {
 
   /// Yangi yo'lni quradi: uchlari yo'lga tegsa, ikkala yo'l ham bo'linadi;
   /// boshqa yo'llarni kesib o'tsa, har bir kesishuvda chorraha hosil bo'ladi.
-  void connectRoad(List<Offset> raw) {
+  void connectRoad(List<Offset> raw, {int type = 0}) {
     final path = List<Offset>.of(_dedupe(raw));
     if (path.length < 2) return;
 
@@ -388,7 +392,7 @@ class RoadNetwork {
         if (cum[i] > d0 + 0.5 && cum[i] < d1 - 0.5) piece.add(path[i]);
       }
       piece.add(stops[k].node!.pos);
-      _addNodes(piece, stops[k - 1].node!, stops[k].node!);
+      _addNodes(piece, stops[k - 1].node!, stops[k].node!, type: type);
     }
   }
 }

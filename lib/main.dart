@@ -69,6 +69,62 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
       ..showSnackBar(SnackBar(content: Text(text), duration: const Duration(seconds: 2)));
   }
 
+  Future<void> _newGameDialog() async {
+    var biome = game.biome, diff = game.difficulty, sbx = game.sandbox;
+    final seedCtl = TextEditingController(text: Random().nextInt(100000).toString());
+    final go = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(builder: (ctx, setS) {
+        Widget chips(List<String> names, int sel, void Function(int) on) => Wrap(
+              spacing: 6,
+              children: [
+                for (var i = 0; i < names.length; i++)
+                  ChoiceChip(
+                    label: Text(names[i]),
+                    selected: sel == i,
+                    onSelected: (_) => setS(() => on(i)),
+                  ),
+              ],
+            );
+        return AlertDialog(
+          title: const Text("Yangi o'yin"),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text("Biom"),
+                chips(const ["Tekislik", "Daryo deltasi", "Tog' vodiysi", "Orollar"], biome, (i) => biome = i),
+                const SizedBox(height: 12),
+                const Text("Qiyinlik"),
+                chips(const ["Oson", "Oddiy", "Qiyin"], diff, (i) => diff = i),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text("Sandbox (cheksiz mablag')"),
+                  value: sbx,
+                  onChanged: (v) => setS(() => sbx = v),
+                ),
+                TextField(
+                  controller: seedCtl,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(labelText: "Seed"),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text("Bekor")),
+            FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text("Boshlash")),
+          ],
+        );
+      }),
+    );
+    if (go == true) {
+      game.newMap(int.tryParse(seedCtl.text) ?? Random().nextInt(100000),
+          biome: biome, difficulty: diff, sandbox: sbx);
+    }
+  }
+
   String _hint() {
     switch (game.tool) {
       case Tool.pan:
@@ -83,6 +139,10 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
         return "Chorrahaga bosing: svetofor qo'yish, vaqtini o'zgartirish yoki olib tashlash";
       case Tool.roundabout:
         return "Chorrahaga bosing: shu joyda aylana chorraha quriladi";
+      case Tool.building:
+        return "Bo'sh joyga bosing: bino qo'yiladi";
+      case Tool.inspect:
+        return "Mashina, yo'l yoki chorrahaga bosing: ma'lumot chiqadi";
       case Tool.erase:
         return "Yo'lga tegib o'chiring (pul to'liq qaytadi)";
     }
@@ -171,7 +231,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
             runSpacing: 6,
             alignment: WrapAlignment.center,
             children: [
-              _chip("Mablag': ${game.budget.round()}"),
+              _chip(game.sandbox ? "Sandbox: cheksiz mablag'" : "Mablag': ${game.budget.round()}"),
               _chip("Yo'llar: ${game.net.roads.length}"),
               _chip("Daraja: ${game.level}"),
               _chip(
@@ -252,6 +312,19 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                 selected: game.tool == Tool.roundabout),
             _btn(Icons.delete_outline, "O'chirish", () => game.setTool(Tool.erase),
                 selected: game.tool == Tool.erase),
+            _btn(Icons.info_outline, "Ma'lumot", () => game.setTool(Tool.inspect),
+                selected: game.tool == Tool.inspect),
+            _btn(Icons.alt_route, game.roadType == 1 ? "Katta yo'l" : "Oddiy yo'l", game.cycleRoadType),
+            if (game.sandbox) ...[
+              _btn(Icons.home_work, ["Uy", "Do'kon", "Zavod"][game.buildType], () {
+                if (game.tool == Tool.building) {
+                  game.cycleBuildType();
+                } else {
+                  game.setTool(Tool.building);
+                }
+              }, selected: game.tool == Tool.building),
+              _btn(Icons.groups, "Talab x${game.demand}", game.cycleDemand),
+            ],
             if (game.stage != 0) _btn(Icons.close, "Bekor", game.cancel),
             _btn(game.speed == 0 ? Icons.pause : Icons.speed, speedLabel, game.cycleSpeed),
             _btn(Icons.local_fire_department, "Tirbandlik", game.toggleHeat, selected: game.heat),
@@ -263,7 +336,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
               final ok = await game.load();
               _toast(ok ? "Yuklandi" : "Saqlangan o'yin topilmadi");
             }),
-            _btn(Icons.refresh, "Yangi", () => game.newMap(Random().nextInt(100000))),
+            _btn(Icons.refresh, "Yangi", _newGameDialog),
           ],
         ),
       ),
