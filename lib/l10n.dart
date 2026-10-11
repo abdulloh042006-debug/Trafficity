@@ -82,6 +82,8 @@ class L {
     ["zaxira", "запас", "stock"],
     ["Ranglar", "Цвета", "Colors"],
     ["Hajm", "Размер", "Size"],
+    ["Tayyor shahar yuklandi", "Готовый город загружен", "Ready-made city loaded"],
+    ["Tayyor shahar qurilmadi", "Не удалось построить город", "Could not build the ready-made city"],
     // --- o'rgatuvchi vazifalar
     ["Kamerani suring, kattalashtiring yoki buring (2 barmoq)", "Двигайте, масштабируйте или вращайте карту (2 пальца)", "Pan, zoom or rotate the map (2 fingers)"],
     ["«To'g'ri» asbobi bilan birinchi yo'lni chizing", "Проведите первую дорогу инструментом «Прямая»", "Draw your first road with the «Straight» tool"],

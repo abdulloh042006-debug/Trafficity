@@ -60,7 +60,8 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     // yuklashni birinchi kadrdan keyin boshlaymiz: ekran darhol chiqadi, xatolar ko'rinadi
-    WidgetsBinding.instance.addPostFrameCallback((_) => game.newMap(game.seed));
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => game.newMap(game.seed, ideal: RoadGame.idealCityOnStart));
     SharedPreferences.getInstance().then((p) {
       final sc = p.getDouble('uiScale');
       if (sc != null && sc >= 0.8 && sc <= 1.5 && mounted) setState(() => _uiScale = sc);

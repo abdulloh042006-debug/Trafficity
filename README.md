@@ -102,6 +102,14 @@ flutter build apk --release  # build/app/outputs/flutter-apk/app-release.apk
 - Mamnuniyatning 8% i ta'minotdan (0.37 ulanish, 0.20 safar, 0.17 oqim, 0.07 muvaffaqiyat, 0.11 ekologiya, 0.08 ta'minot); yuk mashinalari tirbandlikda qolsa ta'minot pasayadi
 - "Ranglar": ko'r odamlar uchun tirbandlik palitrasi; "Hajm": interfeys matn va tugma hajmi (saqlanadi)
 
+## Tayyor shahar (boshlang'ich holat)
+- O'yin ochilganda tayyor shahar turadi: 2 ta katta yo'l (2 polosali) kesishmasida aylana chorraha, parallel yo'l va svetoforli chorraha, hamma binoga mahalliy yo'l. Faqat mavjud asboblar ishlatilgan, yangi imkoniyat yo'q
+- Reja bino joylashuviga qarab ishga tushganda hisoblanadi (har seedda mos tushadi), xato bo'lsa bo'sh xarita bilan davom etadi
+- Yakunda o'chirish: `lib/game/road_game.dart` ichida `static const bool idealCityOnStart = true;` ni `false` qiling (o'yin bo'sh boshlanadi)
+- Tayyor shahar byudjetga bog'lanmay quriladi, so'ng qolgan mablag' qiyinlikka qarab 1500 / 1000 / 700 qilib qo'yiladi (sandbox'da cheksiz)
+- Rejalashtirish mantig'i 300 ta tasodifiy bino joylashuvida Python'da sinab ko'rilgan: asosiy yo'llar har doim topildi; mahalliy yo'l variantlari bilan 10 ta shaharda 200 binoning 100% i ulandi
+- "Yangi" tugmasi bilan boshlangan o'yinlar oldingidek bo'sh boshlanadi
+
 ## Hali yo'q
 Aylanada kiruvchiga "yo'l bering" qoidasi (hozir kim birinchi so'rasa), ko'p polosali yo'llar, magistral va ramplar, iqtisodiyot va darajalar, qo'lda svetofor fazalarini tahrirlash.
 

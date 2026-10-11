@@ -184,13 +184,20 @@ class RoadGame extends FlameGame {
   // ---------------------------------------------------------------- xarita
 
   /// Xarita yaratish. Xato bo'lsa ekranda ko'rsatiladi (qotib qolmaydi).
-  Future<void> newMap(int s, {int? biome, int? difficulty, bool? sandbox}) async {
+  Future<void> newMap(int s, {int? biome, int? difficulty, bool? sandbox, bool ideal = false}) async {
     if (biome != null) this.biome = biome;
     if (difficulty != null) this.difficulty = difficulty;
     if (sandbox != null) this.sandbox = sandbox;
     loadError = null;
     try {
       await _newMapImpl(s);
+      if (ideal) {
+        try {
+          _applyIdealCity();
+        } catch (e) {
+          flashMsg("Tayyor shahar qurilmadi: $e");
+        }
+      }
     } catch (e, st) {
       loadError = '$e\n${st.toString().split("\n").take(3).join("\n")}';
       loading = true;
@@ -422,6 +429,202 @@ class RoadGame extends FlameGame {
     _onNetworkChanged();
     _feedback(big: true);
     flashMsg("Daraja $level! +${bonus.round()} mablag', yangi binolar: ${buildings.length - before}");
+  }
+
+  // ------------------------------------------------------------ tayyor ("ideal") shahar
+
+  /// O'yin ochilganda tayyor shahar turadi. Yakuniy bosqichda `false` qilinadi: o'yin bo'sh boshlanadi.
+  static const bool idealCityOnStart = true;
+
+  bool _free(Offset p, double pad) =>
+      !terrain.isWaterAt(p) && !buildings.any((b) => b.containsPoint(p, pad));
+
+  /// Bino va suvdan xoli eng uzun to'g'ri chiziqni qidiradi (markaz atrofida). (boshi, oxiri, siljish)
+  (Offset, Offset, double)? _bestLine(bool horizontal, {double? notNear}) {
+    final c = cityCenter;
+    final dir = horizontal ? const Offset(1, 0) : const Offset(0, 1);
+    (Offset, Offset, double)? best;
+    var bestScore = -1e9;
+    for (final o in const [0.0, 25.0, -25.0, 50.0, -50.0, 75.0, -75.0, 100.0, -100.0, 130.0, -130.0, 160.0, -160.0, 200.0, -200.0, 240.0, -240.0]) {
+      if (notNear != null && (o - notNear).abs() < 110) continue;
+      final origin = horizontal ? c + Offset(0, o) : c + Offset(o, 0);
+      if (!_free(origin, 14)) continue;
+      double ext(double sign) {
+        var t = 0.0;
+        while (t < 430 && _free(origin + dir * (sign * (t + 10)), 14)) {
+          t += 10;
+        }
+        return t;
+      }
+
+      final a = ext(-1);
+      final b = ext(1);
+      if (a + b < 260) continue;
+      final score = a + b - o.abs() * 0.6;
+      if (score > bestScore) {
+        bestScore = score;
+        best = (origin - dir * a, origin + dir * b, o);
+      }
+    }
+    return best;
+  }
+
+  bool _buildLine((Offset, Offset, double)? l, int type, {double reserve = 150}) {
+    if (l == null) return false;
+    final pts = RoadNetwork.sample(l.$1, l.$2, null);
+    final cost = RoadNetwork.polyLength(pts) * RoadNetwork.costPerUnit * RoadNetwork.costFactor(type);
+    if (cost > budget - reserve) return false;
+    net.connectRoad(pts, type: type);
+    budget -= cost;
+    return true;
+  }
+
+  Offset? _crossPoint((Offset, Offset, double)? h, (Offset, Offset, double)? v) {
+    if (h == null || v == null) return null;
+    final p = Offset(cityCenter.dx + v.$3, cityCenter.dy + h.$3);
+    final inH = p.dx >= min(h.$1.dx, h.$2.dx) && p.dx <= max(h.$1.dx, h.$2.dx);
+    final inV = p.dy >= min(v.$1.dy, v.$2.dy) && p.dy <= max(v.$1.dy, v.$2.dy);
+    return inH && inV ? p : null;
+  }
+
+  List<Offset> _poly(List<Offset> w) {
+    final out = <Offset>[w.first];
+    for (var i = 1; i < w.length; i++) {
+      out.addAll(RoadNetwork.sample(w[i - 1], w[i], null).skip(1));
+    }
+    return out;
+  }
+
+  /// Binoning old nuqtasidan eng yaqin yo'lga mahalliy yo'l: to'g'ri, egri (turli bukilish) yoki
+  /// siniq chiziq variantlari sinab ko'riladi; bino/suvga tegmaydigan, boshqa yo'lni kesmaydigani olinadi.
+  bool _linkBuilding(Building b) {
+    final f = b.frontPoint;
+    if (net.nearestRoadPoint(f, 6.0, layer: 0) != null) return true; // yo'lning o'zida
+    final cands = <Offset>[];
+    for (final r in net.roads.values) {
+      if (r.layer != 0 || r.oneWay) continue;
+      for (var i = 1; i < r.pts.length; i++) {
+        cands.add(closestOnSegment(f, r.pts[i - 1], r.pts[i]));
+      }
+    }
+    cands.sort((p, q) => (p - f).distance.compareTo((q - f).distance));
+    final picked = <Offset>[];
+    for (final c in cands) {
+      if (picked.length >= 24) break;
+      if (picked.every((p) => (p - c).distance > 15)) picked.add(c);
+    }
+    final fd = Offset(-sin(b.angle), cos(b.angle));
+    final side = Offset(-fd.dy, fd.dx);
+    for (final t in picked) {
+      final dist = (t - f).distance;
+      if (dist < 6) return true;
+      final paths = <List<Offset>>[RoadNetwork.sample(f, t, null)];
+      for (final len in const [35.0, 60.0, 90.0]) {
+        final ctrl = f + fd * min(len, dist * 0.7);
+        if (!_tooSharp(f, t, ctrl)) paths.add(RoadNetwork.sample(f, t, ctrl));
+      }
+      for (final len in const [45.0, 70.0]) {
+        for (final sd in const [-60.0, 60.0]) {
+          final ctrl = f + fd * len + side * sd;
+          if (!_tooSharp(f, t, ctrl)) paths.add(RoadNetwork.sample(f, t, ctrl));
+        }
+      }
+      for (final len in const [30.0, 50.0, 80.0]) {
+        final w1 = f + fd * len;
+        paths.add(_poly([f, w1, t]));
+        for (final sd in const [-50.0, 50.0]) {
+          paths.add(_poly([f, w1, w1 + side * sd, t]));
+        }
+      }
+      for (final pts in paths) {
+        final plen = RoadNetwork.polyLength(pts);
+        if (plen < 8) continue;
+        if (_hitsBuilding(pts) || pts.any(terrain.isWaterAt)) continue;
+        var crosses = false;
+        for (final p in pts) {
+          if ((p - t).distance < 16 || (p - f).distance < 10) continue;
+          if (net.nearestRoadPoint(p, 6.0, layer: 0) != null) {
+            crosses = true;
+            break;
+          }
+        }
+        if (crosses) continue;
+        final cost = plen * RoadNetwork.costPerUnit;
+        if (cost > budget - 120) continue;
+        net.connectRoad(pts, type: 0);
+        budget -= cost;
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /// Mavjud asboblar bilan shahar: ikki katta yo'l, ular kesishmasida aylana chorraha,
+  /// parallel yo'l va svetoforli chorraha, hamma binoga mahalliy yo'l.
+  void _applyIdealCity() {
+    roadType = 0;
+    roadLayer = 0;
+    budget = 1e9; // reja byudjetga bog'lanmaydi; shahar tayyor bo'lgach qolgan mablag' belgilanadi
+    final h1 = _bestLine(true);
+    final v = _bestLine(false);
+    final h2 = h1 == null ? null : _bestLine(true, notNear: h1.$3);
+    if (!_buildLine(h1, 1)) _buildLine(h1, 0);
+    if (!_buildLine(v, 1)) _buildLine(v, 0);
+
+    // asosiy kesishma: aylana chorraha (bo'lmasa svetofor)
+    final p1 = _crossPoint(h1, v);
+    if (p1 != null) {
+      final n = net.nodeNear(p1, 6);
+      if (n != null && n.roads.length >= 3) {
+        final center = n.pos;
+        var spent = 0.0;
+        final err = net.buildRoundabout(
+          n.id,
+          roundaboutRadius,
+          (p) => terrain.isWaterAt(p) || buildings.any((b) => (b.pos - p).distance < b.radius),
+          budget,
+          (d) => spent += d,
+        );
+        if (err == null) {
+          budget -= spent;
+          roundabouts.add(center);
+        } else {
+          _onNetworkChanged();
+          sim.addSignal(n.id, 12);
+        }
+      }
+    }
+
+    // parallel yo'l va unda svetoforli chorraha
+    _buildLine(h2, 0);
+    final p2 = _crossPoint(h2, v);
+    if (p2 != null) {
+      final n = net.nodeNear(p2, 6);
+      if (n != null && n.roads.length >= 3) {
+        _onNetworkChanged();
+        sim.addSignal(n.id, 12);
+      }
+    }
+
+    // hamma binoga mahalliy yo'l (markazga yaqinidan boshlab)
+    final order = [...buildings]
+      ..sort((a, b) => (a.pos - cityCenter).distance.compareTo((b.pos - cityCenter).distance));
+    for (final b in order) {
+      _linkBuilding(b);
+    }
+
+    roadType = 0;
+    roadLayer = 0;
+    budget = sandbox ? 1e9 : const [1500.0, 1000.0, 700.0][difficulty];
+    tutorial = false;
+    cam = cityCenter;
+    zoom = 0.5;
+    _clampCam();
+    _undo.clear();
+    _redo.clear();
+    _onNetworkChanged();
+    _notify();
+    flashMsg("Tayyor shahar yuklandi");
   }
 
   // ---------------------------------------------------------- saqlash/yuklash
