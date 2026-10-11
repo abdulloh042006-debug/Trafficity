@@ -90,6 +90,13 @@ flutter build apk --release  # build/app/outputs/flutter-apk/app-release.apk
 - Binolar estakadaga to'g'ridan-to'g'ri chiqmaydi; saqlashda qatlam saqlanadi
 - Shu bilan ko'p qavatli chorrahalar (rampali) qurish mumkin
 
+## 12-bosqich: qulaylik (tayyor, sinovdan o'tmagan)
+- Ortga / Oldinga (30 qadamgacha): yo'l qurish, o'chirish, aylana, svetofor, to'r; byudjet ham qaytariladi
+- 3 ta saqlash uyasi + avtosaqlash ("Slotlar" oynasi, sana va daraja ko'rinadi)
+- "To'r" asbobi: burchakdan burchakka sudrang, ko'rinish yo'nalishiga mos ko'cha to'ri; oraliq 80/110/150/200
+- Ovoz/tebranish (tizim ovozi va haptik), debug'da fps va simulyatsiya vaqti
+- `test/network_test.dart`: tarmoq/marshrut testlari (ishga tushirish: `flutter test`)
+
 ## Hali yo'q
 Aylanada kiruvchiga "yo'l bering" qoidasi (hozir kim birinchi so'rasa), ko'p polosali yo'llar, magistral va ramplar, iqtisodiyot va darajalar, qo'lda svetofor fazalarini tahrirlash.
 

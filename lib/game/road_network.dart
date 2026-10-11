@@ -86,11 +86,13 @@ class RoadNetwork {
   int _nextNode = 1;
   int _nextRoad = 1;
 
-  void clear() {
+  void clear({bool resetIds = true}) {
     nodes.clear();
     roads.clear();
-    _nextNode = 1;
-    _nextRoad = 1;
+    if (resetIds) {
+      _nextNode = 1;
+      _nextRoad = 1;
+    }
   }
 
   // ------------------------------------------------------------- geometriya

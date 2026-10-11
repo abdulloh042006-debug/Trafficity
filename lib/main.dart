@@ -89,6 +89,55 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
       ..showSnackBar(SnackBar(content: Text(L.t(text)), duration: const Duration(seconds: 2)));
   }
 
+  Future<void> _slotsDialog() async {
+    final infos = [for (var i = 0; i <= 3; i++) await game.slotInfo(i)];
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(L.t("Slotlar")),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (var i = 0; i <= 3; i++)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(i == 0 ? L.t("Avtosaqlash") : "Slot $i"),
+                subtitle: Text(L.t(infos[i] ?? "Bo'sh"), style: const TextStyle(fontSize: 12)),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (i > 0)
+                      IconButton(
+                        icon: const Icon(Icons.save),
+                        tooltip: L.t("Saqlash"),
+                        onPressed: () async {
+                          Navigator.pop(ctx);
+                          final ok = await game.save(slot: i);
+                          _toast(ok ? "Saqlandi" : "Saqlab bo'lmadi");
+                        },
+                      ),
+                    IconButton(
+                      icon: const Icon(Icons.folder_open),
+                      tooltip: L.t("Yuklash"),
+                      onPressed: infos[i] == null
+                          ? null
+                          : () async {
+                              Navigator.pop(ctx);
+                              final ok = await game.load(slot: i);
+                              _toast(ok ? "Yuklandi" : "Saqlangan o'yin topilmadi");
+                            },
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+        actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: Text(L.t("Bekor")))],
+      ),
+    );
+  }
+
   Future<void> _newGameDialog() async {
     var biome = game.biome, diff = game.difficulty, sbx = game.sandbox;
     final seedCtl = TextEditingController(text: Random().nextInt(100000).toString());
@@ -159,6 +208,8 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
         return "Chorrahaga bosing: svetofor qo'yish, vaqtini o'zgartirish yoki olib tashlash";
       case Tool.roundabout:
         return "Chorrahaga bosing: shu joyda aylana chorraha quriladi";
+      case Tool.grid:
+        return "Burchakdan burchakka sudrang: ko'cha to'ri quriladi";
       case Tool.building:
         return "Bo'sh joyga bosing: bino qo'yiladi";
       case Tool.inspect:
@@ -364,7 +415,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
               color: plan.valid ? const Color(0xFF1B8FA0) : const Color(0xFFC0392B),
             )
           else
-            _chip(game.flash ?? _hint()),
+            _chip(game.flash ?? (game.tool == Tool.grid && game.gridInfo.isNotEmpty ? game.gridInfo : _hint())),
         ],
       ),
     );
@@ -406,9 +457,13 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
           children: [
             _btn(Icons.open_with, "Kamera", () => game.setTool(Tool.pan), selected: game.tool == Tool.pan),
             if (game.rot.abs() > 0.01) _btn(Icons.explore, "Shimol", game.resetRotation),
+            if (game.canUndo) _btn(Icons.undo, "Ortga", game.undo),
+            if (game.canRedo) _btn(Icons.redo, "Oldinga", game.redo),
             _btn(Icons.horizontal_rule, "To'g'ri", () => game.setTool(Tool.straight),
                 selected: game.tool == Tool.straight),
             _btn(Icons.gesture, "Egri", () => game.setTool(Tool.curve), selected: game.tool == Tool.curve),
+            _btn(Icons.grid_on, "To'r", () => game.setTool(Tool.grid), selected: game.tool == Tool.grid),
+            if (game.tool == Tool.grid) _btn(Icons.space_bar, "Oraliq ${game.gridSpacing}", game.cycleGridSpacing),
             _btn(Icons.traffic, "Svetofor", () => game.setTool(Tool.signal),
                 selected: game.tool == Tool.signal),
             _btn(Icons.trip_origin, "Aylana", () => game.setTool(Tool.roundabout),
@@ -435,15 +490,9 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
             _btn(Icons.local_fire_department, "Tirbandlik", game.toggleHeat, selected: game.heat),
             _btn(Icons.show_chart, "Grafik", game.toggleCharts, selected: game.showCharts),
             _btn(Icons.eco, "Ekologiya", game.toggleEnv, selected: game.showEnv),
+            _btn(game.soundOn ? Icons.volume_up : Icons.volume_off, "Ovoz", game.toggleSound),
             _btn(Icons.bug_report, "Debug", game.toggleDebug, selected: game.debug),
-            _btn(Icons.save_outlined, "Saqlash", () async {
-              final ok = await game.save();
-              _toast(ok ? "Saqlandi" : "Saqlab bo'lmadi");
-            }),
-            _btn(Icons.folder_open, "Yuklash", () async {
-              final ok = await game.load();
-              _toast(ok ? "Yuklandi" : "Saqlangan o'yin topilmadi");
-            }),
+            _btn(Icons.save_outlined, "Slotlar", _slotsDialog),
             _btn(Icons.language, ["UZ", "RU", "EN"][L.lang], () async {
               L.lang = (L.lang + 1) % 3;
               setState(() {});

@@ -5,6 +5,7 @@ import 'dart:ui' as ui show Image;
 
 import 'package:flame/game.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'building.dart';
@@ -15,7 +16,7 @@ import 'terrain.dart';
 import 'traffic_model.dart';
 import 'traffic_sim.dart';
 
-enum Tool { pan, straight, curve, signal, roundabout, erase, building, inspect }
+enum Tool { pan, straight, curve, signal, roundabout, erase, building, inspect, grid }
 
 class RoadPlan {
   RoadPlan(this.a, this.b, this.c, this.pts, this.length, this.cost, this.error);
@@ -25,6 +26,15 @@ class RoadPlan {
   final double length, cost;
   final String? error;
   bool get valid => error == null;
+}
+
+/// Bekor qilish / qaytarish uchun tarmoq holati (yo'llar, aylanalar, svetoforlar).
+class _EditState {
+  _EditState(this.roads, this.roundabouts, this.signals, this.refund);
+  final List<(List<Offset>, bool, int, int)> roads; // pts, oneWay, type, layer
+  final List<Offset> roundabouts;
+  final List<(Offset, double)> signals; // tugun joyi, yashil vaqt
+  final double refund; // holat qo'llanganda byudjetga qo'shiladigan miqdor
 }
 
 class RoadGame extends FlameGame {
@@ -79,6 +89,24 @@ class RoadGame extends FlameGame {
   int buildType = 0; // sandbox: 0 uy, 1 do'kon, 2 zavod
   double demand = 1.0; // sandbox: talab ko'paytmasi
   Vehicle? selected;
+
+  // bekor qilish / qaytarish
+  final List<_EditState> _undo = [];
+  final List<_EditState> _redo = [];
+  bool get canUndo => _undo.isNotEmpty;
+  bool get canRedo => _redo.isNotEmpty;
+
+  // yo'l to'ri asbobi
+  int gridSpacing = 110;
+  List<RoadPlan> gridPlans = [];
+  String gridInfo = "";
+
+  // ovoz/tebranish, ishlash o'lchovi
+  bool soundOn = true;
+  double fps = 0;
+  double simMs = 0;
+  double _fpsAcc = 0;
+  int _fpsN = 0;
 
   // ekologiya: zavod ifloslanishi + transport shovqini
   double env = 1.0; // 1 = toza va tinch
@@ -188,6 +216,8 @@ class RoadGame extends FlameGame {
     demand = 1.0;
     selected = null;
     rot = 0;
+    _undo.clear();
+    _redo.clear();
     histVeh.clear();
     histSat.clear();
     histTrip.clear();
@@ -375,20 +405,22 @@ class RoadGame extends FlameGame {
     _placeBatch(Random(seed * 31 + level), 3 + level ~/ 2, level.isEven ? 1 : 0,
         level % 3 == 0 ? 1 : 0, 420 + 50.0 * level);
     _onNetworkChanged();
+    _feedback(big: true);
     flashMsg("Daraja $level! +${bonus.round()} mablag', yangi binolar: ${buildings.length - before}");
   }
 
   // ---------------------------------------------------------- saqlash/yuklash
 
-  Future<bool> save({bool auto = false}) async {
+  Future<bool> save({bool auto = false, int slot = 1}) async {
     if (loading) return false;
     try {
       final sp = await SharedPreferences.getInstance();
-      final key = auto ? 'autosave' : 'save1';
+      final key = auto ? 'autosave' : 'save$slot';
       final old = sp.getString(key);
       if (old != null) await sp.setString('${key}_prev', old);
       final data = jsonEncode({
         'v': 2,
+        'ts': DateTime.now().toIso8601String(),
         'seed': seed,
         'budget': budget,
         'level': level,
@@ -422,14 +454,32 @@ class RoadGame extends FlameGame {
     }
   }
 
-  Future<bool> load() async {
+  /// Uya haqida qisqa ma'lumot (0 = avtosaqlash).
+  Future<String?> slotInfo(int slot) async {
+    try {
+      final sp = await SharedPreferences.getInstance();
+      final raw = sp.getString(slot == 0 ? 'autosave' : 'save$slot');
+      if (raw == null) return null;
+      final m = jsonDecode(raw) as Map<String, dynamic>;
+      final ts = (m['ts'] as String?) ?? '';
+      final when = ts.length >= 16 ? ts.substring(0, 16).replaceFirst('T', ' ') : '';
+      return "Daraja ${(m['level'] as num?)?.toInt() ?? 1} · ${(m['roads'] as List).length} yo'l · $when";
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<bool> load({int? slot}) async {
     final SharedPreferences sp;
     try {
       sp = await SharedPreferences.getInstance();
     } catch (_) {
       return false;
     }
-    for (final key in ['save1', 'save1_prev', 'autosave', 'autosave_prev']) {
+    final keys = slot == null
+        ? ['save1', 'save1_prev', 'autosave', 'autosave_prev']
+        : (slot == 0 ? ['autosave', 'autosave_prev'] : ['save$slot', 'save${slot}_prev']);
+    for (final key in keys) {
       final raw = sp.getString(key);
       if (raw == null) continue;
       try {
@@ -531,7 +581,153 @@ class RoadGame extends FlameGame {
     String f(double v, [int d = 1]) => v.toStringAsFixed(d);
     return "touch (${f(t.dx)}, ${f(t.dy)}) -> world (${f(w.dx)}, ${f(w.dy)}) -> back (${f(back.dx)}, ${f(back.dy)})  d=${f((back - t).distance, 3)}\n"
         "global-local d=${g == null ? '-' : f((g - t).distance)} | game ${f(size.x, 0)}x${f(size.y, 0)} widget ${f(widgetSize.width, 0)}x${f(widgetSize.height, 0)} | dpr ${f(dpr, 2)}\n"
-        "cam (${cam.dx.round()}, ${cam.dy.round()}) zoom ${f(zoom, 2)} rot ${f(rot, 2)}";
+        "cam (${cam.dx.round()}, ${cam.dy.round()}) zoom ${f(zoom, 2)} rot ${f(rot, 2)}\n"
+        "fps ${f(fps, 0)} | sim ${f(simMs, 1)} ms | mashina ${sim.vehicles.length} | polosa ${graph.lanes.length}";
+  }
+
+  void toggleSound() {
+    soundOn = !soundOn;
+    hud.value++;
+  }
+
+  void _feedback({bool big = false}) {
+    if (!soundOn) return;
+    if (big) {
+      HapticFeedback.heavyImpact();
+      SystemSound.play(SystemSoundType.alert);
+    } else {
+      HapticFeedback.lightImpact();
+      SystemSound.play(SystemSoundType.click);
+    }
+  }
+
+  _EditState _capture(double refund) => _EditState(
+        [for (final rd in net.roads.values) (List<Offset>.of(rd.pts), rd.oneWay, rd.type, rd.layer)],
+        List<Offset>.of(roundabouts),
+        [
+          for (final s in sim.signals.values)
+            if (net.nodes[s.nodeId] != null) (net.nodes[s.nodeId]!.pos, s.green)
+        ],
+        refund,
+      );
+
+  /// Tahrirdan OLDIN chaqiriladi; tahrir muvaffaqiyatli bo'lsa _endEdit bilan yakunlanadi.
+  _EditState _beginEdit() => _capture(0);
+
+  void _endEdit(_EditState before, double spent) {
+    _undo.add(_EditState(before.roads, before.roundabouts, before.signals, spent));
+    if (_undo.length > 30) _undo.removeAt(0);
+    _redo.clear();
+  }
+
+  void _restore(_EditState s) {
+    net.clear(resetIds: false); // eski polosa id'lari qayta ishlatilmasin
+    sim.signals.clear();
+    roundabouts
+      ..clear()
+      ..addAll(s.roundabouts);
+    for (final rd in s.roads) {
+      net.addRoadPts(List<Offset>.of(rd.$1), oneWay: rd.$2, type: rd.$3, layer: rd.$4);
+    }
+    _onNetworkChanged();
+    for (final sg in s.signals) {
+      final nd = net.nodeNear(sg.$1, 2.0);
+      if (nd != null) sim.addSignal(nd.id, sg.$2);
+    }
+    selected = null;
+    stage = 0;
+  }
+
+  void undo() {
+    if (_undo.isEmpty) return;
+    final e = _undo.removeLast();
+    final cur = _capture(-e.refund);
+    _restore(e);
+    budget += e.refund;
+    _redo.add(cur);
+    _notify();
+    flashMsg("Bekor qilindi");
+  }
+
+  void redo() {
+    if (_redo.isEmpty) return;
+    final e = _redo.removeLast();
+    final cur = _capture(-e.refund);
+    _restore(e);
+    budget += e.refund;
+    _undo.add(cur);
+    _notify();
+    flashMsg("Qaytarildi");
+  }
+
+  void cycleGridSpacing() {
+    const opts = [80, 110, 150, 200];
+    gridSpacing = opts[(opts.indexOf(gridSpacing) + 1) % opts.length];
+    _notify();
+  }
+
+  /// To'rtburchak ko'cha to'ri: ko'rinish yo'nalishiga mos ikki o'q bo'ylab chiziqlar.
+  void _computeGrid() {
+    gridPlans = [];
+    gridInfo = "";
+    if (tool != Tool.grid || stage != 1 || _a == null || _b == null) return;
+    final a = _a!, b = _b!;
+    final u = _rot(const Offset(1, 0), -rot);
+    final v = _rot(const Offset(0, 1), -rot);
+    final d = b - a;
+    final du = d.dx * u.dx + d.dy * u.dy;
+    final dv = d.dx * v.dx + d.dy * v.dy;
+    if (du.abs() < gridSpacing * 0.8 || dv.abs() < gridSpacing * 0.8) {
+      gridInfo = "Maydon juda kichik";
+      return;
+    }
+    final nu = (du.abs() / gridSpacing).floor();
+    final nv = (dv.abs() / gridSpacing).floor();
+    if ((nu + 1) + (nv + 1) > 24) {
+      gridInfo = "Juda ko'p yo'l (oraliqni kattalashtiring)";
+      return;
+    }
+    final su = du >= 0 ? 1.0 : -1.0;
+    final sv = dv >= 0 ? 1.0 : -1.0;
+    for (var j = 0; j <= nv; j++) {
+      final p0 = a + v * (sv * j * gridSpacing);
+      gridPlans.add(_buildPlan(p0, p0 + u * (su * du.abs()), null));
+    }
+    for (var i = 0; i <= nu; i++) {
+      final p0 = a + u * (su * i * gridSpacing);
+      gridPlans.add(_buildPlan(p0, p0 + v * (sv * dv.abs()), null));
+    }
+    final ok = gridPlans.where((p) => p.error == null || p.error == "Mablag' yetarli emas").toList();
+    final skipped = gridPlans.length - ok.length;
+    final total = ok.fold<double>(0, (s, p) => s + p.cost);
+    gridInfo = "${ok.length} yo'l · narx ${total.round()}${skipped > 0 ? ' · $skipped o\'tkaziladi' : ''}";
+    if (total > budget) gridInfo = "Mablag' yetarli emas (${total.round()})";
+  }
+
+  void _buildGrid() {
+    _computeGrid();
+    final ok = [
+      for (final p in gridPlans)
+        if (p.error == null || p.error == "Mablag' yetarli emas") p
+    ];
+    if (ok.isEmpty) {
+      flashMsg(gridInfo.isEmpty ? "Yo'l qurib bo'lmaydi" : gridInfo);
+      return;
+    }
+    final total = ok.fold<double>(0, (s, p) => s + p.cost);
+    if (total > budget) {
+      flashMsg("Mablag' yetarli emas");
+      return;
+    }
+    final before = _beginEdit();
+    for (final p in ok) {
+      net.connectRoad(p.pts, type: roadType, layer: roadLayer);
+    }
+    budget -= total;
+    _onNetworkChanged();
+    _endEdit(before, total);
+    _feedback();
+    flashMsg("To'r qurildi: ${ok.length} yo'l (${total.round()})");
   }
 
   void toggleEnv() {
@@ -662,6 +858,11 @@ class RoadGame extends FlameGame {
         _a = _snap(w);
         _b = _a;
         break;
+      case Tool.grid:
+        stage = 1;
+        _a = w;
+        _b = w;
+        break;
       case Tool.curve:
         if (stage == 2) {
           stage = 3;
@@ -694,6 +895,9 @@ class RoadGame extends FlameGame {
       case Tool.pan:
         cam -= _rot((pos - prev) / zoom, -rot);
         _clampCam();
+        break;
+      case Tool.grid:
+        if (stage == 1) _b = toWorld(pos);
         break;
       case Tool.straight:
       case Tool.curve:
@@ -756,6 +960,12 @@ class RoadGame extends FlameGame {
       case Tool.roundabout:
         if (!_moved) _tapRoundabout(toWorld(pos));
         break;
+      case Tool.grid:
+        if (stage == 1) {
+          _buildGrid();
+          stage = 0;
+        }
+        break;
       case Tool.building:
         if (!_moved) _tapBuilding(toWorld(pos));
         break;
@@ -771,12 +981,16 @@ class RoadGame extends FlameGame {
   void _eraseAt(Offset w) {
     final r = (net.nearestRoadPoint(w, 14 / zoom + 8, layer: 1) ?? net.nearestRoadPoint(w, 14 / zoom + 8))?.road;
     if (r == null) return;
+    final before = _beginEdit();
     budget += r.cost; // to'liq qaytarish
     net.removeRoad(r.id);
     _onNetworkChanged();
+    _endEdit(before, -r.cost);
+    _feedback();
   }
 
   void _commit(RoadPlan p) {
+    final before = _beginEdit();
     var loose = false;
     for (final e in [p.a, p.b]) {
       final joined = net.nodeNear(e, 14) != null || net.nearestRoadPoint(e, 12) != null;
@@ -786,6 +1000,8 @@ class RoadGame extends FlameGame {
     net.connectRoad(p.pts, type: roadType, layer: roadLayer);
     budget -= p.cost;
     _onNetworkChanged();
+    _endEdit(before, p.cost);
+    _feedback();
     if (loose) flashMsg("Diqqat: yo'l uchi yaqin yo'lga ulanmadi. Uchini yo'lga yaqinlashtiring");
   }
 
@@ -981,7 +1197,10 @@ class RoadGame extends FlameGame {
       flashMsg("Chorraha ustiga bosing (kamida 3 yo'l)");
       return;
     }
+    final before = _beginEdit();
     flashMsg(sim.cycleSignal(n.id));
+    _endEdit(before, 0);
+    _feedback();
   }
 
   void _tapRoundabout(Offset w) {
@@ -992,6 +1211,7 @@ class RoadGame extends FlameGame {
     }
     final center = n.pos;
     var spent = 0.0;
+    final before = _beginEdit();
     final err = net.buildRoundabout(
       n.id,
       roundaboutRadius,
@@ -1006,6 +1226,8 @@ class RoadGame extends FlameGame {
     budget -= spent;
     roundabouts.add(center);
     _onNetworkChanged();
+    _endEdit(before, spent);
+    _feedback();
     flashMsg("Aylana chorraha qurildi (${spent.round()})");
   }
 
@@ -1055,13 +1277,14 @@ class RoadGame extends FlameGame {
   }
 
   RoadPlan? _computePlan() {
-    if (stage == 0 || _a == null || _b == null) return null;
+    if (stage == 0 || _a == null || _b == null || tool == Tool.grid) return null;
     if (stage == 1) return _buildPlan(_a!, _b!, null);
     return _buildPlan(_a!, _b!, _c ?? (_a! + _b!) / 2);
   }
 
   void _notify() {
     currentPlan = _computePlan();
+    _computeGrid();
     hud.value++;
   }
 
@@ -1070,6 +1293,13 @@ class RoadGame extends FlameGame {
   @override
   void update(double dt) {
     super.update(dt);
+    _fpsAcc += dt;
+    _fpsN++;
+    if (_fpsAcc >= 1) {
+      fps = _fpsN / _fpsAcc;
+      _fpsAcc = 0;
+      _fpsN = 0;
+    }
     if (loading) return;
     final ds = _dragScreen;
     if (ds != null && (stage == 1 || stage == 3)) {
@@ -1084,7 +1314,7 @@ class RoadGame extends FlameGame {
         cam += _rot(Offset(vx, vy) * (450 / zoom * dt), -rot);
         _clampCam();
         if (stage == 1) {
-          _b = _snap(toWorld(ds));
+          _b = tool == Tool.grid ? toWorld(ds) : _snap(toWorld(ds));
         } else {
           _c = toWorld(ds);
         }
@@ -1101,11 +1331,13 @@ class RoadGame extends FlameGame {
     if (speed > 0) {
       _acc += min(dt, 0.1) * speed;
       var n = 0;
+      final sw = Stopwatch()..start();
       while (_acc >= _simStep && n < 10) {
         sim.step(_simStep);
         _acc -= _simStep;
         n++;
       }
+      simMs = sw.elapsedMicroseconds / 1000.0;
       if (_acc > _simStep) _acc = 0; // qurilma ulgurmasa, tezlikni pasaytiramiz
     }
     if (speed > 0) {
@@ -1403,6 +1635,19 @@ class RoadGame extends FlameGame {
   }
 
   void _drawPreview(Canvas canvas) {
+    if (tool == Tool.grid && stage == 1) {
+      for (final p in gridPlans) {
+        final good = p.error == null || p.error == "Mablag' yetarli emas";
+        canvas.drawPath(
+          _pathOf(p.pts),
+          Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = RoadNetwork.roadWidth
+            ..strokeCap = StrokeCap.round
+            ..color = good ? const Color(0x8829C5D6) : const Color(0x66E0524A),
+        );
+      }
+    }
     final plan = currentPlan;
     if (plan == null) return;
     final color = plan.valid ? const Color(0xAA29C5D6) : const Color(0xAAE0524A);
