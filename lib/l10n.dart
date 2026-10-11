@@ -77,6 +77,11 @@ class L {
     ["Oldinga", "Вперёд", "Redo"],
     ["Ovoz", "Звук", "Sound"],
     ["To'r", "Сетка", "Grid"],
+    ["Do'konlarda tovar yetishmayapti", "В магазинах не хватает товаров", "Shops are running out of goods"],
+    ["Ta'minot", "Снабжение", "Supply"],
+    ["zaxira", "запас", "stock"],
+    ["Ranglar", "Цвета", "Colors"],
+    ["Hajm", "Размер", "Size"],
     // --- o'rgatuvchi vazifalar
     ["Kamerani suring, kattalashtiring yoki buring (2 barmoq)", "Двигайте, масштабируйте или вращайте карту (2 пальца)", "Pan, zoom or rotate the map (2 fingers)"],
     ["«To'g'ri» asbobi bilan birinchi yo'lni chizing", "Проведите первую дорогу инструментом «Прямая»", "Draw your first road with the «Straight» tool"],

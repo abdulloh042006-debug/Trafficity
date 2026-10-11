@@ -97,6 +97,11 @@ flutter build apk --release  # build/app/outputs/flutter-apk/app-release.apk
 - Ovoz/tebranish (tizim ovozi va haptik), debug'da fps va simulyatsiya vaqti
 - `test/network_test.dart`: tarmoq/marshrut testlari (ishga tushirish: `flutter test`)
 
+## 13-bosqich: ta'minot va moslashuvchanlik (tayyor, sinovdan o'tmagan)
+- Do'konlarda tovar zaxirasi: yuk mashinasi yetib kelsa +12, mijoz kelsa -1; zaxira tugasa mijoz xizmatsiz qoladi
+- Mamnuniyatning 8% i ta'minotdan (0.37 ulanish, 0.20 safar, 0.17 oqim, 0.07 muvaffaqiyat, 0.11 ekologiya, 0.08 ta'minot); yuk mashinalari tirbandlikda qolsa ta'minot pasayadi
+- "Ranglar": ko'r odamlar uchun tirbandlik palitrasi; "Hajm": interfeys matn va tugma hajmi (saqlanadi)
+
 ## Hali yo'q
 Aylanada kiruvchiga "yo'l bering" qoidasi (hozir kim birinchi so'rasa), ko'p polosali yo'llar, magistral va ramplar, iqtisodiyot va darajalar, qo'lda svetofor fazalarini tahrirlash.
 

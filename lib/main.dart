@@ -53,6 +53,7 @@ class GameScreen extends StatefulWidget {
 
 class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   late final RoadGame game = RoadGame();
+  double _uiScale = 1.0;
 
   @override
   void initState() {
@@ -61,6 +62,8 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
     // yuklashni birinchi kadrdan keyin boshlaymiz: ekran darhol chiqadi, xatolar ko'rinadi
     WidgetsBinding.instance.addPostFrameCallback((_) => game.newMap(game.seed));
     SharedPreferences.getInstance().then((p) {
+      final sc = p.getDouble('uiScale');
+      if (sc != null && sc >= 0.8 && sc <= 1.5 && mounted) setState(() => _uiScale = sc);
       final v = p.getInt('lang');
       if (v != null && v >= 0 && v < 3 && mounted) {
         setState(() => L.lang = v);
@@ -346,7 +349,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
       ),
       child: Text(
         L.t(text),
-        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: color ?? const Color(0xFF2B2E33)),
+        style: TextStyle(fontSize: 12 * _uiScale, fontWeight: FontWeight.w600, color: color ?? const Color(0xFF2B2E33)),
       ),
     );
   }
@@ -368,6 +371,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
               _chip("Yo'llar: ${game.net.roads.length}"),
               _chip("Daraja: ${game.level}"),
               _chip("Ekologiya: ${(game.env * 100).round()}%"),
+              _chip("Ta'minot: ${(game.supply * 100).round()}%"),
               _chip(
                 "Mamnuniyat: ${game.satisfaction.round()}/${game.satTarget.round()}"
                 "${game.levelTimer > 0 ? '  (${game.levelTimer.round()}/${RoadGame.levelNeedSeconds.round()} s)' : ''}",
@@ -436,8 +440,8 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(icon, size: 21, color: fg),
-                Text(L.t(label), style: TextStyle(fontSize: 10.5, color: fg)),
+                Icon(icon, size: 21 * _uiScale, color: fg),
+                Text(L.t(label), style: TextStyle(fontSize: 10.5 * _uiScale, color: fg)),
               ],
             ),
           ),
@@ -491,6 +495,16 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
             _btn(Icons.show_chart, "Grafik", game.toggleCharts, selected: game.showCharts),
             _btn(Icons.eco, "Ekologiya", game.toggleEnv, selected: game.showEnv),
             _btn(game.soundOn ? Icons.volume_up : Icons.volume_off, "Ovoz", game.toggleSound),
+            _btn(Icons.palette, "Ranglar", game.toggleColorBlind, selected: game.colorBlind),
+            _btn(Icons.format_size, "Hajm", () async {
+              const opts = [0.9, 1.0, 1.15, 1.3];
+              final i = opts.indexOf(_uiScale);
+              setState(() => _uiScale = opts[(i + 1) % opts.length]);
+              try {
+                final p = await SharedPreferences.getInstance();
+                await p.setDouble('uiScale', _uiScale);
+              } catch (_) {}
+            }),
             _btn(Icons.bug_report, "Debug", game.toggleDebug, selected: game.debug),
             _btn(Icons.save_outlined, "Slotlar", _slotsDialog),
             _btn(Icons.language, ["UZ", "RU", "EN"][L.lang], () async {

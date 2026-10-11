@@ -35,6 +35,9 @@ class TrafficSim {
   int completed = 0;
   int failed = 0; // marshrut topilmadi
   int lost = 0; // tahrir tufayli yo'qolgan
+  int served = 0; // xizmat ko'rsatilgan mijozlar
+  int unserved = 0; // tovar yo'qligi sababli xizmatsiz qolganlar
+  int delivered = 0; // yetkazilgan yuklar
   double avgTrip = 0;
   int maxVehicles = 250;
   double demandScale = 1.0;
@@ -526,8 +529,27 @@ class TrafficSim {
     if (pc != null) _waiters[pc.nodeId]?.remove(v);
   }
 
+  Building? _bld(int id) {
+    for (final b in buildings) {
+      if (b.id == id) return b;
+    }
+    return null;
+  }
+
   void _arrive(Vehicle v) {
     completed++;
+    final dest = _bld(v.destB);
+    if (dest != null && dest.type == BuildingType.shop && !v.isReturn) {
+      if (v.type == VType.truck) {
+        dest.stock = min(100.0, dest.stock + 12); // yuk yetib keldi
+        delivered++;
+      } else if (dest.stock >= 1) {
+        dest.stock -= 1; // mijoz xizmat oldi
+        served++;
+      } else {
+        unserved++; // tovar yo'q
+      }
+    }
     final tt = time - v.born;
     avgTrip = avgTrip == 0 ? tt : avgTrip * 0.9 + tt * 0.1;
     if (!v.isReturn) {

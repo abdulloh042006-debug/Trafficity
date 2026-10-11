@@ -110,6 +110,8 @@ class RoadGame extends FlameGame {
 
   // ekologiya: zavod ifloslanishi + transport shovqini
   double env = 1.0; // 1 = toza va tinch
+  double supply = 1.0; // do'konlar ta'minoti 0..1
+  bool colorBlind = false;
   bool showEnv = false;
   final Map<int, double> envExpo = {}; // uy id -> ekologik yuk 0..1
 
@@ -364,6 +366,17 @@ class RoadGame extends FlameGame {
     }
     env = houses == 0 ? 1.0 : 1 - expoSum / houses;
 
+    // ta'minot: do'konlar zaxirasi va xizmat ko'rsatish ulushi (yuk mashinalari tirbandlikda qolsa, pasayadi)
+    final shops = buildings.where((b) => b.type == BuildingType.shop).toList();
+    if (shops.isEmpty) {
+      supply = 1.0;
+    } else {
+      final avgStock = shops.fold<double>(0, (s, b) => s + b.stock) / shops.length / 100;
+      final tot = sim.served + sim.unserved;
+      final service = tot < 5 ? 1.0 : sim.served / tot;
+      supply = 0.5 * avgStock + 0.5 * service;
+    }
+
     final total = buildings.length;
     final access = total == 0 ? 0.0 : (total - noAccess) / total;
     final commute = sim.completed < 3
@@ -375,7 +388,7 @@ class RoadGame extends FlameGame {
     }
     final flow = graph.lanes.isEmpty ? 0.0 : sum / graph.lanes.length;
     final failFrac = sim.failed / (sim.failed + sim.completed + 1);
-    final raw = 100 * (0.40 * access + 0.22 * commute + 0.18 * flow + 0.08 * (1 - failFrac) + 0.12 * env);
+    final raw = 100 * (0.37 * access + 0.20 * commute + 0.17 * flow + 0.07 * (1 - failFrac) + 0.11 * env + 0.08 * supply);
     satisfaction += (raw - satisfaction) * 0.15;
 
     if (noAccess > 0) {
@@ -386,6 +399,8 @@ class RoadGame extends FlameGame {
       satNote = "Tirbandlik mamnuniyatni pasaytiryapti";
     } else if (env < 0.6) {
       satNote = "Zavod ifloslanishi va shovqin uylarni bezovta qilyapti";
+    } else if (supply < 0.5) {
+      satNote = "Do'konlarda tovar yetishmayapti";
     } else {
       satNote = "Tarmoq yaxshi ishlayapti";
     }
@@ -583,6 +598,11 @@ class RoadGame extends FlameGame {
         "global-local d=${g == null ? '-' : f((g - t).distance)} | game ${f(size.x, 0)}x${f(size.y, 0)} widget ${f(widgetSize.width, 0)}x${f(widgetSize.height, 0)} | dpr ${f(dpr, 2)}\n"
         "cam (${cam.dx.round()}, ${cam.dy.round()}) zoom ${f(zoom, 2)} rot ${f(rot, 2)}\n"
         "fps ${f(fps, 0)} | sim ${f(simMs, 1)} ms | mashina ${sim.vehicles.length} | polosa ${graph.lanes.length}";
+  }
+
+  void toggleColorBlind() {
+    colorBlind = !colorBlind;
+    hud.value++;
   }
 
   void toggleSound() {
@@ -1081,7 +1101,7 @@ class RoadGame extends FlameGame {
           flashMsg("Uy: ekologik yuk ${((envExpo[b.id] ?? 0) * 100).round()}%, yo'lga ulangan: $linked");
           break;
         case BuildingType.shop:
-          flashMsg("Do'kon: yo'lga ulangan: $linked");
+          flashMsg("Do'kon: zaxira ${b.stock.round()}%, yo'lga ulangan: $linked");
           break;
         case BuildingType.factory:
           flashMsg("Zavod: ifloslanish manbai (250 birlik atrofida), yo'lga ulangan: $linked");
@@ -1411,15 +1431,26 @@ class RoadGame extends FlameGame {
     Color(0xFF4CAF50), // erkin harakat
   ];
 
+  // ko'r odamlar uchun palitra (Okabe-Ito'ga yaqin): ko'k -> sariq -> to'q sariq -> binafsha
+  static const _heatColCb = [
+    Color(0xFF4B1D6B),
+    Color(0xFF9B3D8F),
+    Color(0xFFE67E22),
+    Color(0xFFF4D03F),
+    Color(0xFF7FB5E6),
+    Color(0xFF2E86C1),
+  ];
+
   Color _heatColor(double r) {
+    final cols = colorBlind ? _heatColCb : _heatCol;
     final x = r.clamp(0.0, 1.0).toDouble();
     for (var i = 1; i < _heatPos.length; i++) {
       if (x <= _heatPos[i]) {
         final t = (x - _heatPos[i - 1]) / (_heatPos[i] - _heatPos[i - 1]);
-        return Color.lerp(_heatCol[i - 1], _heatCol[i], t)!;
+        return Color.lerp(cols[i - 1], cols[i], t)!;
       }
     }
-    return _heatCol.last;
+    return cols.last;
   }
 
   double _roadRatio(Road r) {

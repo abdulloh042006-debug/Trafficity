@@ -19,6 +19,7 @@ class Building {
   final double angle;
   final Size size;
   final Color roof;
+  double stock = 60; // do'kon tovar zaxirasi 0..100
 
   double get radius => size.longestSide / 2 + 8;
 
@@ -47,6 +48,7 @@ class Building {
         'w': size.width,
         'h': size.height,
         'r': max(0, roofPalette.indexOf(roof)),
+        's': stock,
       };
 
   static Building fromJson(int id, Map<String, dynamic> m) => Building(
@@ -56,7 +58,7 @@ class Building {
         angle: (m['a'] as num).toDouble(),
         size: Size((m['w'] as num).toDouble(), (m['h'] as num).toDouble()),
         roof: roofPalette[(m['r'] as int).clamp(0, roofPalette.length - 1)],
-      );
+      )..stock = (m['s'] as num?)?.toDouble() ?? 60;
 
   void draw(Canvas c) {
     c.save();
