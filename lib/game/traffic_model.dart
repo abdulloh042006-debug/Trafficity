@@ -60,7 +60,7 @@ class Lane extends Track {
     this.laneCount = 1,
   });
 
-  final int laneIdx; // 0 tashqi (o'ng), 1 ichki
+  final int laneIdx; // 0 markazga eng yaqin (ichki, tez), keyingilari o'ngga (tashqi)
   final int laneCount; // shu yo'nalishdagi polosalar soni
 
   final double speedLimit; // birlik/s
@@ -70,13 +70,13 @@ class Lane extends Track {
   /// O'rtacha tezlik / limit (tirbandlik o'lchovi, 1 = erkin harakat).
   double ratio = 1.0;
 
-  final int id; // roadId*4 + (fwd ? 0 : 2) + laneIdx
+  final int id; // roadId*8 + (fwd ? 0 : 4) + laneIdx
   final int roadId;
   final bool fwd;
   final int fromNode;
   final int toNode;
 
-  static int idFor(int roadId, bool fwd, int lane) => roadId * 4 + (fwd ? 0 : 2) + lane;
+  static int idFor(int roadId, bool fwd, int lane) => roadId * 8 + (fwd ? 0 : 4) + lane;
 }
 
 class Connector extends Track {
@@ -132,7 +132,7 @@ class Vehicle {
         width = type == VType.truck ? 6.0 : 4.4,
         aMax = type == VType.truck ? 3.0 : 6.0,
         bComf = type == VType.truck ? 6.0 : 8.0,
-        vMaxSelf = type == VType.truck ? 24.0 : 36.0;
+        vMaxSelf = type == VType.truck ? 42.0 : 58.0;
 
   final int id;
   final VType type;
@@ -153,6 +153,8 @@ class Vehicle {
   Connector? holdConn; // chorrahadan o'tish ruxsati
   Connector? pendingConn; // ruxsat kutilayotgan burilish
   double wait = 0;
+  double lat = 0; // polosa almashtirishda ko'ndalang siljish (silliq nolga qaytadi)
+  double lcCool = 0; // polosa almashtirish uchun kutish vaqti
   bool needsReroute = false;
   bool removed = false;
 }

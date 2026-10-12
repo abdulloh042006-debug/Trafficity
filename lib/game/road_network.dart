@@ -78,7 +78,7 @@ class _Cut {
 /// Chizishdan mustaqil yo'l topologiyasi.
 class RoadNetwork {
   static const double costPerUnit = 0.5;
-  static double costFactor(int type) => type == 1 ? 2.2 : 1.0;
+  static double costFactor(int type) => type == 2 ? 3.6 : (type == 1 ? 2.2 : 1.0);
   static const double roadWidth = 14;
 
   final Map<int, RoadNode> nodes = {};
@@ -417,7 +417,8 @@ class RoadNetwork {
     final cuts = <_Cut>[];
     for (var i = 1; i < path.length; i++) {
       for (final r in roads.values) {
-        if (r.layer != layer) continue; // estakada yer usti yo'llari bilan kesishmaydi
+        // estakada yer usti yo'llari bilan, magistral esa hech qanday yo'l bilan kesishmaydi (qavatlararo)
+        if (r.layer != layer || r.type == 2 || type == 2) continue;
         for (var j = 1; j < r.pts.length; j++) {
           final x = _segInter(path[i - 1], path[i], r.pts[j - 1], r.pts[j]);
           if (x == null) continue;

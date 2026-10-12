@@ -86,7 +86,7 @@ class LaneGraph {
     for (final r in net.roads.values) {
       for (final fwd in [true, false]) {
         if (!fwd && r.oneWay) continue;
-        final count = r.type == 1 ? 2 : 1; // katta yo'lda har yo'nalishda 2 polosa
+        final count = r.type == 2 ? 3 : (r.type == 1 ? 2 : 1); // magistral 3, katta yo'l 2 polosa
         for (var k = 0; k < count; k++) {
           final id = Lane.idFor(r.id, fwd, k);
           want.add(id);
@@ -99,7 +99,7 @@ class LaneGraph {
               fwd: fwd,
               fromNode: fwd ? r.a : r.b,
               toNode: fwd ? r.b : r.a,
-              speedLimit: r.type == 1 ? 33.0 : 22.0,
+              speedLimit: r.type == 2 ? 55.0 : (r.type == 1 ? 33.0 : 22.0),
               laneIdx: k,
               laneCount: count,
             );
@@ -177,8 +177,8 @@ class LaneGraph {
   }
 
   List<Lane> lanesOf(int roadId) => [
-        for (var i = 0; i < 4; i++)
-          if (lanes.containsKey(roadId * 4 + i)) lanes[roadId * 4 + i]!
+        for (var i = 0; i < 8; i++)
+          if (lanes.containsKey(roadId * 8 + i)) lanes[roadId * 8 + i]!
       ];
 
   /// Har bir bino uchun eng yaqin polosa nuqtasini topadi (yo'l kirish joyi).
@@ -190,7 +190,8 @@ class LaneGraph {
       var bestS = 0.0;
       for (final l in lanes.values) {
         if (l.length < 50) continue;
-        if ((net.roads[l.roadId]?.layer ?? 0) == 1) continue; // estakadaga bino to'g'ridan-to'g'ri chiqmaydi
+        final rdd = net.roads[l.roadId];
+        if (rdd != null && (rdd.layer == 1 || rdd.type == 2)) continue; // estakada va magistralga bino to'g'ridan-to'g'ri chiqmaydi
         for (var i = 1; i < l.pts.length; i++) {
           final q = closestOnSegment(b.pos, l.pts[i - 1], l.pts[i]);
           final d = (q - b.pos).distance;
@@ -241,8 +242,8 @@ class LaneGraph {
     final cross = a.dx * b.dy - a.dy * b.dx; // > 0: o'ngga burilish
     var pen = 0.5 + acos(dot) * 1.2;
     if (from.laneCount > 1) {
-      if (cross > 0.5 && from.laneIdx > 0) pen += 2.0; // o'ngga ichki polosadan
-      if (cross < -0.5 && from.laneIdx == 0) pen += 2.0; // chapga tashqi polosadan
+      if (cross > 0.5 && from.laneIdx < from.laneCount - 1) pen += 2.0; // o'ngga ichki polosadan
+      if (cross < -0.5 && from.laneIdx > 0) pen += 2.0; // chapga tashqi polosadan
     }
     return pen;
   }
@@ -268,7 +269,7 @@ class LaneGraph {
         final d = (l.pts.last - p).distance;
         if (d < m) m = d;
       }
-      return m / 33.0;
+      return m / 55.0;
     }
 
     void expand(Lane from, double baseG, int fromKey) {

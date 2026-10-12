@@ -1236,7 +1236,7 @@ class RoadGame extends FlameGame {
   }
 
   void cycleRoadType() {
-    roadType = 1 - roadType;
+    roadType = (roadType + 1) % 3;
     _notify();
   }
 
@@ -1465,7 +1465,7 @@ class RoadGame extends FlameGame {
   /// Yo'l markaz chizig'i (yarim kenglik bilan) bino maydoniga tegadimi: haqiqiy geometriya,
   /// har 4 birlikda tekshiriladi (oraliqdagi burchakni o'tkazib yubormaydi).
   bool _hitsBuilding(List<Offset> pts) {
-    final pad = roadType == 1 ? 13.0 : 6.5;
+    final pad = const [6.5, 13.0, 20.0][roadType];
     for (final bd in buildings) {
       for (var i = 0; i < pts.length; i++) {
         if (bd.containsPoint(pts[i], pad)) return true;
@@ -1701,16 +1701,16 @@ class RoadGame extends FlameGame {
         ..color = const Color(0x50000000)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
       for (var i = 0; i < roads.length; i++) {
-        shadow.strokeWidth = (roads[i].type == 1 ? w * 2 + 5 : w + 5) + 4;
+        shadow.strokeWidth = [w + 5, w * 2 + 5, w * 3 + 5][roads[i].type] + 4;
         canvas.drawPath(paths[i].shift(const Offset(4, 6)), shadow);
       }
     }
     for (var i = 0; i < roads.length; i++) {
-      border.strokeWidth = roads[i].type == 1 ? w * 2 + 5 : w + 5;
+      border.strokeWidth = [w + 5, w * 2 + 5, w * 3 + 5][roads[i].type];
       canvas.drawPath(paths[i], border);
     }
     for (var i = 0; i < roads.length; i++) {
-      fill.strokeWidth = roads[i].type == 1 ? w * 2 : w;
+      fill.strokeWidth = [w, w * 2, w * 3][roads[i].type];
       fill.color = heat ? _heatColor(_roadRatio(roads[i])) : const Color(0xFFDADCDF);
       canvas.drawPath(paths[i], fill);
     }
@@ -1724,8 +1724,8 @@ class RoadGame extends FlameGame {
         ..strokeWidth = 1
         ..color = const Color(0xAAFFFFFF);
       for (final rd in roads) {
-        if (rd.type != 1) continue;
-        for (final off in const [-7.0, 7.0]) {
+        if (rd.type == 0) continue;
+        for (final off in rd.type == 2 ? const [-14.0, -7.0, 7.0, 14.0] : const [-7.0, 7.0]) {
           canvas.drawPath(_pathOf(LaneGraph.offsetPath(rd.pts, off)), laneLine);
         }
       }
@@ -1850,7 +1850,7 @@ class RoadGame extends FlameGame {
     for (final v in sim.vehicles) {
       final p = v.track.pointAt(v.s);
       final d = v.track.dirAt(v.s);
-      final c = p - d * (v.length * k / 2);
+      final c = p - d * (v.length * k / 2) + Offset(-d.dy, d.dx) * v.lat; // lat: polosa almashtirish siljishi
       canvas.save();
       canvas.translate(c.dx, c.dy);
       canvas.rotate(atan2(d.dy, d.dx));

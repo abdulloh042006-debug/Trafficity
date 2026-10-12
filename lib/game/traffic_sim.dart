@@ -120,6 +120,7 @@ class TrafficSim {
     if (pc != null) _waiters[pc.nodeId]?.remove(v);
     v.pendingConn = null;
     v.track = best;
+    v.lat = 0;
     v.s = bestS;
     v.route = [best];
     v.routeIdx = 0;
@@ -230,6 +231,7 @@ class TrafficSim {
       if (v.needsReroute && v.track is Lane && v.holdConn == null) _reroute(v);
     }
     vehicles.removeWhere((v) => v.removed);
+    _laneChanges(dt);
     for (final v in vehicles) {
       _computeAccel(v, dt);
     }
@@ -361,6 +363,68 @@ class TrafficSim {
     v.routeIdx = 0;
     v.destS = ad.goals[route.last.id] ?? ad.s;
     v.needsReroute = false;
+  }
+
+  // ------------------------------------------------------- polosa almashtirish
+
+  /// Ko'p polosali yo'lda sekin mashina ortida qolgan mashina qo'shni polosaga o'tadi (quvib o'tish):
+  /// maqsad polosada old va orqa masofa xavfsiz va foyda bor bo'lsa. Ko'ndalang siljish silliq (lat).
+  void _laneChanges(double dt) {
+    final decay = exp(-3.0 * dt);
+    for (final v in vehicles) {
+      v.lat *= decay;
+      v.lcCool -= dt;
+      final tr = v.track;
+      if (tr is! Lane || tr.laneCount < 2 || v.lcCool > 0 || v.removed) continue;
+      if (v.holdConn != null || v.needsReroute) continue;
+      if (v.s < 25 || tr.length - v.s < 70) continue;
+      if (v.routeIdx >= v.route.length - 1 && v.destS - v.s < 80) continue;
+      final idx = tr.vehicles.indexOf(v);
+      final lead = (idx >= 0 && idx + 1 < tr.vehicles.length) ? tr.vehicles[idx + 1] : null;
+      final gapNow = lead == null ? 999.0 : lead.s - lead.length - v.s;
+      final v0 = min(tr.speedLimit, v.vMaxSelf);
+      final blocked = lead != null && gapNow < 40 && lead.v < min(v0 * 0.75, v.v - 1.5);
+      v.lcCool = 1.0;
+      if (!blocked) continue;
+      for (final k in [tr.laneIdx - 1, tr.laneIdx + 1]) {
+        if (k < 0 || k >= tr.laneCount) continue;
+        final target = graph.lanes[Lane.idFor(tr.roadId, tr.fwd, k)];
+        if (target == null || !_laneChangeOk(v, target, gapNow, lead)) continue;
+        tr.vehicles.remove(v);
+        target.vehicles.add(v);
+        v.lat += (k - tr.laneIdx) * -7.0; // eski polosa markazidan yangisiga qarab silliq o'tadi
+        v.track = target;
+        v.route[v.routeIdx] = target;
+        v.lcCool = 5.0;
+        break;
+      }
+    }
+  }
+
+  bool _laneChangeOk(Vehicle v, Lane target, double gapNow, Vehicle? lead) {
+    Vehicle? ahead;
+    Vehicle? behind;
+    for (final u in target.vehicles) {
+      final overlap = u.s > v.s - v.length - 4 && u.s - u.length < v.s + 4;
+      if (overlap) return false;
+      if (u.s - u.length >= v.s + 4) {
+        if (ahead == null || u.s < ahead.s) ahead = u;
+      } else if (behind == null || u.s > behind.s) {
+        behind = u;
+      }
+    }
+    if (ahead != null) {
+      final gap = ahead.s - ahead.length - v.s;
+      if (gap < 14 + max(0.0, v.v - ahead.v)) return false;
+    }
+    if (behind != null) {
+      final gap = v.s - v.length - behind.s;
+      if (gap < 10 + max(0.0, behind.v - v.v) * 1.4) return false;
+    }
+    // foyda: maqsad polosada ancha ko'p joy yoki tezroq lider
+    final gapT = ahead == null ? 999.0 : ahead.s - ahead.length - v.s;
+    final fasterAhead = ahead == null || (lead != null && ahead.v > lead.v + 2);
+    return gapT > gapNow + 12 || fasterAhead;
   }
 
   // -------------------------------------------------------------- tezlanish

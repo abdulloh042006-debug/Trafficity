@@ -115,6 +115,13 @@ flutter build apk --release  # build/app/outputs/flutter-apk/app-release.apk
 - Svetofor tugmasi: yashil 12 -> 20 -> 30 s -> adaptiv -> olib tashlash. Adaptiv: faol faza bo'sh, boshqasida kutayotgan bo'lsa, yashilni (6 s dan keyin) erta tugatadi
 - Adaptiv holat saqlanadi va bekor qilish/qaytarishda tiklanadi
 
+## 15-bosqich: magistral va polosa almashtirish (tayyor, sinovdan o'tmagan)
+- Yo'l turi tugmasi: Oddiy (40 km/s, 1 polosa) -> Katta yo'l (60 km/s, 2 polosa) -> Magistral (100 km/s, har yo'nalishda 3 polosa, 3.6x narx)
+- Magistral hech qaysi yo'l bilan kesishmaydi (qavatlararo); ulanish faqat uchlari yoki unga ulangan yo'l (rampa) orqali. Binolar magistralga chiqmaydi. "Estakada" bilan birga daryo ustidan o'tadi
+- Polosa almashtirish: sekin mashina ortida qolgan mashina qo'shni polosaga o'tadi (old/orqa masofa va foyda tekshiriladi, 5 s kutish, silliq ko'ndalang siljish)
+- Chorrahada burilish polosasi tanlovi to'g'rilandi: o'ngga tashqi, chapga ichki polosa afzal
+- Polosa id'lari 8 ga kengaytirildi (3 polosagacha)
+
 ## Hali yo'q
 Aylanada kiruvchiga "yo'l bering" qoidasi (hozir kim birinchi so'rasa), ko'p polosali yo'llar, magistral va ramplar, iqtisodiyot va darajalar, qo'lda svetofor fazalarini tahrirlash.
 
