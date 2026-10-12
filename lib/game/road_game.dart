@@ -33,7 +33,7 @@ class _EditState {
   _EditState(this.roads, this.roundabouts, this.signals, this.refund);
   final List<(List<Offset>, bool, int, int)> roads; // pts, oneWay, type, layer
   final List<Offset> roundabouts;
-  final List<(Offset, double)> signals; // tugun joyi, yashil vaqt
+  final List<(Offset, double, bool)> signals; // tugun joyi, yashil vaqt, adaptiv
   final double refund; // holat qo'llanganda byudjetga qo'shiladigan miqdor
 }
 
@@ -659,7 +659,7 @@ class RoadGame extends FlameGame {
         ],
         'signals': [
           for (final s in sim.signals.values)
-            [graph.net.nodes[s.nodeId]!.pos.dx, graph.net.nodes[s.nodeId]!.pos.dy, s.green]
+            [graph.net.nodes[s.nodeId]!.pos.dx, graph.net.nodes[s.nodeId]!.pos.dy, s.green, s.adaptive ? 1.0 : 0.0]
         ],
         'rbs': [
           for (final c in roundabouts) [c.dx, c.dy]
@@ -748,7 +748,7 @@ class RoadGame extends FlameGame {
         _onNetworkChanged();
         for (final sg in sigs) {
           final nd = net.nodeNear(Offset(sg[0], sg[1]), 2.0);
-          if (nd != null) sim.addSignal(nd.id, sg[2]);
+          if (nd != null) sim.addSignal(nd.id, sg[2], adaptive: sg.length > 3 && sg[3] == 1);
         }
         if (savedB.isNotEmpty) {
           buildings
@@ -829,7 +829,7 @@ class RoadGame extends FlameGame {
         List<Offset>.of(roundabouts),
         [
           for (final s in sim.signals.values)
-            if (net.nodes[s.nodeId] != null) (net.nodes[s.nodeId]!.pos, s.green)
+            if (net.nodes[s.nodeId] != null) (net.nodes[s.nodeId]!.pos, s.green, s.adaptive)
         ],
         refund,
       );
@@ -855,7 +855,7 @@ class RoadGame extends FlameGame {
     _onNetworkChanged();
     for (final sg in s.signals) {
       final nd = net.nodeNear(sg.$1, 2.0);
-      if (nd != null) sim.addSignal(nd.id, sg.$2);
+      if (nd != null) sim.addSignal(nd.id, sg.$2, adaptive: sg.$3);
     }
     selected = null;
     stage = 0;
@@ -1315,7 +1315,7 @@ class RoadGame extends FlameGame {
     final node = net.nodeNear(w, 26 / zoom + 10);
     if (node != null && node.roads.length >= 3) {
       final sg = sim.signals[node.id];
-      flashMsg("Chorraha: ${node.roads.length} yo'l, svetofor: ${sg != null ? 'bor (yashil ${sg.green.round()} s)' : 'yo\'q'}, kutayotgan mashinalar: ${sim.waitingAt(node.id)}");
+      flashMsg("Chorraha: ${node.roads.length} yo'l, svetofor: ${sg != null ? (sg.adaptive ? 'bor (adaptiv)' : 'bor (yashil ${sg.green.round()} s)') : 'yo\'q'}, kutayotgan mashinalar: ${sim.waitingAt(node.id)}");
       return;
     }
     final hit = net.nearestRoadPoint(w, 14 / zoom + 8);

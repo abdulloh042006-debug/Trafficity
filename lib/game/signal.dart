@@ -11,6 +11,7 @@ class Signal {
   double green = 12;
   double amber = 2;
   double allRed = 1; // tozalash oralig'i
+  bool adaptive = false; // navbatga qarab yashilni erta tugatadi
   double t = 0;
 
   List<Lane> incoming = [];

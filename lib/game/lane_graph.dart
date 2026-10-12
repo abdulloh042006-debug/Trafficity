@@ -73,6 +73,7 @@ class LaneGraph {
   final RoadNetwork net;
   final Map<int, Lane> lanes = {};
   final Map<int, List<Lane>> outgoing = {}; // tugun -> shu tugundan chiquvchi polosalar
+  final Map<int, List<Lane>> incoming = {}; // tugun -> shu tugunga kiruvchi polosalar
   final Map<String, Connector> connectors = {};
   final Map<int, List<Connector>> connectorsFrom = {};
   final Map<int, Access> access = {}; // bino -> eng yaqin polosa nuqtasi
@@ -114,8 +115,10 @@ class LaneGraph {
       connectorsFrom.putIfAbsent(c.from.id, () => []).add(c);
     }
     outgoing.clear();
+    incoming.clear();
     for (final l in lanes.values) {
       outgoing.putIfAbsent(l.fromNode, () => []).add(l);
+      incoming.putIfAbsent(l.toNode, () => []).add(l);
     }
   }
 

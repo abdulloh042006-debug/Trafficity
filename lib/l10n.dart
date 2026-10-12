@@ -84,6 +84,8 @@ class L {
     ["Hajm", "Размер", "Size"],
     ["Tayyor shahar yuklandi", "Готовый город загружен", "Ready-made city loaded"],
     ["Tayyor shahar qurilmadi", "Не удалось построить город", "Could not build the ready-made city"],
+    ["Adaptiv svetofor: navbatga qarab", "Адаптивный светофор: по очереди машин", "Adaptive signal: follows the queue"],
+    ["adaptiv", "адаптивный", "adaptive"],
     // --- o'rgatuvchi vazifalar
     ["Kamerani suring, kattalashtiring yoki buring (2 barmoq)", "Двигайте, масштабируйте или вращайте карту (2 пальца)", "Pan, zoom or rotate the map (2 fingers)"],
     ["«To'g'ri» asbobi bilan birinchi yo'lni chizing", "Проведите первую дорогу инструментом «Прямая»", "Draw your first road with the «Straight» tool"],

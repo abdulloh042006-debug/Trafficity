@@ -138,6 +138,31 @@ class TrafficSim {
   }
 
   /// Svetofor qo'yadi, yashil vaqtini 12 -> 20 -> 30 s aylantiradi, so'ng olib tashlaydi.
+  /// Adaptiv svetofor: faol faza bo'sh, boshqa fazada kutayotgan bo'lsa, yashilni (6 s dan keyin) erta tugatadi.
+  void _adapt(Signal s) {
+    if (s.phases.length < 2) return;
+    final ap = s.activePhase;
+    final local = s.t - ap * s.phaseLen;
+    if (local < 6 || local >= s.green) return;
+    bool busy(int phase) {
+      for (final id in s.phases[phase]) {
+        final l = graph.lanes[id];
+        if (l == null) continue;
+        for (final u in l.vehicles) {
+          if (l.length - u.s < 45) return true;
+        }
+      }
+      return false;
+    }
+
+    var others = false;
+    for (var p = 0; p < s.phases.length; p++) {
+      if (p != ap && busy(p)) others = true;
+    }
+    if (!busy(ap) && others) s.t = ap * s.phaseLen + s.green;
+  }
+
+  /// Svetofor: yashil 12 -> 20 -> 30 s -> adaptiv -> olib tashlash.
   String cycleSignal(int nodeId) {
     final s = signals[nodeId];
     if (s == null) {
@@ -145,13 +170,19 @@ class TrafficSim {
       _refreshSignals();
       return "Svetofor qo'yildi: yashil 12 s";
     }
+    if (s.adaptive) {
+      signals.remove(nodeId);
+      return "Svetofor olib tashlandi";
+    }
     if (s.green < 15) {
       s.green = 20;
     } else if (s.green < 25) {
       s.green = 30;
     } else {
-      signals.remove(nodeId);
-      return "Svetofor olib tashlandi";
+      s.adaptive = true;
+      s.green = 25;
+      s.t = 0;
+      return "Adaptiv svetofor: navbatga qarab";
     }
     s.t = 0;
     return "Yashil vaqt: ${s.green.round()} s";
@@ -159,8 +190,10 @@ class TrafficSim {
 
   int waitingAt(int nodeId) => _waiters[nodeId]?.length ?? 0;
 
-  void addSignal(int nodeId, double green) {
-    final s = Signal(nodeId)..green = green;
+  void addSignal(int nodeId, double green, {bool adaptive = false}) {
+    final s = Signal(nodeId)
+      ..green = green
+      ..adaptive = adaptive;
     signals[nodeId] = s;
     _refreshSignals();
   }
@@ -184,6 +217,7 @@ class TrafficSim {
   void step(double dt) {
     time += dt;
     for (final s in signals.values) {
+      if (s.adaptive) _adapt(s);
       s.tick(dt);
     }
     _statAcc += dt;
@@ -352,10 +386,38 @@ class TrafficSim {
     return best;
   }
 
+  int _rank(Lane l) => graph.net.roads[l.roadId]?.type ?? 0;
+
+  /// Svetofor yo'q chorrahada, kiruvchi yo'llar turli sinfda bo'lsa, past sinfdagisi "kichik yo'l":
+  /// u to'liq to'xtab, ustun yo'lga yo'l beradi.
+  bool _minorAt(Lane l, int node) {
+    if (signals.containsKey(node)) return false;
+    final inc = graph.incoming[node];
+    if (inc == null) return false;
+    var maxR = 0;
+    for (final x in inc) {
+      final rk = _rank(x);
+      if (rk > maxR) maxR = rk;
+    }
+    return _rank(l) < maxR;
+  }
+
   bool _tryGrant(Vehicle v, Connector c) {
     final node = c.nodeId;
     final sg = signals[node];
     if (sg != null && sg.stateOfLane(c.from.id) != 0) return false; // qizil/sariq
+    if (_minorAt(c.from, node)) {
+      // ustun yo'lda yaqinlashayotgan (45 birlik ichida) va bu burilish bilan to'qnashadigan mashina bo'lsa, kutadi
+      for (final l in graph.incoming[node] ?? const <Lane>[]) {
+        if (_rank(l) <= _rank(c.from)) continue;
+        for (final u in l.vehicles) {
+          if (l.length - u.s > 45) continue;
+          final nx = _next(l, u.routeIdx, u.route);
+          final nc = nx?.track;
+          if (nc is Connector && c.conflicts(nc)) return false;
+        }
+      }
+    }
     final to = c.to;
     if (to.vehicles.isNotEmpty) {
       final f = to.vehicles.first;
@@ -420,7 +482,9 @@ class TrafficSim {
         v0 = min(v0, sqrt(conn.vmax * conn.vmax + 2 * v.bComf * max(0.0, endDist)));
         if (v.holdConn == null) {
           final dreq = v.v * v.v / (2 * v.bComf) + 20;
-          if (endDist <= dreq && !_tryGrant(v, conn)) {
+          // kichik yo'l: stopline'da to'liq to'xtamaguncha ruxsat so'ralmaydi
+          final ready = !_minorAt(tr, conn.nodeId) || (v.v < 0.6 && endDist < 8);
+          if (endDist <= dreq && !(ready && _tryGrant(v, conn))) {
             if (v.v < 1.0 && endDist < 15) v.wait += dt;
             if (v.wait > 25) {
               v.wait = 8; // uzoq qotib qolsa, tirbandlikni hisobga olib yangi marshrut qidiradi

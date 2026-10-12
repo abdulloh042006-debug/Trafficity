@@ -110,6 +110,11 @@ flutter build apk --release  # build/app/outputs/flutter-apk/app-release.apk
 - Rejalashtirish mantig'i 300 ta tasodifiy bino joylashuvida Python'da sinab ko'rilgan: asosiy yo'llar har doim topildi; mahalliy yo'l variantlari bilan 10 ta shaharda 200 binoning 100% i ulandi
 - "Yangi" tugmasi bilan boshlangan o'yinlar oldingidek bo'sh boshlanadi
 
+## 14-bosqich: ustuvor yo'llar va adaptiv svetofor (tayyor, sinovdan o'tmagan)
+- Svetoforsiz chorrahada kiruvchi yo'llar turli sinfda (oddiy / katta yo'l) bo'lsa, past sinfdagi mashina stopline'da TO'LIQ to'xtaydi va yaqinlashayotgan (45 birlik) to'qnashuvchi mashinaga yo'l beradi; ustun yo'ldagilar to'xtamaydi
+- Svetofor tugmasi: yashil 12 -> 20 -> 30 s -> adaptiv -> olib tashlash. Adaptiv: faol faza bo'sh, boshqasida kutayotgan bo'lsa, yashilni (6 s dan keyin) erta tugatadi
+- Adaptiv holat saqlanadi va bekor qilish/qaytarishda tiklanadi
+
 ## Hali yo'q
 Aylanada kiruvchiga "yo'l bering" qoidasi (hozir kim birinchi so'rasa), ko'p polosali yo'llar, magistral va ramplar, iqtisodiyot va darajalar, qo'lda svetofor fazalarini tahrirlash.
 
