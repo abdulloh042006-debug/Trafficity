@@ -127,6 +127,11 @@ flutter build apk --release  # build/app/outputs/flutter-apk/app-release.apk
 - Sozlamalar oynasi: til (UZ/RU/EN), ovoz, ko'r odamlar uchun ranglar, matn hajmi
 - "Yangi o'yin" oynasida tanlangan seed va biom bo'yicha xarita ko'rinishi (relyef rasmi) chiqadi
 
+## 17-bosqich: fon musiqasi (tayyor, sinovdan o'tmagan)
+- `assets/audio/ambient.wav`: 24 soniyalik, uzluksiz takrorlanadigan sokin pad (Am-F-C-G akkordlari). Loyiha ichida kod bilan yaratilgan, tashqi manba yo'q, mualliflik huquqi masalasi yo'q
+- "Ovoz" tugmasi / sozlamalardagi "Ovoz" musiqani ham yoqadi/o'chiradi; ilova fonga o'tganda to'xtaydi
+- Paket: `audioplayers` (xato bo'lsa o'yin davom etadi, faqat musiqasiz)
+
 ## Hali yo'q
 Aylanada kiruvchiga "yo'l bering" qoidasi (hozir kim birinchi so'rasa), ko'p polosali yo'llar, magistral va ramplar, iqtisodiyot va darajalar, qo'lda svetofor fazalarini tahrirlash.
 

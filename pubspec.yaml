@@ -1,7 +1,7 @@
 name: roadflow_city
 description: Top-down traffic and city simulation game (Flutter + Flame).
 publish_to: 'none'
-version: 0.2.0+2
+version: 0.3.0+3
 
 environment:
   sdk: '>=3.3.0 <4.0.0'
@@ -11,6 +11,7 @@ dependencies:
     sdk: flutter
   flame: ^1.21.0
   shared_preferences: ^2.2.0
+  audioplayers: ^6.1.0
 
 dev_dependencies:
   flutter_test:
@@ -19,6 +20,8 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/audio/ambient.wav
 
 flutter_launcher_icons:
   android: true

@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'dart:ui' as ui;
 
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -57,6 +58,32 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   double _uiScale = 1.0;
   bool _menu = true;
 
+  // fon musiqasi (24 soniyalik uzluksiz sokin pad, loyiha ichida yaratilgan)
+  final AudioPlayer _music = AudioPlayer();
+  bool _musicOn = false;
+  bool _musicBusy = false;
+
+  Future<void> _syncMusic() async {
+    if (_musicBusy) return;
+    final want = game.soundOn;
+    if (want == _musicOn) return;
+    _musicBusy = true;
+    try {
+      if (want) {
+        await _music.setReleaseMode(ReleaseMode.loop);
+        await _music.setVolume(0.3);
+        await _music.play(AssetSource('audio/ambient.wav'));
+      } else {
+        await _music.pause();
+      }
+    } catch (_) {
+      // audio ishlamasa o'yin davom etadi
+    } finally {
+      _musicOn = want;
+      _musicBusy = false;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -79,14 +106,17 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _music.dispose();
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     // faqat yo'l qurilgan bo'lsa avtosaqlaymiz (bo'sh xarita saqlangan o'yinni bosib ketmasin)
-    if (state == AppLifecycleState.paused && game.net.roads.isNotEmpty) {
-      game.save(auto: true);
+    if (state == AppLifecycleState.paused) {
+      _music.pause();
+      _musicOn = false; // qaytganda qayta ishga tushadi
+      if (game.net.roads.isNotEmpty) game.save(auto: true);
     }
   }
 
@@ -425,6 +455,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
               child: ValueListenableBuilder<int>(
                 valueListenable: game.hud,
                 builder: (context, _, __) {
+                  _syncMusic();
                   final plan = game.currentPlan;
                   return Stack(
                     children: [
