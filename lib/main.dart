@@ -1,5 +1,5 @@
 import 'dart:math';
-import 'dart:ui' show PlatformDispatcher;
+import 'dart:ui' as ui;
 
 import 'package:flame/game.dart';
 import 'package:flutter/gestures.dart';
@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'game/road_game.dart';
+import 'game/terrain.dart';
 import 'l10n.dart';
 
 /// Oxirgi xatoni ekranda ko'rsatish uchun (release rejimida xatolar sezilmay qolmasligi uchun).
@@ -18,7 +19,7 @@ class AppErr {
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   FlutterError.onError = (d) => AppErr.last = d.exceptionAsString();
-  PlatformDispatcher.instance.onError = (e, s) {
+  ui.PlatformDispatcher.instance.onError = (e, s) {
     AppErr.last = '$e';
     return true;
   };
@@ -54,11 +55,13 @@ class GameScreen extends StatefulWidget {
 class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   late final RoadGame game = RoadGame();
   double _uiScale = 1.0;
+  bool _menu = true;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    game.menuOpen = true;
     // yuklashni birinchi kadrdan keyin boshlaymiz: ekran darhol chiqadi, xatolar ko'rinadi
     WidgetsBinding.instance
         .addPostFrameCallback((_) => game.newMap(game.seed, ideal: RoadGame.idealCityOnStart));
@@ -130,6 +133,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                               Navigator.pop(ctx);
                               final ok = await game.load(slot: i);
                               _toast(ok ? "Yuklandi" : "Saqlangan o'yin topilmadi");
+                              if (ok) _closeMenu();
                             },
                     ),
                   ],
@@ -142,12 +146,164 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
     );
   }
 
+  void _closeMenu() {
+    if (!mounted) return;
+    setState(() => _menu = false);
+    game.menuOpen = false;
+    game.hud.value++;
+  }
+
+  Future<void> _setLang(int i) async {
+    setState(() => L.lang = i);
+    game.hud.value++;
+    try {
+      final p = await SharedPreferences.getInstance();
+      await p.setInt('lang', i);
+    } catch (_) {}
+  }
+
+  Future<void> _setScale(double sc) async {
+    setState(() => _uiScale = sc);
+    try {
+      final p = await SharedPreferences.getInstance();
+      await p.setDouble('uiScale', sc);
+    } catch (_) {}
+  }
+
+  Future<void> _settingsDialog() async {
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setS) => AlertDialog(
+          title: Text(L.t("Sozlamalar")),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(L.t("Til")),
+                Wrap(
+                  spacing: 6,
+                  children: [
+                    for (var i = 0; i < 3; i++)
+                      ChoiceChip(
+                        label: Text(["O'zbekcha", "Русский", "English"][i]),
+                        selected: L.lang == i,
+                        onSelected: (_) async {
+                          await _setLang(i);
+                          setS(() {});
+                        },
+                      ),
+                  ],
+                ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(L.t("Ovoz")),
+                  value: game.soundOn,
+                  onChanged: (_) {
+                    game.toggleSound();
+                    setS(() {});
+                  },
+                ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(L.t("Ranglar")),
+                  value: game.colorBlind,
+                  onChanged: (_) {
+                    game.toggleColorBlind();
+                    setS(() {});
+                  },
+                ),
+                Text(L.t("Hajm")),
+                Wrap(
+                  spacing: 6,
+                  children: [
+                    for (final sc in const [0.9, 1.0, 1.15, 1.3])
+                      ChoiceChip(
+                        label: Text("${(sc * 100).round()}%"),
+                        selected: _uiScale == sc,
+                        onSelected: (_) async {
+                          await _setScale(sc);
+                          setS(() {});
+                        },
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: Text(L.t("Yopish")))],
+        ),
+      ),
+    );
+  }
+
+  Widget _menuOverlay() {
+    Widget item(IconData icon, String label, VoidCallback onTap) => Padding(
+          padding: const EdgeInsets.symmetric(vertical: 5),
+          child: SizedBox(
+            width: 270,
+            child: FilledButton.tonalIcon(onPressed: onTap, icon: Icon(icon), label: Text(L.t(label))),
+          ),
+        );
+    return Container(
+      color: const Color(0xD91F2A22),
+      child: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  "RoadFlow City",
+                  style: TextStyle(fontSize: 34, fontWeight: FontWeight.w800, color: Colors.white),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  L.t("Yo'l qurilishi va transport simulyatsiyasi"),
+                  style: const TextStyle(color: Colors.white70),
+                ),
+                const SizedBox(height: 22),
+                item(Icons.play_arrow, "Davom etish", _closeMenu),
+                item(Icons.add_circle_outline, "Yangi o'yin", _newGameDialog),
+                item(Icons.school, "O'rgatish", () {
+                  game.newMap(7, biome: 0, difficulty: 1, sandbox: false);
+                  _closeMenu();
+                }),
+                item(Icons.construction, "Sandbox", () {
+                  game.newMap(Random().nextInt(100000), sandbox: true);
+                  _closeMenu();
+                }),
+                item(Icons.folder_open, "Saqlangan o'yinlar", _slotsDialog),
+                item(Icons.settings, "Sozlamalar", _settingsDialog),
+                item(Icons.exit_to_app, "Chiqish", () => SystemNavigator.pop()),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _newGameDialog() async {
     var biome = game.biome, diff = game.difficulty, sbx = game.sandbox;
     final seedCtl = TextEditingController(text: Random().nextInt(100000).toString());
+    ui.Image? preview;
+    var req = 0;
     final go = await showDialog<bool>(
       context: context,
       builder: (ctx) => StatefulBuilder(builder: (ctx, setS) {
+        // xarita ko'rinishi: tanlangan seed va biom bo'yicha kichik relyef rasmi
+        Future<void> regen() async {
+          final my = ++req;
+          final sd = int.tryParse(seedCtl.text) ?? 0;
+          try {
+            final im = await Terrain(sd, biome).toImage(res: 96);
+            if (my == req) setS(() => preview = im);
+          } catch (_) {}
+        }
+
+        if (req == 0) regen();
         Widget chips(List<String> names, int sel, void Function(int) on) => Wrap(
               spacing: 6,
               children: [
@@ -166,8 +322,21 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (preview != null)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: SizedBox(
+                      height: 120,
+                      width: double.infinity,
+                      child: RawImage(image: preview, fit: BoxFit.cover, filterQuality: FilterQuality.medium),
+                    ),
+                  ),
+                const SizedBox(height: 10),
                 Text(L.t("Biom")),
-                chips(const ["Tekislik", "Daryo deltasi", "Tog' vodiysi", "Orollar"], biome, (i) => biome = i),
+                chips(const ["Tekislik", "Daryo deltasi", "Tog' vodiysi", "Orollar"], biome, (i) {
+                  biome = i;
+                  regen();
+                }),
                 const SizedBox(height: 12),
                 Text(L.t("Qiyinlik")),
                 chips(const ["Oson", "Oddiy", "Qiyin"], diff, (i) => diff = i),
@@ -181,6 +350,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                   controller: seedCtl,
                   keyboardType: TextInputType.number,
                   decoration: const InputDecoration(labelText: "Seed"),
+                  onChanged: (_) => regen(),
                 ),
               ],
             ),
@@ -195,6 +365,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
     if (go == true) {
       game.newMap(int.tryParse(seedCtl.text) ?? Random().nextInt(100000),
           biome: biome, difficulty: diff, sandbox: sbx);
+      _closeMenu();
     }
   }
 
@@ -289,6 +460,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
               ),
             ),
           ),
+          if (_menu) Positioned.fill(child: _menuOverlay()),
         ],
       ),
     );
@@ -460,6 +632,10 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
+            _btn(Icons.menu, "Menyu", () {
+              setState(() => _menu = true);
+              game.menuOpen = true;
+            }),
             _btn(Icons.open_with, "Kamera", () => game.setTool(Tool.pan), selected: game.tool == Tool.pan),
             if (game.rot.abs() > 0.01) _btn(Icons.explore, "Shimol", game.resetRotation),
             if (game.canUndo) _btn(Icons.undo, "Ortga", game.undo),

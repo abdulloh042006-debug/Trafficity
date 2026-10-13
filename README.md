@@ -122,6 +122,11 @@ flutter build apk --release  # build/app/outputs/flutter-apk/app-release.apk
 - Chorrahada burilish polosasi tanlovi to'g'rilandi: o'ngga tashqi, chapga ichki polosa afzal
 - Polosa id'lari 8 ga kengaytirildi (3 polosagacha)
 
+## 16-bosqich: bosh menyu va sozlamalar (tayyor, sinovdan o'tmagan)
+- Bosh menyu: Davom etish, Yangi o'yin, O'rgatish, Sandbox, Saqlangan o'yinlar, Sozlamalar, Chiqish. Menyu ochiq bo'lganda simulyatsiya to'xtaydi; pastki panelda "Menyu" tugmasi bor
+- Sozlamalar oynasi: til (UZ/RU/EN), ovoz, ko'r odamlar uchun ranglar, matn hajmi
+- "Yangi o'yin" oynasida tanlangan seed va biom bo'yicha xarita ko'rinishi (relyef rasmi) chiqadi
+
 ## Hali yo'q
 Aylanada kiruvchiga "yo'l bering" qoidasi (hozir kim birinchi so'rasa), ko'p polosali yo'llar, magistral va ramplar, iqtisodiyot va darajalar, qo'lda svetofor fazalarini tahrirlash.
 

@@ -103,6 +103,7 @@ class RoadGame extends FlameGame {
 
   // ovoz/tebranish, ishlash o'lchovi
   bool soundOn = true;
+  bool menuOpen = false; // bosh menyu ochiq: simulyatsiya to'xtaydi
   double fps = 0;
   double simMs = 0;
   double _fpsAcc = 0;
@@ -1523,7 +1524,7 @@ class RoadGame extends FlameGame {
       _fpsAcc = 0;
       _fpsN = 0;
     }
-    if (loading) return;
+    if (loading || menuOpen) return;
     final ds = _dragScreen;
     if (ds != null && (stage == 1 || stage == 3)) {
       // chizayotganda barmoq ekran chetiga yetsa, xarita o'zi suriladi
