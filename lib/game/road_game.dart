@@ -801,7 +801,7 @@ class RoadGame extends FlameGame {
     return "touch (${f(t.dx)}, ${f(t.dy)}) -> world (${f(w.dx)}, ${f(w.dy)}) -> back (${f(back.dx)}, ${f(back.dy)})  d=${f((back - t).distance, 3)}\n"
         "global-local d=${g == null ? '-' : f((g - t).distance)} | game ${f(size.x, 0)}x${f(size.y, 0)} widget ${f(widgetSize.width, 0)}x${f(widgetSize.height, 0)} | dpr ${f(dpr, 2)}\n"
         "cam (${cam.dx.round()}, ${cam.dy.round()}) zoom ${f(zoom, 2)} rot ${f(rot, 2)}\n"
-        "fps ${f(fps, 0)} | sim ${f(simMs, 1)} ms | mashina ${sim.vehicles.length} | polosa ${graph.lanes.length}";
+        "fps ${f(fps, 0)} | sim ${f(simMs, 1)} ms | mashina ${sim.vehicles.length} | polosa ${graph.lanes.length} | marshrut ${graph.routeCalls}";
   }
 
   void toggleColorBlind() {

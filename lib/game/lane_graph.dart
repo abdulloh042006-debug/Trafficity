@@ -77,6 +77,7 @@ class LaneGraph {
   final Map<String, Connector> connectors = {};
   final Map<int, List<Connector>> connectorsFrom = {};
   final Map<int, Access> access = {}; // bino -> eng yaqin polosa nuqtasi
+  int routeCalls = 0; // marshrut hisoblari soni (ishlash diagnostikasi)
 
   static const double laneOffset = 3.5;
 
@@ -146,7 +147,7 @@ class LaneGraph {
     return connectors.putIfAbsent(key, () {
       final pA = a.pts.last, pB = b.pts.first;
       final dA = a.dirAt(a.length), dB = b.dirAt(0);
-      final node = net.nodes[a.toNode]!.pos;
+      final node = net.nodes[a.toNode]?.pos ?? a.pts.last;
       final dot = (dA.dx * dB.dx + dA.dy * dB.dy).clamp(-1.0, 1.0).toDouble();
       final ang = acos(dot);
       var ctrl = node;
@@ -250,6 +251,7 @@ class LaneGraph {
 
   /// A*: generalized cost = yurish vaqti + burilish jarimasi + navbat (tirbandlik) taxmini.
   List<Lane>? findRoute(Lane start, double startS, Lane goal, double goalS, {Map<int, double>? goals}) {
+    routeCalls++;
     final gm = <int, double>{
       for (final e in (goals ?? {goal.id: goalS}).entries)
         if (lanes.containsKey(e.key)) e.key: e.value

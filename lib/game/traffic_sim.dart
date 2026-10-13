@@ -43,6 +43,7 @@ class TrafficSim {
   double demandScale = 1.0;
 
   final Map<int, Signal> signals = {};
+  double _sanT = 0;
   double _statAcc = 0;
   final Map<int, double> _accum = {};
   final Map<int, List<Trip>> _pending = {};
@@ -217,6 +218,11 @@ class TrafficSim {
 
   void step(double dt) {
     time += dt;
+    _sanT += dt;
+    if (_sanT >= 2) {
+      _sanT = 0;
+      _sanitize();
+    }
     for (final s in signals.values) {
       if (s.adaptive) _adapt(s);
       s.tick(dt);
@@ -351,6 +357,7 @@ class TrafficSim {
   }
 
   void _reroute(Vehicle v) {
+    _clearWait(v); // eski kutish yozuvi yangi marshrutga xalaqit bermasin
     final lane = v.track as Lane;
     final ad = graph.access[v.destB];
     final route = ad == null ? null : graph.findRoute(lane, v.s, ad.lane, ad.s, goals: ad.goals);
@@ -390,6 +397,7 @@ class TrafficSim {
         if (k < 0 || k >= tr.laneCount) continue;
         final target = graph.lanes[Lane.idFor(tr.roadId, tr.fwd, k)];
         if (target == null || !_laneChangeOk(v, target, gapNow, lead)) continue;
+        _clearWait(v);
         tr.vehicles.remove(v);
         target.vehicles.add(v);
         v.lat += (k - tr.laneIdx) * -7.0; // eski polosa markazidan yangisiga qarab silliq o'tadi
@@ -475,7 +483,7 @@ class TrafficSim {
       for (final l in graph.incoming[node] ?? const <Lane>[]) {
         if (_rank(l) <= _rank(c.from)) continue;
         for (final u in l.vehicles) {
-          if (l.length - u.s > 45) continue;
+          if (l.length - u.s > max(45.0, u.v * 2.5)) continue; // yuqori tezlikda masofa ortadi
           final nx = _next(l, u.routeIdx, u.route);
           final nc = nx?.track;
           if (nc is Connector && c.conflicts(nc)) return false;
@@ -494,7 +502,8 @@ class TrafficSim {
     }
     // adolat: uzoq kutgan mashinaga yo'l beriladi
     for (final w in sg != null ? const <Vehicle>{} : (_waiters[node] ?? const <Vehicle>{})) {
-      if (identical(w, v) || w.pendingConn == null) continue;
+      // eskirgan kutuvchilar (o'chirilgan, boshqa polosaga o'tgan) adolat tekshiruvida qatnashmaydi
+      if (identical(w, v) || w.removed || w.pendingConn == null || !identical(w.track, w.pendingConn!.from)) continue;
       if (w.wait > 3 && w.wait > v.wait && c.conflicts(w.pendingConn!)) return false;
     }
     v.holdConn = c;
@@ -647,6 +656,23 @@ class TrafficSim {
     if (hc == null) return;
     _holders[hc.nodeId]?.remove(v);
     v.holdConn = null;
+  }
+
+  void _clearWait(Vehicle v) {
+    final pc = v.pendingConn;
+    if (pc != null) _waiters[pc.nodeId]?.remove(v);
+    v.pendingConn = null;
+  }
+
+  /// Invariantlar: _holders faqat haqiqatan ruxsat ushlab turganlarni, _waiters faqat haqiqiy kutayotganlarni saqlaydi.
+  void _sanitize() {
+    for (final e in _holders.entries) {
+      e.value.removeWhere((v) => v.removed || v.holdConn == null || v.holdConn!.nodeId != e.key);
+    }
+    for (final e in _waiters.entries) {
+      e.value.removeWhere(
+          (v) => v.removed || v.pendingConn == null || v.holdConn != null || v.pendingConn!.nodeId != e.key);
+    }
   }
 
   void _remove(Vehicle v) {

@@ -19,7 +19,10 @@ class AppErr {
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  FlutterError.onError = (d) => AppErr.last = d.exceptionAsString();
+  FlutterError.onError = (d) {
+    AppErr.last = d.exceptionAsString();
+    FlutterError.presentError(d); // standart hisobot ham saqlanadi
+  };
   ui.PlatformDispatcher.instance.onError = (e, s) {
     AppErr.last = '$e';
     return true;
@@ -62,9 +65,10 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   final AudioPlayer _music = AudioPlayer();
   bool _musicOn = false;
   bool _musicBusy = false;
+  bool _musicFailed = false; // audio ishlamasa qayta urinmaymiz
 
   Future<void> _syncMusic() async {
-    if (_musicBusy) return;
+    if (_musicBusy || _musicFailed) return;
     final want = game.soundOn;
     if (want == _musicOn) return;
     _musicBusy = true;
@@ -76,10 +80,10 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
       } else {
         await _music.pause();
       }
+      _musicOn = want; // faqat muvaffaqiyatdan keyin
     } catch (_) {
-      // audio ishlamasa o'yin davom etadi
+      _musicFailed = true; // audio ishlamasa o'yin davom etadi
     } finally {
-      _musicOn = want;
       _musicBusy = false;
     }
   }
@@ -121,6 +125,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   }
 
   void _toast(String text) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context)
       ..clearSnackBars()
       ..showSnackBar(SnackBar(content: Text(L.t(text)), duration: const Duration(seconds: 2)));

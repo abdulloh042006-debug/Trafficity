@@ -62,4 +62,23 @@ void main() {
     final g = LaneGraph(n)..rebuild();
     expect(g.lanesOf(r.id).length, 4);
   });
+
+  test('uchga juda yaqin bo\'linishda yo\'l yo\'qolmaydi', () {
+    final n = RoadNetwork();
+    n.connectRoad(line(0, 0, 300, 0));
+    final id = n.roads.keys.first;
+    final before = n.roads.length;
+    n.splitRoadAt(id, const Offset(2.5, 0)); // uchdan 2.5 birlik: bo'linmasligi kerak
+    expect(n.roads.length, before);
+  });
+
+  test('juda qisqa yo\'l tarmoqni o\'zgartirmaydi', () {
+    final n = RoadNetwork();
+    n.connectRoad(line(0, 0, 300, 0));
+    final roads = n.roads.length;
+    final nodes = n.nodes.length;
+    n.connectRoad([const Offset(150, 0), const Offset(153, 0)]);
+    expect(n.roads.length, roads);
+    expect(n.nodes.length, nodes);
+  });
 }

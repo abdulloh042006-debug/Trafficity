@@ -223,10 +223,12 @@ class RoadNetwork {
 
   /// Yo'lni p nuqtada ikkiga bo'ladi va chorraha tugunini qaytaradi.
   RoadNode splitRoadAt(int roadId, Offset p) {
-    final r = roads[roadId]!;
+    final r = roads[roadId];
+    if (r == null) return _newNode(p);
     for (final nid in [r.a, r.b]) {
-      final n = nodes[nid]!;
-      if ((n.pos - p).distance < 2.0) return n;
+      final n = nodes[nid];
+      // 3.5: bo'lak 3 dan qisqa bo'lib yo'qolib qolmasligi uchun uchga yaqin nuqtada bo'linmaydi
+      if (n != null && (n.pos - p).distance < 3.5) return n;
     }
     var bi = 1;
     var bd = double.infinity;
@@ -242,8 +244,12 @@ class RoadNetwork {
     }
     final left = [...r.pts.sublist(0, bi), bp];
     final right = [bp, ...r.pts.sublist(bi)];
-    final na = nodes[r.a]!;
-    final nb = nodes[r.b]!;
+    final na = nodes[r.a];
+    final nb = nodes[r.b];
+    if (na == null || nb == null) return _newNode(bp);
+    // o'chirishdan oldin tekshiramiz: qisqa bo'lak hosil bo'lsa, bo'lmaymiz (yo'l yo'qolmasin)
+    if (polyLength(left) < 3.5) return na;
+    if (polyLength(right) < 3.5) return nb;
     _detach(r);
     final mid = _newNode(bp);
     _addNodes(left, na, mid, oneWay: r.oneWay, type: r.type, layer: r.layer);
@@ -284,6 +290,8 @@ class RoadNetwork {
   ) {
     final n = nodes[nodeId];
     if (n == null || n.roads.length < 3) return "Kamida 3 ta yo'l kerak";
+    if (!radius.isFinite || radius < 10) return "Aylana radiusi yaroqsiz";
+    if (!budget.isFinite) return "Mablag' yetarli emas";
     final c = n.pos;
     final cutDist = radius + 16;
     final arms = <_Arm>[];
@@ -373,7 +381,7 @@ class RoadNetwork {
   /// Bir-biriga juda yaqin (dist dan kam) tugunlarni bitta chorrahaga birlashtiradi,
   /// ular orasidagi qisqa yo'l bo'lagi yo'qoladi. Aylana chorraha tugunlariga tegmaydi.
   void mergeCloseNodes([double dist = 30]) {
-    for (var guard = 0; guard < 30; guard++) {
+    for (var guard = 0; guard < 100; guard++) {
       RoadNode? keep;
       RoadNode? drop;
       final list = nodes.values.toList();
@@ -401,7 +409,7 @@ class RoadNetwork {
   /// boshqa yo'llarni kesib o'tsa, har bir kesishuvda chorraha hosil bo'ladi.
   void connectRoad(List<Offset> raw, {int type = 0, int layer = 0}) {
     final path = List<Offset>.of(_dedupe(raw));
-    if (path.length < 2) return;
+    if (path.length < 2 || polyLength(path) < 8) return; // tarmoqni o'zgartirishdan oldin tekshiramiz
 
     final startNode = _attachEnd(path.first, layer);
     final endNode = _attachEnd(path.last, layer);
