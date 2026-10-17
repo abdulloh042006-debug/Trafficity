@@ -1,46 +1,78 @@
-# RoadFlow City — project state for Claude (read this first)
+# CLAUDE.md — RoadFlow City (Trafficity klon) — YAGONA MANBA, AVVAL SHUNI O'QING
 
-User: Abdulloh (Uzbek speaker). Reply in Uzbek, short and concrete. Repo: https://github.com/abdulloh042006-debug/Trafficity (public, branch main).
-Never store or print tokens. A token was once pasted in chat: it must be revoked; ask for a fresh one only when a push is needed.
+## Loyiha kimligi (boshqa loyihalar bilan adashtirmang)
+Bu **RoadFlow City**: Flutter + Flame'da Android o'yini, tepadan ko'rinadigan yo'l qurilishi va transport simulyatsiyasi
+(Steam'dagi Trafficity'dan ilhomlangan, original). Egasi: Abdulloh. Bu MUU LMS, K-Quest, Phone Mouse, Acoustic3D,
+KoreyaViza EMAS. Repo: https://github.com/abdulloh042006-debug/Trafficity (public, branch `main`). Til: foydalanuvchi bilan o'zbekcha.
 
-## Purpose
-Top-down traffic + city simulation for Android, inspired by Trafficity (Steam). Flutter + Flame, custom canvas rendering, microscopic traffic (IDM), lane graph, A* routing. Original assets only.
+## Tejamkorlik qoidalari (kredit tugamasligi uchun, majburiy)
+- Fayllarni to'liq chiqarib o'qima: `grep -n`, `sed -n 'a,bp'`. O'zgarmagan faylni qayta o'qima. Avval shu fayl, keyin kerakli joy.
+- O'zgartirish: Python skriptda `rep(s, eski, yangi)` + `count==1` tekshiruvi (anchor topilmasa to'xtaydi), keyin qavs-balans tekshiruvi.
+- Bir bosqich = bitta push. Hujjat o'zgarishi uchun commit xabarida `[skip ci]`. CI natijasini ko'pi bilan 2 marta (har biri <=60 s) tekshir, bo'lmasa foydalanuvchidan so'ra.
+- Python sinovlari <=60 s (timeout 100). Uzoq simulyatsiyani kichraytir (N=10). 300 s dan oshgan buyruq ish bermaydi.
+- present_files faqat yakuniy yuklab olinadigan fayl uchun (APK/arxiv); har fayl uchun emas.
+- Javob qisqa: nima qilindi, nima tekshirilmagan, keyingi qadam. Ortiqcha reja/hisobot yozma.
+- Yangi funksiya qo'shishdan oldin foydalanuvchi so'ragan narsa ekanini tekshir ("ortiqcha yangilik qo'shma" degan edi).
 
-## Layout (lib/)
-- main.dart: UI shell, HUD, bottom toolbar, menu, dialogs, music (audioplayers), error chip (AppErr)
-- l10n.dart: UZ/RU/EN phrase table; Uzbek source text, L.t() translates by phrase
-- game/road_game.dart: FlameGame; camera (pan/zoom/rotate), pointer tools, snapping, undo/redo, grid tool, save/load (SharedPreferences, 3 slots + autosave), economy tick, ideal city planner, rendering
-- game/road_network.dart: nodes/roads topology, connectRoad (auto split/crossings), mergeCloseNodes, roundabout builder
-- game/lane_graph.dart: directional lanes (id = roadId*8 + (fwd?0:4) + lane), connectors, building access, A* (findRoute)
-- game/traffic_sim.dart: vehicles, spawning, IDM, junction grants (conflict geometry), priority roads, signals, lane changes
-- game/signal.dart (fixed/adaptive), traffic_model.dart (Track/Lane/Connector/Vehicle), terrain.dart (biomes), building.dart
-- test/network_test.dart (Dart unit tests, never executed), ci/debug.keystore (fixed signing key)
+## Muhit va ishlash tartibi
+- Bu muhitda Flutter/Dart YO'Q: kodni ishga tushirib bo'lmaydi. Kompilyatsiyani faqat GitHub Actions tekshiradi (`flutter build apk`).
+- Mantiqni Python'da modellashtirish mumkin (foydalanuvchi ruxsat bergan): geometriya/marshrut/rejalashtirish.
+- Loyiha nusxasi: `/mnt/user-data/outputs/roadflow_city/` (repo bilan bir xil). Push: vaqtinchalik klon, `cp -r`, `git checkout HEAD -- .github`
+  (token `workflow` ruxsatisiz: workflow faylini o'zgartirib push qilib bo'lmaydi), commit, push, token URL'dan olib tashlanadi.
+- Token KODGA/HUJJATGA/XOTIRAGA YOZILMAYDI. Foydalanuvchi uni chatda oshkor qilgan; o'chirib yangisini yaratishi tavsiya etilgan.
+- APK: Actions -> oxirgi "Build APK" -> Artifacts `roadflow-apk`. Imzo har build'da o'zgaradi: eski ilovani o'chirib o'rnatish kerak
+  (doimiy imzo `ci/debug.keystore` tayyor, lekin workflow'ni foydalanuvchi qo'lda yangilashi kerak, hali yangilamagan).
 
-## Key decisions
-- Road types: 0 local (1 lane/dir, 40 km/h), 1 arterial (2 lanes, 60), 2 highway (3 lanes, 100, never crosses at grade). Layer 1 = overpass/bridge (no crossing junctions; ends connect = ramps).
-- Buildings connect via front point snap (screen-based 34 px radius). Access = nearest lane within 100 units; goals include all lanes of that road.
-- Satisfaction = 0.37 access + 0.20 commute + 0.17 flow + 0.07 trip success + 0.11 ecology + 0.08 supply.
-- idealCityOnStart = true (road_game.dart): app opens with a generated city; set false for an empty start when the game is finished.
-- Coordinates: one toWorld/worldToScreen pair (math verified numerically). "Debug" button shows touch/world/back/dpr.
+## Arxitektura (lib/)
+- `main.dart`: HUD, pastki panel, bosh menyu, sozlamalar, slotlar, yangi o'yin oynasi (xarita ko'rinishi), musiqa (audioplayers), xato chipi.
+- `l10n.dart`: UZ/RU/EN, o'zbekcha matnlar jadval bo'yicha tarjima qilinadi (`L.t`). Yangi matn qo'shsang jadvalga ham qo'sh.
+- `game/road_game.dart` (eng katta): kamera (zoom/pan/burish), pointer boshqaruvi, asboblar (to'g'ri, egri, to'r, svetofor, aylana, o'chirish,
+  bino, ma'lumot), chizish, saqlash/yuklash (3 slot + avto), undo/redo, iqtisod/mamnuniyat/daraja, ekologiya, tayyor shahar, debug.
+- `game/road_network.dart`: yo'l topologiyasi (tugun/yo'l bo'lagi), connectRoad (kesishuvda bo'lish), splitRoadAt, mergeCloseNodes,
+  buildRoundabout, qatlamlar (layer 1 = estakada), tur (0 oddiy, 1 katta=2 polosa, 2 magistral=3 polosa).
+- `game/lane_graph.dart`: polosalar (id = roadId*8 + (fwd?0:4) + lane), connectors, A* marshrut, bino kirishi (Access.goals).
+- `game/traffic_sim.dart`: IDM, chorraha ruxsati (_tryGrant, geometrik to'qnashuv, adolat), ustuvor yo'llar (_minorAt), svetofor (fixed + adaptiv),
+  polosa almashtirish, talab (uy->do'kon/zavod, yuk mashinasi), do'kon zaxirasi, mashinalarni yo'l o'zgarganda ko'chirish (_relocate).
+- `game/{traffic_model,signal,terrain,building}.dart`; `test/network_test.dart` (ishga tushirilmagan); `ci/debug.keystore`; `assets/{audio,icon}`.
+- Konstantalar: dunyo 3200x3200 birlik, 1 birlik ~0.5 m; polosa 7; yo'l eni 14; mashina 9 (yuk 22); maxVehicles 100+25*daraja (<=250).
 
-## Status
-IMPLEMENTED AND VERIFIED (user saw it on device, said "all good" up to stage 13): terrain/biomes, camera pan/zoom, straight/curved roads, junction splitting, vehicles + queues, satisfaction + levels, heatmap, roundabout, signals, save/load, language switch.
-IMPLEMENTED BUT NOT VERIFIED ON DEVICE (CI compile OK at 9c47e64): ideal city default start, priority junctions (minor road stops/yields), adaptive signal, highway type, lane changing, main menu/settings/map preview, background music, audit fixes (stale waiters, safe split), 2-lane road lane preference fix, estakada/ramps in practice.
-INCOMPLETE: production chain (only shop stock/deliveries), ecology is simple, tutorial is 8 steps, tests exist but never run.
-NOT IMPLEMENTED: lane add/upgrade tool, stop/yield sign objects, manual signal phase editor, 5000+ vehicles, profiling suite, accessibility beyond colors/text size.
-BLOCKED (needs user): GitHub token has no `workflow` scope, so .github/workflows/build-apk.yml (remote still old) must be replaced by the user in the web UI: adds fixed signing (ci/debug.keystore), app name "RoadFlow City", launcher icons step, `flutter test`. Until then APK name is roadflow_city and each build has a new signature (uninstall old app first).
+## Holat (dalil bilan)
+**IMPLEMENTED AND VERIFIED** (foydalanuvchi skrinshotlari / telefon): xarita va relyef yuklanadi; kamera surish/zoom; to'g'ri va egri yo'l;
+kesishuvda chorraha bo'linishi; mashinalar yuradi va navbat hosil qiladi; mamnuniyat va daraja oshishi; tirbandlik xaritasi; aylana chorraha;
+APK o'rnatiladi.
+**IMPLEMENTED BUT NOT VERIFIED** (faqat CI kompilyatsiyasi o'tgan): xarita burish; binoga avtomatik tushish (ekran pikselidagi radius); tugunlarni
+birlashtirish; undo/redo; 3 saqlash uyasi; to'r asbobi; grafiklar + "eng og'ir joy"; ekologiya; do'kon zaxirasi/ta'minot; estakada/ko'prik;
+katta yo'l va magistral; polosa almashtirish; ustuvor yo'llar; adaptiv svetofor; TAYYOR SHAHAR (default); bosh menyu; musiqa; UZ/RU/EN;
+ko'r odamlar palitrasi; matn hajmi; debug overlay (barmoq<->dunyo); audit tuzatishlari (eskirgan kutuvchilar, xavfsiz bo'lish).
+**INCOMPLETE**: o'rgatish (8 vazifa); iqtisod zanjiri (ishchilar/ishlab chiqarish yo'q); ishlash o'lchovi (faqat debug fps/sim ms/marshrut soni).
+**NOT IMPLEMENTED**: polosa qo'shish/yo'l yangilash asbobi; stop/yield belgisi asbobi (ustuvorlik avtomatik); svetofor fazalarini qo'lda tahrirlash;
+5000+ agent; piyoda/avtobus; replay; haqiqiy audio effektlar (faqat tizim tovushi).
+**BLOCKED** (foydalanuvchi kerak): workflow YAML yangilash (nom "RoadFlow City", doimiy imzo, `flutter test`); telefonda sinash.
 
-## Known risks
-Gridlock cycles possible (no teleport by design; stuck vehicles reroute after 25 s). Performance unmeasured beyond debug fps/sim-ms chip. Lane-change and priority logic are untested at runtime.
+## Tayyor shahar
+`idealCityOnStart = true` (`road_game.dart`): ochilganda 2 katta yo'l + aylana + parallel yo'l + svetoforli chorraha + hamma binoga mahalliy yo'l,
+byudjet 1500/1000/700 (qiyinlikka qarab). Reja Python'da 300 tasodifiy joylashuvda sinalgan (asosiy yo'llar doim topildi; yo'l izlash
+kuchaytirilgach 10 shaharda 100% bino ulandi). Dart kodining o'zi telefonda sinalmagan; xatoda bo'sh xaritada ochiladi + "Tayyor shahar qurilmadi" xabari.
+**O'yin 100% tugaganda "0 qilish": shu konstantani `false` qiling.**
 
-## Next steps (priority)
-1. Get the user's device feedback on the newest APK (Actions -> latest run -> Artifacts roadflow-apk); fix reported bugs.
-2. If asked: lane add/upgrade tool, supply chain depth, profiling.
-3. When the game is 100% done: set idealCityOnStart = false.
+## Ma'lum xavflar
+Chorrahada qotib qolish (gridlock) telefonda tasdiqlanmagan; polosa almashtirish va ustuvorlik mantiqi sinalmagan; tahrirda mashinalar yo'qolishi
+("Yo'qotilgan" chipi); 250+ mashinada ishlash o'lchanmagan; `connectRoad` kesishuvlari juda yaqin nuqtalarda; test faylidagi testlar hali ishga tushmagan.
 
-## How to work (credit rules — the chat history re-reads every turn, so keep turns cheap)
-- Do not poll CI in loops. Push, say so, check CI once at the next turn.
-- Do not print whole files. Use grep -n and small ranges; patch with Python str.replace + count asserts, batch several changes per push.
-- No simulations over ~60 s, no giant outputs. Python tests are fine (user approved); runtime/device tests go to the user's agents as copy-ready prompts.
-- Preserve user work; never rewrite history; push to main only fast-forward. Push recipe: clone with token from env, copy project, `git checkout HEAD -- .github`, commit, push, reset remote URL, delete clone.
-- Before editing a file section, re-read it (anchors drift). Bracket-balance check after edits.
+## Keyingi qadamlar (ustuvorlik tartibida)
+1. Foydalanuvchi oxirgi APK'ni o'rnatadi va xatolarni (skrinshot, "Debug" raqamlari, qizil "Xato:" chip) yuboradi -> ildiz sababni topib tuzat.
+2. Foydalanuvchi workflow YAML'ni qo'yadi (README oxiridagi/yaqinda yuborilgan blok: keystore + icon/name + `flutter test`).
+3. Telefon natijalariga ko'ra: qotib qolish, tayyor shahar, polosa almashtirish tuzatishlari.
+4. Ishlash: 250 mashinada fps/sim ms (Debug) o'lcha; faqat o'lchovga qarab optimallashtir.
+5. Faqat so'ralsa: polosa qo'shish/yangilash asbobi, stop/yield, svetofor fazalari.
+
+## Sinov (foydalanuvchi/AI agent bajaradi, Flutter bor muhitda)
+`flutter pub get && flutter analyze && flutter test && flutter build apk --release`. Kutiladi: analyze xatosiz, `test/network_test.dart` 8 ta test PASS,
+APK yig'iladi. Xato bo'lsa: to'liq chiqishni yuboring (PASS/FAIL/BLOCKED/NOT TESTED). Telefonda: ochilganda tayyor shahar, mashinalar yuradi,
+"Debug" yoqilganda qizil va sariq halqa ustma-ust, Ortga/Oldinga, To'r, Estakada, Magistral, til tugmasi, musiqa.
+
+## Yangi sessiya uchun qisqa prompt (nusxa oling)
+"Sen RoadFlow City (Flutter+Flame, Android traffic o'yini) dasturchisisan. Avval repo ildizidagi CLAUDE.md ni o'qi (yagona manba), keyin faqat
+kerakli fayl joylarini grep/sed bilan ko'r. Tejamkor bo'l: uzun chiqish, ortiqcha push/CI kutish, uzoq sinov yo'q. Dart ishga tushmaydi: mantiqni
+Python'da <=60 s sinab ko'r, kompilyatsiyani CI tekshiradi. Faqat foydalanuvchi so'ragan ishni qil, yangi funksiya qo'shma. 'Keyingi qadamlar'
+dagi eng yuqori tugallanmagan vazifadan davom et, o'zbekcha qisqa yoz va nima tekshirilmaganini ochiq ayt."
