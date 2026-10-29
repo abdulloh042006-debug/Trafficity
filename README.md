@@ -140,6 +140,14 @@ flutter build apk --release  # build/app/outputs/flutter-apk/app-release.apk
 - Pastki panel: Ovoz, Ranglar, Hajm, Til, Debug, Slotlar, Yangi tugmalari olib tashlandi (menyu va sozlamalarda bor; Debug sozlamalarga ko'chdi). Tugmalar guruhlarga ajratildi
 - Ortiqcha animatsiyalar olib tashlandi: bosilganda to'lqin (splash) va yuklanishdagi aylanuvchi indikator
 
+## 19-bosqich: chorrahada silliq burilish (tayyor, headless sinovdan o'tgan, telefonda emas)
+- Sabab: polosalar tugun markazida tugardi, burilish yo'li esa 3.5 birlikli kichik egri bo'lib, boshlang'ich/oxirgi yo'nalishi mashina yo'nalishiga mos kelmasdi (o'ng burilishda mashina halqa bo'lib aylanardi). Ideal shaharda 248 burilishdan 236 tasining boshlang'ich yo'nalishi 20° dan ko'p og'gan edi
+- Polosalar chorraha oldida to'xtash chizig'igacha qisqartiriladi (chorraha o'lchamiga qarab: yo'l yarim eni + 3; tupikda kesilmaydi; qisqa yo'lda uzunlikning 25% igacha). Svetoforlar ham shu chiziqda turadi
+- Burilish: urinma chiziqlar kesishgan nuqtada kvadratik Bezye (o'ng/chap), aks holda kubik (to'g'ri, U-burilish)
+- Yo'l uchi boshqa yo'lga ulanganda qolgan keskin burchaklar va siniq mahalliy yo'llar polosa chizig'ida yumaloqlanadi; keskin egri yo'llar zichroq tanlanadi
+- Binoga kirish nuqtasi qisqa polosada xavfsiz (clamp xatosi yo'q); chorrahada yo'l o'zgarsa mashinalar kengroq radiusda ko'chiriladi
+- O'lchov (3 ta shahar, 125 mashina, 8 daqiqa): burilishda 28° dan katta sakrashlar ~400-670 -> 4-7; yetib borgan safarlar 326 -> 416. Tirbandlik (mashinalarning ~85% i to'xtab qolishi) ikkala variantda ham bor: u alohida muammo (chiqish polosasida joy yo'qligi)
+
 ## Hali yo'q
 Aylanada kiruvchiga "yo'l bering" qoidasi (hozir kim birinchi so'rasa), ko'p polosali yo'llar, magistral va ramplar, iqtisodiyot va darajalar, qo'lda svetofor fazalarini tahrirlash.
 

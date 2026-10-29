@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'dart:ui';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -80,5 +81,49 @@ void main() {
     n.connectRoad([const Offset(150, 0), const Offset(153, 0)]);
     expect(n.roads.length, roads);
     expect(n.nodes.length, nodes);
+  });
+
+  double angDiff(Offset p, Offset q) {
+    final d = (atan2(p.dy, p.dx) - atan2(q.dy, q.dx)).abs();
+    return d > pi ? 2 * pi - d : d;
+  }
+
+  test('chorrahadagi burilishlar silliq: boshi/oxiri polosa yo\'nalishiga mos, halqa yo\'q', () {
+    final n = RoadNetwork();
+    n.connectRoad(line(0, 200, 400, 200));
+    n.connectRoad(line(200, 0, 200, 400));
+    final g = LaneGraph(n)..rebuild();
+    final node = n.nodes.values.firstWhere((x) => x.roads.length == 4);
+    var count = 0;
+    for (final a in g.incoming[node.id]!) {
+      for (final b in g.outgoing[node.id]!) {
+        if (a.roadId == b.roadId) continue; // U-burilish
+        final c = g.connector(a, b);
+        count++;
+        final dA = a.dirAt(a.length), dB = b.dirAt(0);
+        expect(angDiff(c.dirAt(0), dA), lessThan(0.35), reason: 'boshi ${a.id}->${b.id}');
+        expect(angDiff(c.dirAt(c.length), dB), lessThan(0.35), reason: 'oxiri ${a.id}->${b.id}');
+        var rot = 0.0;
+        for (var i = 2; i < c.pts.length; i++) {
+          rot += angDiff(c.pts[i] - c.pts[i - 1], c.pts[i - 1] - c.pts[i - 2]);
+        }
+        expect(rot, lessThan(angDiff(dA, dB) + 0.3), reason: 'halqa ${a.id}->${b.id}');
+      }
+    }
+    expect(count, 12);
+  });
+
+  test('polosa chorraha oldida to\'xtash chizig\'igacha qisqaradi, tupikda esa kesilmaydi', () {
+    final n = RoadNetwork();
+    n.connectRoad(line(0, 200, 400, 200));
+    n.connectRoad(line(200, 0, 200, 400));
+    final g = LaneGraph(n)..rebuild();
+    final node = n.nodes.values.firstWhere((x) => x.roads.length == 4);
+    final dead = n.nodes.values.firstWhere((x) => x.roads.length == 1);
+    for (final l in g.lanes.values) {
+      if (l.toNode == node.id) expect(l.trimB, greaterThan(5));
+      if (l.toNode == dead.id) expect(l.trimB, 0);
+      expect((l.pts.last - n.nodes[l.toNode]!.pos).distance, l.toNode == node.id ? greaterThan(8) : lessThan(8));
+    }
   });
 }

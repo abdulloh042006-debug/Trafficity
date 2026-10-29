@@ -111,7 +111,10 @@ class RoadNetwork {
       return [for (var i = 0; i <= n; i++) Offset.lerp(a, b, i / n)!];
     }
     final approx = (c - a).distance + (b - c).distance;
-    final n = max(2, (approx / 10).ceil());
+    // keskin egrilikda ham siniq nuqtalar orasidagi burilish kichik bo'lsin (mashinalar silliq yursin)
+    var turn = (atan2(b.dy - c.dy, b.dx - c.dx) - atan2(c.dy - a.dy, c.dx - a.dx)).abs();
+    if (turn > pi) turn = 2 * pi - turn;
+    final n = min(48, max(2, max((approx / 10).ceil(), (turn / 0.15).ceil())));
     return [for (var i = 0; i <= n; i++) _bez(a, b, c, i / n)];
   }
 

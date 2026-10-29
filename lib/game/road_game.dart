@@ -488,10 +488,34 @@ class RoadGame extends FlameGame {
     return inH && inV ? p : null;
   }
 
+  /// Siniq chiziq; sinish nuqtalari yumaloqlanadi (mashina tirsakda keskin burilmasin).
   List<Offset> _poly(List<Offset> w) {
     final out = <Offset>[w.first];
+    var from = w.first;
     for (var i = 1; i < w.length; i++) {
-      out.addAll(RoadNetwork.sample(w[i - 1], w[i], null).skip(1));
+      final v = w[i];
+      if (i == w.length - 1) {
+        out.addAll(RoadNetwork.sample(from, v, null).skip(1));
+        break;
+      }
+      final d1 = (v - w[i - 1]).distance, d2 = (w[i + 1] - v).distance;
+      final d = min(14.0, 0.4 * min(d1, d2));
+      if (d < 3) {
+        out.addAll(RoadNetwork.sample(from, v, null).skip(1));
+        from = v;
+        continue;
+      }
+      final a = v + (w[i - 1] - v) / d1 * d;
+      final b = v + (w[i + 1] - v) / d2 * d;
+      out.addAll(RoadNetwork.sample(from, a, null).skip(1));
+      for (var k = 1; k <= 6; k++) {
+        final t = k / 6, q = 1 - t;
+        out.add(Offset(
+          q * q * a.dx + 2 * q * t * v.dx + t * t * b.dx,
+          q * q * a.dy + 2 * q * t * v.dy + t * t * b.dy,
+        ));
+      }
+      from = b;
     }
     return out;
   }

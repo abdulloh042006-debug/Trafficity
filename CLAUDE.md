@@ -15,7 +15,7 @@ KoreyaViza EMAS. Repo: https://github.com/abdulloh042006-debug/Trafficity (publi
 - Yangi funksiya qo'shishdan oldin foydalanuvchi so'ragan narsa ekanini tekshir ("ortiqcha yangilik qo'shma" degan edi).
 
 ## Muhit va ishlash tartibi
-- Flutter bu muhitda oldindan YO'Q, lekin o'rnatsa bo'ladi (proxy orqali ishladi): scratchpad'da `git clone --depth 1 -b stable https://github.com/flutter/flutter.git`, so'ng `flutter pub get` (~3 daqiqa; PATH ga `flutter/bin`, `CI=true`). Shunda `flutter analyze` va `flutter test` (8 ta test PASS) ishlaydi. Renderni tekshirish: vaqtinchalik `test/zz_*_test.dart` da `testWidgets` + `tester.runAsync`, `RoadGame().render(canvas)` yoki `RepaintBoundary.toImage` -> PNG (shrift: `bin/cache/artifacts/material_fonts` dan `FontLoader`); keyin faylni o'chiring. Telefon sinovi o'rnini baribir bosmaydi.
+- Flutter bu muhitda oldindan YO'Q, lekin o'rnatsa bo'ladi (proxy orqali ishladi): scratchpad'da `git clone --depth 1 -b stable https://github.com/flutter/flutter.git`, so'ng `flutter pub get` (~3 daqiqa; PATH ga `flutter/bin`, `CI=true`). Shunda `flutter analyze` va `flutter test` (10 ta test PASS) ishlaydi. Renderni tekshirish: vaqtinchalik `test/zz_*_test.dart` da `testWidgets` + `tester.runAsync`, `RoadGame().render(canvas)` yoki `RepaintBoundary.toImage` -> PNG (shrift: `bin/cache/artifacts/material_fonts` dan `FontLoader`); keyin faylni o'chiring. Telefon sinovi o'rnini baribir bosmaydi.
 - Mantiqni Python'da modellashtirish mumkin (foydalanuvchi ruxsat bergan): geometriya/marshrut/rejalashtirish.
 - Loyiha nusxasi: `/mnt/user-data/outputs/roadflow_city/` (repo bilan bir xil). Push: vaqtinchalik klon, `cp -r`, `git checkout HEAD -- .github`
   (token `workflow` ruxsatisiz: workflow faylini o'zgartirib push qilib bo'lmaydi), commit, push, token URL'dan olib tashlanadi.
@@ -33,14 +33,14 @@ KoreyaViza EMAS. Repo: https://github.com/abdulloh042006-debug/Trafficity (publi
 - `game/lane_graph.dart`: polosalar (id = roadId*8 + (fwd?0:4) + lane), connectors, A* marshrut, bino kirishi (Access.goals).
 - `game/traffic_sim.dart`: IDM, chorraha ruxsati (_tryGrant, geometrik to'qnashuv, adolat), ustuvor yo'llar (_minorAt), svetofor (fixed + adaptiv),
   polosa almashtirish, talab (uy->do'kon/zavod, yuk mashinasi), do'kon zaxirasi, mashinalarni yo'l o'zgarganda ko'chirish (_relocate).
-- `game/{traffic_model,signal,terrain,building}.dart`; `test/network_test.dart` (ishga tushirilmagan); `ci/debug.keystore`; `assets/{audio,icon}`.
+- `game/{traffic_model,signal,terrain,building}.dart`; `test/network_test.dart` (10 test, PASS); `ci/debug.keystore`; `assets/{audio,icon}`.
 - Konstantalar: dunyo 3200x3200 birlik, 1 birlik ~0.5 m; polosa 7; yo'l eni 14; mashina 9 (yuk 22); maxVehicles 100+25*daraja (<=250).
 
 ## Holat (dalil bilan)
 **IMPLEMENTED AND VERIFIED** (foydalanuvchi skrinshotlari / telefon): xarita va relyef yuklanadi; kamera surish/zoom; to'g'ri va egri yo'l;
 kesishuvda chorraha bo'linishi; mashinalar yuradi va navbat hosil qiladi; mamnuniyat va daraja oshishi; tirbandlik xaritasi; aylana chorraha;
 APK o'rnatiladi.
-**VERIFIED HEADLESS** (flutter analyze + render PNG, telefonda emas): estakada rampasi (uchi yerga silliq tushadi, soya/chekka balandlik bilan o'sadi, `_drawElevated`), yer usti mashinalari estakada ostida, punktir yo'l belgilari, ixcham yuqori panel, 8 unit test.
+**VERIFIED HEADLESS** (flutter analyze + render PNG, telefonda emas): chorrahada silliq burilish (polosa to'xtash chizig'igacha qisqaradi, urinmali Bezye burilish, `LaneGraph._turnPts`/`_setback`/`smoothCorners`; 10 unit test), estakada rampasi (uchi yerga silliq tushadi, soya/chekka balandlik bilan o'sadi, `_drawElevated`), yer usti mashinalari estakada ostida, punktir yo'l belgilari, ixcham yuqori panel, 8 unit test.
 **IMPLEMENTED BUT NOT VERIFIED** (faqat CI kompilyatsiyasi o'tgan): xarita burish; binoga avtomatik tushish (ekran pikselidagi radius); tugunlarni
 birlashtirish; undo/redo; 3 saqlash uyasi; to'r asbobi; grafiklar + "eng og'ir joy"; ekologiya; do'kon zaxirasi/ta'minot; estakada/ko'prik;
 katta yo'l va magistral; polosa almashtirish; ustuvor yo'llar; adaptiv svetofor; TAYYOR SHAHAR (default); bosh menyu; musiqa; UZ/RU/EN;
@@ -57,8 +57,8 @@ kuchaytirilgach 10 shaharda 100% bino ulandi). Dart kodining o'zi telefonda sina
 **O'yin 100% tugaganda "0 qilish": shu konstantani `false` qiling.**
 
 ## Ma'lum xavflar
-Chorrahada qotib qolish (gridlock) telefonda tasdiqlanmagan; polosa almashtirish va ustuvorlik mantiqi sinalmagan; tahrirda mashinalar yo'qolishi
-("Yo'qotilgan" chipi); 250+ mashinada ishlash o'lchanmagan; `connectRoad` kesishuvlari juda yaqin nuqtalarda; test faylidagi testlar hali ishga tushmagan.
+Chorrahada qotib qolish (gridlock) headless o'lchandi: ideal shaharda 125 mashina bilan ~8 daqiqada mashinalarning ~85% i to'xtab qoladi (asosiy sabab: chiqish polosasida joy yo'q, `_tryGrant` 'exit'; qisqa polosalar ko'p) — hal qilinmagan; polosa almashtirish va ustuvorlik mantiqi sinalmagan; tahrirda mashinalar yo'qolishi
+("Yo'qotilgan" chipi); 250+ mashinada ishlash o'lchanmagan; `connectRoad` kesishuvlari juda yaqin nuqtalarda.
 
 ## Keyingi qadamlar (ustuvorlik tartibida)
 1. Foydalanuvchi oxirgi APK'ni o'rnatadi va xatolarni (skrinshot, "Debug" raqamlari, qizil "Xato:" chip) yuboradi -> ildiz sababni topib tuzat.
@@ -68,7 +68,7 @@ Chorrahada qotib qolish (gridlock) telefonda tasdiqlanmagan; polosa almashtirish
 5. Faqat so'ralsa: polosa qo'shish/yangilash asbobi, stop/yield, svetofor fazalari.
 
 ## Sinov (foydalanuvchi/AI agent bajaradi, Flutter bor muhitda)
-`flutter pub get && flutter analyze && flutter test && flutter build apk --release`. Kutiladi: analyze xatosiz, `test/network_test.dart` 8 ta test PASS,
+`flutter pub get && flutter analyze && flutter test && flutter build apk --release`. Kutiladi: analyze xatosiz, `test/network_test.dart` 10 ta test PASS,
 APK yig'iladi. Xato bo'lsa: to'liq chiqishni yuboring (PASS/FAIL/BLOCKED/NOT TESTED). Telefonda: ochilganda tayyor shahar, mashinalar yuradi,
 "Debug" yoqilganda qizil va sariq halqa ustma-ust, Ortga/Oldinga, To'r, Estakada, Magistral, til tugmasi, musiqa.
 
