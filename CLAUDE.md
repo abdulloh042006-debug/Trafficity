@@ -15,7 +15,7 @@ KoreyaViza EMAS. Repo: https://github.com/abdulloh042006-debug/Trafficity (publi
 - Yangi funksiya qo'shishdan oldin foydalanuvchi so'ragan narsa ekanini tekshir ("ortiqcha yangilik qo'shma" degan edi).
 
 ## Muhit va ishlash tartibi
-- Bu muhitda Flutter/Dart YO'Q: kodni ishga tushirib bo'lmaydi. Kompilyatsiyani faqat GitHub Actions tekshiradi (`flutter build apk`).
+- Flutter bu muhitda oldindan YO'Q, lekin o'rnatsa bo'ladi (proxy orqali ishladi): scratchpad'da `git clone --depth 1 -b stable https://github.com/flutter/flutter.git`, so'ng `flutter pub get` (~3 daqiqa; PATH ga `flutter/bin`, `CI=true`). Shunda `flutter analyze` va `flutter test` (8 ta test PASS) ishlaydi. Renderni tekshirish: vaqtinchalik `test/zz_*_test.dart` da `testWidgets` + `tester.runAsync`, `RoadGame().render(canvas)` yoki `RepaintBoundary.toImage` -> PNG (shrift: `bin/cache/artifacts/material_fonts` dan `FontLoader`); keyin faylni o'chiring. Telefon sinovi o'rnini baribir bosmaydi.
 - Mantiqni Python'da modellashtirish mumkin (foydalanuvchi ruxsat bergan): geometriya/marshrut/rejalashtirish.
 - Loyiha nusxasi: `/mnt/user-data/outputs/roadflow_city/` (repo bilan bir xil). Push: vaqtinchalik klon, `cp -r`, `git checkout HEAD -- .github`
   (token `workflow` ruxsatisiz: workflow faylini o'zgartirib push qilib bo'lmaydi), commit, push, token URL'dan olib tashlanadi.
@@ -24,7 +24,7 @@ KoreyaViza EMAS. Repo: https://github.com/abdulloh042006-debug/Trafficity (publi
   (doimiy imzo `ci/debug.keystore` tayyor, lekin workflow'ni foydalanuvchi qo'lda yangilashi kerak, hali yangilamagan).
 
 ## Arxitektura (lib/)
-- `main.dart`: HUD, pastki panel, bosh menyu, sozlamalar, slotlar, yangi o'yin oynasi (xarita ko'rinishi), musiqa (audioplayers), xato chipi.
+- `main.dart`: ixcham HUD paneli (`_panel`/`_stat`), pastki asboblar paneli (faqat asboblar va qatlamlar; til/ovoz/ranglar/hajm/debug sozlamalarda, slotlar/yangi o'yin menyuda), bosh menyu, sozlamalar, slotlar, yangi o'yin oynasi (xarita ko'rinishi), musiqa (audioplayers), xato chipi. Animatsiyalar ataylab yo'q (splash o'chirilgan, yuklashda spinner yo'q).
 - `l10n.dart`: UZ/RU/EN, o'zbekcha matnlar jadval bo'yicha tarjima qilinadi (`L.t`). Yangi matn qo'shsang jadvalga ham qo'sh.
 - `game/road_game.dart` (eng katta): kamera (zoom/pan/burish), pointer boshqaruvi, asboblar (to'g'ri, egri, to'r, svetofor, aylana, o'chirish,
   bino, ma'lumot), chizish, saqlash/yuklash (3 slot + avto), undo/redo, iqtisod/mamnuniyat/daraja, ekologiya, tayyor shahar, debug.
@@ -40,6 +40,7 @@ KoreyaViza EMAS. Repo: https://github.com/abdulloh042006-debug/Trafficity (publi
 **IMPLEMENTED AND VERIFIED** (foydalanuvchi skrinshotlari / telefon): xarita va relyef yuklanadi; kamera surish/zoom; to'g'ri va egri yo'l;
 kesishuvda chorraha bo'linishi; mashinalar yuradi va navbat hosil qiladi; mamnuniyat va daraja oshishi; tirbandlik xaritasi; aylana chorraha;
 APK o'rnatiladi.
+**VERIFIED HEADLESS** (flutter analyze + render PNG, telefonda emas): estakada rampasi (uchi yerga silliq tushadi, soya/chekka balandlik bilan o'sadi, `_drawElevated`), yer usti mashinalari estakada ostida, punktir yo'l belgilari, ixcham yuqori panel, 8 unit test.
 **IMPLEMENTED BUT NOT VERIFIED** (faqat CI kompilyatsiyasi o'tgan): xarita burish; binoga avtomatik tushish (ekran pikselidagi radius); tugunlarni
 birlashtirish; undo/redo; 3 saqlash uyasi; to'r asbobi; grafiklar + "eng og'ir joy"; ekologiya; do'kon zaxirasi/ta'minot; estakada/ko'prik;
 katta yo'l va magistral; polosa almashtirish; ustuvor yo'llar; adaptiv svetofor; TAYYOR SHAHAR (default); bosh menyu; musiqa; UZ/RU/EN;
