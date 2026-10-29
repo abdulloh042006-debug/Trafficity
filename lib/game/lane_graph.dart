@@ -81,9 +81,104 @@ class LaneGraph {
 
   static const double laneOffset = 3.5;
 
+  /// Chorraha oldidagi to'xtash chizig'i tugun markazidan qancha orqada (chorraha o'lchamiga qarab).
+  /// Tupikda (bitta yo'l) kesilmaydi.
+  double _setback(int nodeId) {
+    final n = net.nodes[nodeId];
+    if (n == null || n.roads.length < 2) return 0;
+    var half = 7.0;
+    for (final rid in n.roads) {
+      final r = net.roads[rid];
+      if (r != null) half = max(half, 7.0 * (r.type + 1));
+    }
+    return half + 3;
+  }
+
+  /// Polosa chizig'idagi keskin burchaklarni (yo'l uchi boshqa yo'lga ulanganda qolgan qiyshiqlik, siniq
+  /// yo'llar) kvadratik egri bilan yumaloqlaydi, shunda mashina nuqtada keskin burilmaydi.
+  static List<Offset> smoothCorners(List<Offset> p, {double maxCut = 9.0, double minAngle = 0.25}) {
+    if (p.length < 3) return p;
+    final out = <Offset>[p.first];
+    for (var i = 1; i < p.length - 1; i++) {
+      final v = p[i];
+      final d1 = (v - p[i - 1]).distance, d2 = (p[i + 1] - v).distance;
+      if (d1 < 1e-6 || d2 < 1e-6) continue;
+      final u1 = (v - p[i - 1]) / d1, u2 = (p[i + 1] - v) / d2;
+      final cr = u1.dx * u2.dy - u1.dy * u2.dx;
+      final dt = u1.dx * u2.dx + u1.dy * u2.dy;
+      final th = atan2(cr.abs(), dt);
+      final d = min(maxCut, 0.45 * min(d1, d2));
+      if (th < minAngle || d < 1.0) {
+        out.add(v);
+        continue;
+      }
+      final a = v - u1 * d, b = v + u2 * d;
+      final n = max(3, (th / 0.25).ceil());
+      for (var k = 0; k <= n; k++) {
+        final t = k / n, q = 1 - t;
+        out.add(Offset(
+          q * q * a.dx + 2 * q * t * v.dx + t * t * b.dx,
+          q * q * a.dy + 2 * q * t * v.dy + t * t * b.dy,
+        ));
+      }
+    }
+    out.add(p.last);
+    return out;
+  }
+
+  static double _pathLen(List<Offset> p) {
+    var s = 0.0;
+    for (var i = 1; i < p.length; i++) {
+      s += (p[i] - p[i - 1]).distance;
+    }
+    return s;
+  }
+
+  /// Chiziqning boshidan [a] va oxiridan [b] uzunlikdagi qismini kesadi (juda qisqa bo'lsa kesmaydi).
+  static List<Offset> trimPath(List<Offset> p, double a, double b) {
+    if (a <= 1e-6 && b <= 1e-6) return p;
+    final cum = <double>[0];
+    for (var i = 1; i < p.length; i++) {
+      cum.add(cum[i - 1] + (p[i] - p[i - 1]).distance);
+    }
+    final end = cum.last - b;
+    if (end - a < 1.0) return p;
+    Offset at(double d) {
+      for (var i = 1; i < p.length; i++) {
+        final seg = cum[i] - cum[i - 1];
+        if (seg > 1e-9 && d <= cum[i]) return Offset.lerp(p[i - 1], p[i], (d - cum[i - 1]) / seg)!;
+      }
+      return p.last;
+    }
+
+    final out = <Offset>[at(a)];
+    for (var i = 1; i < p.length - 1; i++) {
+      if (cum[i] > a + 1e-6 && cum[i] < end - 1e-6) out.add(p[i]);
+    }
+    out.add(at(end));
+    return out;
+  }
+
+  /// Polosa uchlarini chorraha oldida kesadi (qisqa yo'lda uzunlikning 25% idan oshmaydi).
+  /// Geometriya o'zgargan bo'lsa true; polosadagi mashinalar o'z joyida qoladi.
+  bool _applyTrim(Lane l) {
+    final cap = 0.25 * l.fullLen;
+    final sa = min(_setback(l.fromNode), cap), sb = min(_setback(l.toNode), cap);
+    if ((l.trimA - sa).abs() < 0.01 && (l.trimB - sb).abs() < 0.01 && l.pts.isNotEmpty) return false;
+    final shift = sa - l.trimA;
+    l.setPts(trimPath(l.full, sa, sb));
+    l.trimA = sa;
+    l.trimB = sb;
+    for (final v in l.vehicles) {
+      v.s = (v.s - shift).clamp(0.0, l.length).toDouble();
+    }
+    return true;
+  }
+
   /// O'zgarmagan yo'llarning polosalari saqlanadi (ustidagi mashinalar buzilmaydi).
   void rebuild() {
     final want = <int>{};
+    final changed = <int>{};
     for (final r in net.roads.values) {
       for (final fwd in [true, false]) {
         if (!fwd && r.oneWay) continue;
@@ -91,10 +186,12 @@ class LaneGraph {
         for (var k = 0; k < count; k++) {
           final id = Lane.idFor(r.id, fwd, k);
           want.add(id);
-          if (!lanes.containsKey(id)) {
+          final old = lanes[id];
+          if (old == null) {
             final base = fwd ? r.pts : r.pts.reversed.toList();
-            lanes[id] = Lane(
-              offsetPath(base, laneOffset + k * 7.0),
+            final full = smoothCorners(offsetPath(base, laneOffset + k * 7.0));
+            final lane = Lane(
+              full,
               id: id,
               roadId: r.id,
               fwd: fwd,
@@ -103,12 +200,28 @@ class LaneGraph {
               speedLimit: r.type == 2 ? 55.0 : (r.type == 1 ? 33.0 : 22.0),
               laneIdx: k,
               laneCount: count,
-            );
+            )
+              ..full = full
+              ..fullLen = _pathLen(full);
+            _applyTrim(lane);
+            lanes[id] = lane;
+          } else if (_applyTrim(old)) {
+            changed.add(id); // tugun o'zgargan (masalan, tupikka yo'l ulandi): burilishlar qayta quriladi
           }
         }
       }
     }
     lanes.removeWhere((id, _) => !want.contains(id));
+    if (changed.isNotEmpty) {
+      for (final c in connectors.values) {
+        if (changed.contains(c.from.id) || changed.contains(c.to.id)) {
+          c.setPts(_turnPts(c.from, c.to));
+          for (final v in c.vehicles) {
+            v.s = min(v.s, c.length);
+          }
+        }
+      }
+    }
     connectors.removeWhere(
         (_, c) => !lanes.containsKey(c.from.id) || !lanes.containsKey(c.to.id));
     connectorsFrom.clear();
@@ -142,31 +255,58 @@ class LaneGraph {
     return out;
   }
 
+  /// Burilish chizig'i: polosa uchidagi yo'nalishdan keyingi polosa boshidagi yo'nalishga silliq o'tadi
+  /// (urinma chiziqlar kesishgan joyda kvadratik Bezye, aks holda kubik).
+  List<Offset> _turnPts(Lane a, Lane b) {
+    final pA = a.pts.last, pB = b.pts.first;
+    final dA = a.dirAt(a.length), dB = b.dirAt(0);
+    final w = pB - pA;
+    final chord = w.distance;
+    if (chord < 0.5) return [pA, pB];
+    final cr = dA.dx * dB.dy - dA.dy * dB.dx;
+    if (cr.abs() > 0.12) {
+      final t = (w.dx * dB.dy - w.dy * dB.dx) / cr;
+      final u = (dA.dx * w.dy - dA.dy * w.dx) / cr;
+      if (t > 0.3 && u > 0.3 && t < chord * 3 && u < chord * 3) {
+        final c = pA + dA * t;
+        final n = max(6, min(16, ((t + u) / 3).ceil()));
+        return [
+          for (var i = 0; i <= n; i++)
+            () {
+              final s = i / n, q = 1 - s;
+              return Offset(
+                q * q * pA.dx + 2 * q * s * c.dx + s * s * pB.dx,
+                q * q * pA.dy + 2 * q * s * c.dy + s * s * pB.dy,
+              );
+            }()
+        ];
+      }
+    }
+    final dot = (dA.dx * dB.dx + dA.dy * dB.dy).clamp(-1.0, 1.0).toDouble();
+    final th = acos(dot);
+    final k = th < 0.02 ? chord / 3 : (4 / 3) * tan(th / 4) * chord / (2 * sin(th / 2));
+    final c1 = pA + dA * k, c2 = pB - dB * k;
+    final n = max(6, min(16, max((chord * 1.3 / 3).ceil(), (th / 0.2).ceil())));
+    return [
+      for (var i = 0; i <= n; i++)
+        () {
+          final s = i / n, q = 1 - s;
+          return Offset(
+            q * q * q * pA.dx + 3 * q * q * s * c1.dx + 3 * q * s * s * c2.dx + s * s * s * pB.dx,
+            q * q * q * pA.dy + 3 * q * q * s * c1.dy + 3 * q * s * s * c2.dy + s * s * s * pB.dy,
+          );
+        }()
+    ];
+  }
+
   Connector connector(Lane a, Lane b) {
     final key = '${a.id}_${b.id}';
     return connectors.putIfAbsent(key, () {
-      final pA = a.pts.last, pB = b.pts.first;
       final dA = a.dirAt(a.length), dB = b.dirAt(0);
-      final node = net.nodes[a.toNode]?.pos ?? a.pts.last;
       final dot = (dA.dx * dB.dx + dA.dy * dB.dy).clamp(-1.0, 1.0).toDouble();
       final ang = acos(dot);
-      var ctrl = node;
-      if (dot < -0.7) ctrl = node + dA * 10; // U-burilish
-      final n = (pA - pB).distance < 0.5 ? 1 : 8;
-      final pts = <Offset>[];
-      if (n == 1) {
-        pts..add(pA)..add(pB);
-      } else {
-        for (var i = 0; i <= n; i++) {
-          final t = i / n, u = 1 - t;
-          pts.add(Offset(
-            u * u * pA.dx + 2 * u * t * ctrl.dx + t * t * pB.dx,
-            u * u * pA.dy + 2 * u * t * ctrl.dy + t * t * pB.dy,
-          ));
-        }
-      }
       final c = Connector(
-        pts,
+        _turnPts(a, b),
         from: a,
         to: b,
         nodeId: a.toNode,
@@ -182,6 +322,13 @@ class LaneGraph {
           if (lanes.containsKey(roadId * 8 + i)) lanes[roadId * 8 + i]!
       ];
 
+  /// Kirish nuqtasi polosa boshidan kamida ~30, oxiridan ~14 birlik (qisqa polosada nisbatan).
+  static double _clampS(double s, double len) {
+    final lo = min(30.0, len * 0.4);
+    final hi = max(lo, len - min(14.0, len * 0.25));
+    return s.clamp(lo, hi).toDouble();
+  }
+
   /// Har bir bino uchun eng yaqin polosa nuqtasini topadi (yo'l kirish joyi).
   void computeAccess(List<Building> buildings) {
     access.clear();
@@ -190,9 +337,9 @@ class LaneGraph {
       var bestD = 100.0;
       var bestS = 0.0;
       for (final l in lanes.values) {
-        if (l.length < 50) continue;
         final rdd = net.roads[l.roadId];
-        if (rdd != null && (rdd.layer == 1 || rdd.type == 2)) continue; // estakada va magistralga bino to'g'ridan-to'g'ri chiqmaydi
+        if (rdd == null || rdd.length < 50) continue; // qisqa yo'lga bino chiqmaydi (kesilgan polosa emas, yo'l uzunligi)
+        if (rdd.layer == 1 || rdd.type == 2) continue; // estakada va magistralga bino to'g'ridan-to'g'ri chiqmaydi
         for (var i = 1; i < l.pts.length; i++) {
           final q = closestOnSegment(b.pos, l.pts[i - 1], l.pts[i]);
           final d = (q - b.pos).distance;
@@ -206,7 +353,6 @@ class LaneGraph {
       if (best != null) {
         final goals = <int, double>{};
         for (final l in lanesOf(best.roadId)) {
-          if (l.length < 50) continue;
           var ls = 0.0;
           var ld = double.infinity;
           for (var i = 1; i < l.pts.length; i++) {
@@ -217,9 +363,9 @@ class LaneGraph {
               ls = l.cum[i - 1] + (q - l.pts[i - 1]).distance;
             }
           }
-          goals[l.id] = ls.clamp(30.0, l.length - 14).toDouble();
+          goals[l.id] = _clampS(ls, l.length);
         }
-        final s0 = bestS.clamp(30.0, best.length - 14).toDouble();
+        final s0 = _clampS(bestS, best.length);
         access[b.id] = Access(best, s0, goals.isEmpty ? null : goals);
       }
     }

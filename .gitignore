@@ -8,3 +8,4 @@ build/
 android/local.properties
 android/.gradle/
 *.apk
+__pycache__/

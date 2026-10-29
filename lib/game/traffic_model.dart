@@ -4,11 +4,17 @@ import 'dart:ui';
 abstract class Track {
   Track(this.pts) : cum = _cumulative(pts);
 
-  final List<Offset> pts;
-  final List<double> cum;
+  List<Offset> pts;
+  List<double> cum;
   final List<Vehicle> vehicles = []; // s bo'yicha o'sish tartibida
 
   double get length => cum.last;
+
+  /// Chiziq o'zgarganda (yo'l tarmog'i yangilanishi) geometriyani almashtiradi.
+  void setPts(List<Offset> p) {
+    pts = p;
+    cum = _cumulative(p);
+  }
 
   static List<double> _cumulative(List<Offset> p) {
     final c = <double>[0];
@@ -59,6 +65,10 @@ class Lane extends Track {
     this.laneIdx = 0,
     this.laneCount = 1,
   });
+
+  /// Chorraha oldida kesilmagan to'liq polosa chizig'i va boshidan/oxiridan kesilgan uzunliklar.
+  List<Offset> full = const [];
+  double trimA = 0, trimB = 0, fullLen = 0;
 
   final int laneIdx; // 0 markazga eng yaqin (ichki, tez), keyingilari o'ngga (tashqi)
   final int laneCount; // shu yo'nalishdagi polosalar soni

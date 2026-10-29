@@ -111,7 +111,10 @@ class RoadNetwork {
       return [for (var i = 0; i <= n; i++) Offset.lerp(a, b, i / n)!];
     }
     final approx = (c - a).distance + (b - c).distance;
-    final n = max(2, (approx / 10).ceil());
+    // keskin egrilikda ham siniq nuqtalar orasidagi burilish kichik bo'lsin (mashinalar silliq yursin)
+    var turn = (atan2(b.dy - c.dy, b.dx - c.dx) - atan2(c.dy - a.dy, c.dx - a.dx)).abs();
+    if (turn > pi) turn = 2 * pi - turn;
+    final n = min(48, max(2, max((approx / 10).ceil(), (turn / 0.15).ceil())));
     return [for (var i = 0; i <= n; i++) _bez(a, b, c, i / n)];
   }
 
@@ -175,7 +178,8 @@ class RoadNetwork {
 
   RoadNode _nodeAt(Offset p) => nodeNear(p, 1.0) ?? _newNode(p);
 
-  Road? _addNodes(List<Offset> pts, RoadNode na, RoadNode nb, {bool oneWay = false, int type = 0, int layer = 0}) {
+  Road? _addNodes(List<Offset> pts, RoadNode na, RoadNode nb,
+      {bool oneWay = false, int type = 0, int layer = 0, double? cost}) {
     final p = List<Offset>.of(_dedupe(pts));
     if (p.length < 2) return null;
     p[0] = na.pos;
@@ -188,7 +192,7 @@ class RoadNetwork {
       b: nb.id,
       pts: p,
       length: len,
-      cost: len * costPerUnit * costFactor(type) * (layer == 1 ? 1.5 : 1.0),
+      cost: cost ?? len * costPerUnit * costFactor(type) * (layer == 1 ? 1.5 : 1.0),
       oneWay: oneWay,
       type: type,
       layer: layer,
@@ -200,9 +204,9 @@ class RoadNetwork {
   }
 
   /// Saqlangan yo'l bo'lagini to'g'ridan-to'g'ri qo'shadi (yuklash uchun).
-  Road? addRoadPts(List<Offset> pts, {bool oneWay = false, int type = 0, int layer = 0}) {
+  Road? addRoadPts(List<Offset> pts, {bool oneWay = false, int type = 0, int layer = 0, double? cost}) {
     if (pts.length < 2) return null;
-    return _addNodes(pts, _nodeAt(pts.first), _nodeAt(pts.last), oneWay: oneWay, type: type, layer: layer);
+    return _addNodes(pts, _nodeAt(pts.first), _nodeAt(pts.last), oneWay: oneWay, type: type, layer: layer, cost: cost);
   }
 
   void _detach(Road r) {
@@ -252,8 +256,9 @@ class RoadNetwork {
     if (polyLength(right) < 3.5) return nb;
     _detach(r);
     final mid = _newNode(bp);
-    _addNodes(left, na, mid, oneWay: r.oneWay, type: r.type, layer: r.layer);
-    _addNodes(right, mid, nb, oneWay: r.oneWay, type: r.type, layer: r.layer);
+    final free = r.cost <= 0 ? 0.0 : null; // tayyor (tekin) yo'l bo'linsa ham tekin qoladi
+    _addNodes(left, na, mid, oneWay: r.oneWay, type: r.type, layer: r.layer, cost: free);
+    _addNodes(right, mid, nb, oneWay: r.oneWay, type: r.type, layer: r.layer, cost: free);
     return mid;
   }
 
@@ -373,7 +378,7 @@ class RoadNetwork {
       if (r.a == drop.id) pts[0] = keep.pos;
       if (r.b == drop.id) pts[pts.length - 1] = keep.pos;
       _detach(r);
-      if (na.id != nb.id) _addNodes(pts, na, nb, oneWay: r.oneWay, type: r.type, layer: r.layer);
+      if (na.id != nb.id) _addNodes(pts, na, nb, oneWay: r.oneWay, type: r.type, layer: r.layer, cost: r.cost <= 0 ? 0.0 : null);
     }
     nodes.remove(drop.id);
   }

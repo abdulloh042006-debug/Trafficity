@@ -100,20 +100,25 @@ class TrafficSim {
     Lane? best;
     var bestD = 9.0;
     var bestS = 0.0;
-    for (final l in graph.lanes.values) {
-      for (var i = 1; i < l.pts.length; i++) {
-        final a = l.pts[i - 1], b = l.pts[i];
-        final q = closestOnSegment(pos, a, b);
-        final d = (q - pos).distance;
-        if (d >= bestD) continue;
-        final sd = b - a;
-        final len = sd.distance;
-        if (len < 1e-6) continue;
-        if ((sd.dx * dir.dx + sd.dy * dir.dy) / len < 0.7) continue;
-        bestD = d;
-        best = l;
-        bestS = l.cum[i - 1] + (q - a).distance;
+    // avval yaqin polosa; topilmasa chorraha ichida (kesilgan polosalar oralig'ida) kengroq qidiradi
+    for (final radius in const [9.0, 26.0]) {
+      bestD = radius;
+      for (final l in graph.lanes.values) {
+        for (var i = 1; i < l.pts.length; i++) {
+          final a = l.pts[i - 1], b = l.pts[i];
+          final q = closestOnSegment(pos, a, b);
+          final d = (q - pos).distance;
+          if (d >= bestD) continue;
+          final sd = b - a;
+          final len = sd.distance;
+          if (len < 1e-6) continue;
+          if ((sd.dx * dir.dx + sd.dy * dir.dy) / len < 0.7) continue;
+          bestD = d;
+          best = l;
+          bestS = l.cum[i - 1] + (q - a).distance;
+        }
       }
+      if (best != null) break;
     }
     if (best == null) return false;
     _release(v);

@@ -325,6 +325,9 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                 item(Icons.folder_open, "Saqlangan o'yinlar", _slotsDialog),
                 item(Icons.settings, "Sozlamalar", _settingsDialog),
                 item(Icons.exit_to_app, "Chiqish", () => SystemNavigator.pop()),
+                const SizedBox(height: 14),
+                const Text("Toshkent xaritasi: © OpenStreetMap contributors",
+                    style: TextStyle(color: Colors.white54, fontSize: 11)),
               ],
             ),
           ),
@@ -381,7 +384,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                   ),
                 const SizedBox(height: 10),
                 Text(L.t("Biom")),
-                chips(const ["Tekislik", "Daryo deltasi", "Tog' vodiysi", "Orollar"], biome, (i) {
+                chips(const ["Tekislik", "Daryo deltasi", "Tog' vodiysi", "Orollar", "Toshkent"], biome, (i) {
                   biome = i;
                   regen();
                 }),
@@ -422,7 +425,9 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
       case Tool.pan:
         return "Xaritani suring; 2 barmoq bilan kattalashtiring va buring";
       case Tool.straight:
-        return "Barmoqni bosib sudrang: to'g'ri yo'l shu yerda quriladi";
+        return game.railMode
+            ? "Barmoqni bosib sudrang: temir yo'l quriladi (suv ustida ko'prik, tog'da tunnel)"
+            : "Barmoqni bosib sudrang: to'g'ri yo'l shu yerda quriladi";
       case Tool.curve:
         return game.stage >= 2
             ? "Yo'lni egish uchun kerakli joyga barmoqni bosing"
@@ -437,6 +442,8 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
         return "Bo'sh joyga bosing: bino qo'yiladi";
       case Tool.inspect:
         return "Mashina, yo'l yoki chorrahaga bosing: ma'lumot chiqadi";
+      case Tool.station:
+        return "Temir yo'l ustiga bosing: stansiya quriladi (poyezd uchun kamida ikkita kerak)";
       case Tool.erase:
         return "Yo'lga tegib o'chiring (pul to'liq qaytadi)";
     }
@@ -639,6 +646,10 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
               children: [
                 _stat("Ekologiya: ${(game.env * 100).round()}%"),
                 _stat("Ta'minot: ${(game.supply * 100).round()}%"),
+                if (game.rail.stations.isNotEmpty) ...[
+                  _stat("Poyezd: ${game.rail.trains.length}"),
+                  _stat("Temir yo'l qamrovi: ${(game.railCoverage * 100).round()}%"),
+                ],
                 if (sim != null && sim.failed > 0)
                   _stat("Yo'l topilmadi: ${sim.failed}", color: const Color(0xFFC0392B)),
                 if (sim != null && sim.lost > 0) _stat("Yo'qotilgan: ${sim.lost}"),
@@ -741,8 +752,12 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
             _btn(Icons.info_outline, "Ma'lumot", () => game.setTool(Tool.inspect),
                 selected: game.tool == Tool.inspect),
             const SizedBox(width: 10),
-            _btn(Icons.alt_route, ["Oddiy yo'l", "Katta yo'l", "Magistral"][game.roadType], game.cycleRoadType),
-            _btn(Icons.layers, game.roadLayer == 1 ? "Estakada" : "Yer usti", game.cycleRoadLayer, selected: game.roadLayer == 1),
+            if (!game.railMode)
+              _btn(Icons.alt_route, ["Oddiy yo'l", "Katta yo'l", "Magistral"][game.roadType], game.cycleRoadType),
+            _btn(game.railMode ? Icons.train : Icons.layers, const ["Yer usti", "Estakada", "Temir yo'l", "Tunnel"][game.roadLayer],
+                game.cycleRoadLayer, selected: game.roadLayer != 0),
+            if (game.railMode || game.tool == Tool.station)
+              _btn(Icons.directions_railway, "Stansiya", () => game.setTool(Tool.station), selected: game.tool == Tool.station),
             if (game.sandbox) ...[
               _btn(Icons.home_work, ["Uy", "Do'kon", "Zavod"][game.buildType], () {
                 if (game.tool == Tool.building) {

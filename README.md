@@ -140,6 +140,36 @@ flutter build apk --release  # build/app/outputs/flutter-apk/app-release.apk
 - Pastki panel: Ovoz, Ranglar, Hajm, Til, Debug, Slotlar, Yangi tugmalari olib tashlandi (menyu va sozlamalarda bor; Debug sozlamalarga ko'chdi). Tugmalar guruhlarga ajratildi
 - Ortiqcha animatsiyalar olib tashlandi: bosilganda to'lqin (splash) va yuklanishdagi aylanuvchi indikator
 
+## 19-bosqich: chorrahada silliq burilish (tayyor, headless sinovdan o'tgan, telefonda emas)
+- Sabab: polosalar tugun markazida tugardi, burilish yo'li esa 3.5 birlikli kichik egri bo'lib, boshlang'ich/oxirgi yo'nalishi mashina yo'nalishiga mos kelmasdi (o'ng burilishda mashina halqa bo'lib aylanardi). Ideal shaharda 248 burilishdan 236 tasining boshlang'ich yo'nalishi 20° dan ko'p og'gan edi
+- Polosalar chorraha oldida to'xtash chizig'igacha qisqartiriladi (chorraha o'lchamiga qarab: yo'l yarim eni + 3; tupikda kesilmaydi; qisqa yo'lda uzunlikning 25% igacha). Svetoforlar ham shu chiziqda turadi
+- Burilish: urinma chiziqlar kesishgan nuqtada kvadratik Bezye (o'ng/chap), aks holda kubik (to'g'ri, U-burilish)
+- Yo'l uchi boshqa yo'lga ulanganda qolgan keskin burchaklar va siniq mahalliy yo'llar polosa chizig'ida yumaloqlanadi; keskin egri yo'llar zichroq tanlanadi
+- Binoga kirish nuqtasi qisqa polosada xavfsiz (clamp xatosi yo'q); chorrahada yo'l o'zgarsa mashinalar kengroq radiusda ko'chiriladi
+- O'lchov (3 ta shahar, 125 mashina, 8 daqiqa): burilishda 28° dan katta sakrashlar ~400-670 -> 4-7; yetib borgan safarlar 326 -> 416. Tirbandlik (mashinalarning ~85% i to'xtab qolishi) ikkala variantda ham bor: u alohida muammo (chiqish polosasida joy yo'qligi)
+
+## 20-bosqich: Toshkent xaritasi va kengayuvchi hudud (tayyor, headless sinovdan o'tgan, telefonda emas)
+- Yangi o'yin standart biomi "Toshkent": haqiqiy xarita (OpenStreetMap), markaz — Amir Temur xiyoboni, 1 birlik ~ 1 metr, dunyo 6400x6400. Xarita "ruh" ko'chalar ko'rinishida (o'yinchi yo'llari ajralib turadi); Anhor va boshqa katta kanal/daryolar suv hisoblanadi (ustidan estakada-ko'prik kerak), kichik ariqlar hisobga olinmaydi
+- O'yinchi hududi boshida markaz atrofida 2.4 x 2.4 km; har daraja +300 birlik yarim kenglik (12-darajada ~dunyo chegarasi). Hududdan tashqarisi yopiq (tuman), unda yo'l/bino qurib bo'lmaydi; xarita shahar o'sishi bilan ochilib boradi; yangi binolar kengaygan hududda ham paydo bo'ladi
+- Boshqa biomlar (tekislik, delta, tog', orollar) ham 6400 dunyoda, relyef o'lchami avvalgidek. Eski saqlashlar (3200 dunyo) o'zgarishsiz ochiladi (hudud butun xarita). Saqlashga `ws` (dunyo) va `th` (hudud) qo'shildi
+- Aktivlar: `assets/map/tashkent.webp` (3200 px, 2 m/piksel), `assets/map/tashkent_water.png` (suv niqobi). Qayta yaratish: `tools/map/build_tashkent.py` (OSM SVG eksporti kerak, repoda yo'q, 27 MB)
+- Xarita ma'lumotlari: (c) OpenStreetMap contributors (ODbL); ilovada menyuda ko'rsatiladi
+
+## 21-bosqich: temir yo'l, stansiya, poyezd, ko'prik va tunnel (tayyor, headless sinovdan o'tgan, telefonda emas)
+- Qatlam tugmasi 4 holatli: Yer usti -> Estakada -> Temir yo'l -> Tunnel (yer osti). Temir yo'l rejimida "To'g'ri"/"Egri" asboblari temir yo'l quradi ("To'r" va yo'l turi tugmasi yashirin); "Stansiya" asbobi temir yo'l ustiga bosilganda shu joyda yo'lni bo'lib stansiya quradi
+- Suv ustida avtomatik ko'prik (uchlari quruqlikda, <= 700 birlik), tog'da (balandlik >= 0.64; Toshkentda tog' yo'q) avtomatik tunnel (<= 900), yo'l ustidan o'tganda ko'prik ko'rinishida (yo'lga xalaqit bermaydi). "Tunnel" rejimida butun uchastka yer ostida: bino va suv ostidan o'tadi. Narx: yer 1.5, ko'prik 4.5, tunnel 6 birlik uzunligiga; stansiya 350. Temir yo'l binoga tegmaydi (yer ustida) va hududdan tashqariga qurilmaydi
+- Poyezdlar: bir komponentda 2+ stansiya bo'lsa qatnaydi (1 ta poyezd har 2 stansiyaga, <= 3): lokomotiv + 3 vagon, har yo'nalishga alohida iz (qarama-qarshi poyezdlar o'tib ketadi), bir izda masofa saqlanadi, stansiyada o'rtasi tugunda to'xtaydi (5 s), boshi berkda yoki to'xtab turganda teskari yo'naladi, tugunda ~70 darajadan keskin burilmaydi. Tunnel ichida poyezd ko'rinmaydi
+- Ta'sir: stansiya atrofi (280 birlik) uylarning ulushi ("qamrov") mashina talabini 30% gacha kamaytiradi va mamnuniyatga +6 gacha beradi; poyezd stansiyaga yetganda daromad (1.2 x xizmat zonasidagi uylar, <= 90). HUD'da "Poyezd" va "Temir yo'l qamrovi"
+- Bekor qilish/qaytarish, saqlash (`rails`, `stations`), o'chirish asbobi (stansiya yoki yo'l bo'lagi; mablag' to'liq qaytadi) temir yo'lni ham qamraydi; "Ma'lumot" asbobi stansiya va poyezd haqida aytadi
+- Kod: `lib/game/rail.dart` (marshrut, poyezd), `lib/game/rail_draw.dart` (tasnif, narx, chizish), `lib/game/deck.dart` (ko'prik lentasi, estakada bilan umumiy); testlar: `test/rail_test.dart`, `test/rail_game_test.dart`
+
+## 22-bosqich: Toshkentning haqiqiy ko'chalari 1:1 (tayyor, headless sinovdan o'tgan, telefonda emas)
+- Yo'llar OSM SVG'dagi haqiqiy ko'chalar bilan geometriyasi bo'yicha aynan bir xil (trunk/primary/secondary/tertiary/residential; kichik "service" ko'chalar va piyoda yo'llar faqat xira fonda). Yangi o'yinda boshlang'ich hududdagi (2.4 km) ko'chalar tayyor turadi, hudud kengayganda yangi halqadagi ko'chalar qo'shiladi (jami ~2500 yo'l bo'lagi)
+- Tayyorlash (`tools/map/build_tashkent_roads.py` -> `assets/map/tashkent_roads.json`): tugunlar (T-chorraha va kesishmalar), qisqa (<30 m) bo'laklar birlashtiriladi, ikki tomonlama prospektlar (parallel juft) o'ng tomonlama harakat bo'yicha bir tomonlama qilinadi (yo'nalish tugunlarda izchillashtiriladi), Amir Temur xiyoboni kabi aylanalar soat miliga teskari, suv ustidan o'tgan joylar estakada-ko'prik, trunk kesishmalari estakada, asosiy tarmoqdan uzilgan kichik orollar olib tashlanadi
+- Binolar yo'llardan uzoqda joylashadi va mahalliy yo'l bilan ulanadi; markaz yaqinidagi 4+ yo'lli chorrahalarga (<= 24 ta) adaptiv svetofor qo'yiladi. Tayyor yo'llar narxsiz: o'chirilsa mablag' qaytmaydi (saqlashda `f`, bekor qilishda narx saqlanadi)
+- Asosiy xaritadan (basemap) shu yo'l sinflari olib tashlandi (ikki marta ko'rinmasin); ko'rinadigan oyna bo'yicha chizish (culling) qo'shildi
+- Eski saqlashlar o'zgarishsiz ochiladi; tayyor yo'llar bo'lmagan eski Toshkent saqlashlarida faqat keyingi kengayishlarda haqiqiy yo'llar qo'shiladi
+
 ## Hali yo'q
 Aylanada kiruvchiga "yo'l bering" qoidasi (hozir kim birinchi so'rasa), ko'p polosali yo'llar, magistral va ramplar, iqtisodiyot va darajalar, qo'lda svetofor fazalarini tahrirlash.
 
