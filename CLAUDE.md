@@ -15,7 +15,7 @@ KoreyaViza EMAS. Repo: https://github.com/abdulloh042006-debug/Trafficity (publi
 - Yangi funksiya qo'shishdan oldin foydalanuvchi so'ragan narsa ekanini tekshir ("ortiqcha yangilik qo'shma" degan edi).
 
 ## Muhit va ishlash tartibi
-- Flutter bu muhitda oldindan YO'Q, lekin o'rnatsa bo'ladi (proxy orqali ishladi): scratchpad'da `git clone --depth 1 -b stable https://github.com/flutter/flutter.git`, so'ng `flutter pub get` (~3 daqiqa; PATH ga `flutter/bin`, `CI=true`). Shunda `flutter analyze` va `flutter test` (10 ta test PASS) ishlaydi. Renderni tekshirish: vaqtinchalik `test/zz_*_test.dart` da `testWidgets` + `tester.runAsync`, `RoadGame().render(canvas)` yoki `RepaintBoundary.toImage` -> PNG (shrift: `bin/cache/artifacts/material_fonts` dan `FontLoader`); keyin faylni o'chiring. Telefon sinovi o'rnini baribir bosmaydi.
+- Flutter bu muhitda oldindan YO'Q, lekin o'rnatsa bo'ladi (proxy orqali ishladi): scratchpad'da `git clone --depth 1 -b stable https://github.com/flutter/flutter.git`, so'ng `flutter pub get` (~3 daqiqa; PATH ga `flutter/bin`, `CI=true`). Shunda `flutter analyze` va `flutter test` (19 ta test PASS) ishlaydi. Renderni tekshirish: vaqtinchalik `test/zz_*_test.dart` da `testWidgets` + `tester.runAsync`, `RoadGame().render(canvas)` yoki `RepaintBoundary.toImage` -> PNG (shrift: `bin/cache/artifacts/material_fonts` dan `FontLoader`); keyin faylni o'chiring. Telefon sinovi o'rnini baribir bosmaydi.
 - Mantiqni Python'da modellashtirish mumkin (foydalanuvchi ruxsat bergan): geometriya/marshrut/rejalashtirish.
 - Loyiha nusxasi: `/mnt/user-data/outputs/roadflow_city/` (repo bilan bir xil). Push: vaqtinchalik klon, `cp -r`, `git checkout HEAD -- .github`
   (token `workflow` ruxsatisiz: workflow faylini o'zgartirib push qilib bo'lmaydi), commit, push, token URL'dan olib tashlanadi.
@@ -34,14 +34,15 @@ KoreyaViza EMAS. Repo: https://github.com/abdulloh042006-debug/Trafficity (publi
 - `game/traffic_sim.dart`: IDM, chorraha ruxsati (_tryGrant, geometrik to'qnashuv, adolat), ustuvor yo'llar (_minorAt), svetofor (fixed + adaptiv),
   polosa almashtirish, talab (uy->do'kon/zavod, yuk mashinasi), do'kon zaxirasi, mashinalarni yo'l o'zgarganda ko'chirish (_relocate).
 - `game/terrain.dart`: protsedura biomlar (0-3) va biom 4 = haqiqiy Toshkent (`TashkentMap`: `assets/map/tashkent.webp` + suv niqobi; markaz Amir Temur xiyoboni = (3200,3200)); `RoadGame.terrHalf` hudud yarim kengligi (1200 + 300/daraja), tashqarisi tuman; `tools/map/build_tashkent.py` aktivlarni OSM SVG'dan yaratadi (SVG repoda yo'q).
-- `game/{traffic_model,signal,terrain,building}.dart`; `test/network_test.dart` (10 test, PASS); `ci/debug.keystore`; `assets/{audio,icon}`.
+- `game/rail.dart` (RailSim: poyezd, stansiya, Dijkstra marshrut, teskari yo'nalish, to'qnashuvdan saqlanish), `game/rail_draw.dart` (RailVis: yer/ko'prik/tunnel/yo'l-usti tasnifi, narx `RailVis.analyze`, chizish), `game/deck.dart` (ko'prik/estakada lentasi). Temir yo'l tarmog'i `RoadGame.railNet` (RoadNetwork nusxasi, layer 1 = yer osti tunnel); qatlam tugmasi `roadLayer` 0..3 (2 = temir yo'l, 3 = tunnel).
+- `game/{traffic_model,signal,terrain,building}.dart`; `test/*_test.dart` (19 test, PASS); `ci/debug.keystore`; `assets/{audio,icon}`.
 - Konstantalar: dunyo 6400x6400 birlik (eski saqlashlar 3200), Toshkent biomida 1 birlik ~ 1 m (tezlik km/s hisobi 0.5 m/birlik deb qoldi); polosa 7; yo'l eni 14; mashina 9 (yuk 22); maxVehicles 100+25*daraja (<=250).
 
 ## Holat (dalil bilan)
 **IMPLEMENTED AND VERIFIED** (foydalanuvchi skrinshotlari / telefon): xarita va relyef yuklanadi; kamera surish/zoom; to'g'ri va egri yo'l;
 kesishuvda chorraha bo'linishi; mashinalar yuradi va navbat hosil qiladi; mamnuniyat va daraja oshishi; tirbandlik xaritasi; aylana chorraha;
 APK o'rnatiladi.
-**VERIFIED HEADLESS** (flutter analyze + render PNG, telefonda emas): Toshkent xaritasi (haqiqiy OSM, Amir Temur markazi, suv niqobi, hudud kengayishi `_growTerritory`, tuman, 12 unit test), chorrahada silliq burilish (polosa to'xtash chizig'igacha qisqaradi, urinmali Bezye burilish, `LaneGraph._turnPts`/`_setback`/`smoothCorners`; 10 unit test), estakada rampasi (uchi yerga silliq tushadi, soya/chekka balandlik bilan o'sadi, `_drawElevated`), yer usti mashinalari estakada ostida, punktir yo'l belgilari, ixcham yuqori panel, 8 unit test.
+**VERIFIED HEADLESS** (flutter analyze + render PNG, telefonda emas): temir yo'l (kanal ustida ko'prik, tog'da tunnel, stansiya, poyezdlar, undo, saqlash; `rail_test`, `rail_game_test`), Toshkent xaritasi (haqiqiy OSM, Amir Temur markazi, suv niqobi, hudud kengayishi `_growTerritory`, tuman, 12 unit test), chorrahada silliq burilish (polosa to'xtash chizig'igacha qisqaradi, urinmali Bezye burilish, `LaneGraph._turnPts`/`_setback`/`smoothCorners`; 10 unit test), estakada rampasi (uchi yerga silliq tushadi, soya/chekka balandlik bilan o'sadi, `_drawElevated`), yer usti mashinalari estakada ostida, punktir yo'l belgilari, ixcham yuqori panel, 8 unit test.
 **IMPLEMENTED BUT NOT VERIFIED** (faqat CI kompilyatsiyasi o'tgan): xarita burish; binoga avtomatik tushish (ekran pikselidagi radius); tugunlarni
 birlashtirish; undo/redo; 3 saqlash uyasi; to'r asbobi; grafiklar + "eng og'ir joy"; ekologiya; do'kon zaxirasi/ta'minot; estakada/ko'prik;
 katta yo'l va magistral; polosa almashtirish; ustuvor yo'llar; adaptiv svetofor; TAYYOR SHAHAR (default); bosh menyu; musiqa; UZ/RU/EN;
@@ -69,7 +70,7 @@ Chorrahada qotib qolish (gridlock) headless o'lchandi: ideal shaharda 125 mashin
 5. Faqat so'ralsa: polosa qo'shish/yangilash asbobi, stop/yield, svetofor fazalari.
 
 ## Sinov (foydalanuvchi/AI agent bajaradi, Flutter bor muhitda)
-`flutter pub get && flutter analyze && flutter test && flutter build apk --release`. Kutiladi: analyze xatosiz, `test/network_test.dart` 10 ta test PASS,
+`flutter pub get && flutter analyze && flutter test && flutter build apk --release`. Kutiladi: analyze xatosiz, `flutter test` 19 ta test PASS,
 APK yig'iladi. Xato bo'lsa: to'liq chiqishni yuboring (PASS/FAIL/BLOCKED/NOT TESTED). Telefonda: ochilganda tayyor shahar, mashinalar yuradi,
 "Debug" yoqilganda qizil va sariq halqa ustma-ust, Ortga/Oldinga, To'r, Estakada, Magistral, til tugmasi, musiqa.
 

@@ -155,6 +155,14 @@ flutter build apk --release  # build/app/outputs/flutter-apk/app-release.apk
 - Aktivlar: `assets/map/tashkent.webp` (3200 px, 2 m/piksel), `assets/map/tashkent_water.png` (suv niqobi). Qayta yaratish: `tools/map/build_tashkent.py` (OSM SVG eksporti kerak, repoda yo'q, 27 MB)
 - Xarita ma'lumotlari: (c) OpenStreetMap contributors (ODbL); ilovada menyuda ko'rsatiladi
 
+## 21-bosqich: temir yo'l, stansiya, poyezd, ko'prik va tunnel (tayyor, headless sinovdan o'tgan, telefonda emas)
+- Qatlam tugmasi 4 holatli: Yer usti -> Estakada -> Temir yo'l -> Tunnel (yer osti). Temir yo'l rejimida "To'g'ri"/"Egri" asboblari temir yo'l quradi ("To'r" va yo'l turi tugmasi yashirin); "Stansiya" asbobi temir yo'l ustiga bosilganda shu joyda yo'lni bo'lib stansiya quradi
+- Suv ustida avtomatik ko'prik (uchlari quruqlikda, <= 700 birlik), tog'da (balandlik >= 0.64; Toshkentda tog' yo'q) avtomatik tunnel (<= 900), yo'l ustidan o'tganda ko'prik ko'rinishida (yo'lga xalaqit bermaydi). "Tunnel" rejimida butun uchastka yer ostida: bino va suv ostidan o'tadi. Narx: yer 1.5, ko'prik 4.5, tunnel 6 birlik uzunligiga; stansiya 350. Temir yo'l binoga tegmaydi (yer ustida) va hududdan tashqariga qurilmaydi
+- Poyezdlar: bir komponentda 2+ stansiya bo'lsa qatnaydi (1 ta poyezd har 2 stansiyaga, <= 3): lokomotiv + 3 vagon, har yo'nalishga alohida iz (qarama-qarshi poyezdlar o'tib ketadi), bir izda masofa saqlanadi, stansiyada o'rtasi tugunda to'xtaydi (5 s), boshi berkda yoki to'xtab turganda teskari yo'naladi, tugunda ~70 darajadan keskin burilmaydi. Tunnel ichida poyezd ko'rinmaydi
+- Ta'sir: stansiya atrofi (280 birlik) uylarning ulushi ("qamrov") mashina talabini 30% gacha kamaytiradi va mamnuniyatga +6 gacha beradi; poyezd stansiyaga yetganda daromad (1.2 x xizmat zonasidagi uylar, <= 90). HUD'da "Poyezd" va "Temir yo'l qamrovi"
+- Bekor qilish/qaytarish, saqlash (`rails`, `stations`), o'chirish asbobi (stansiya yoki yo'l bo'lagi; mablag' to'liq qaytadi) temir yo'lni ham qamraydi; "Ma'lumot" asbobi stansiya va poyezd haqida aytadi
+- Kod: `lib/game/rail.dart` (marshrut, poyezd), `lib/game/rail_draw.dart` (tasnif, narx, chizish), `lib/game/deck.dart` (ko'prik lentasi, estakada bilan umumiy); testlar: `test/rail_test.dart`, `test/rail_game_test.dart`
+
 ## Hali yo'q
 Aylanada kiruvchiga "yo'l bering" qoidasi (hozir kim birinchi so'rasa), ko'p polosali yo'llar, magistral va ramplar, iqtisodiyot va darajalar, qo'lda svetofor fazalarini tahrirlash.
 

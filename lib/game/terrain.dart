@@ -112,6 +112,10 @@ class Terrain {
 
   bool isWaterAt(ui.Offset p) => heightAt(p.dx, p.dy) < waterLevel;
 
+  /// Tog' (poyezd tunnel qazishi kerak bo'ladigan joy). Toshkent tekis, u yerda tog' yo'q.
+  static const double mountainLevel = 0.64;
+  bool isMountainAt(ui.Offset p) => biome != tashkent && heightAt(p.dx, p.dy) >= mountainLevel;
+
   /// Bino qurish uchun yaroqli joy (suv ham, tog' ham emas).
   bool isBuildableAt(ui.Offset p) {
     final h = heightAt(p.dx, p.dy);
