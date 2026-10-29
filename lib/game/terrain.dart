@@ -4,15 +4,55 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart' show compute;
+import 'package:flutter/services.dart' show rootBundle;
+
+/// Haqiqiy Toshkent xaritasi (OpenStreetMap, markazi: Amir Temur xiyoboni). 1 birlik ~ 1 metr.
+/// Asosiy rasm 3200x3200 piksel (2 m/piksel), suv niqobi 1600x1600 (4 m/piksel); dunyo 6400x6400 birlik.
+class TashkentMap {
+  static const int maskRes = 1600;
+  static Uint8List? _mask;
+
+  static Future<void> loadMask() async {
+    if (_mask != null) return;
+    final data = await rootBundle.load('assets/map/tashkent_water.png');
+    final codec = await ui.instantiateImageCodec(data.buffer.asUint8List());
+    final img = (await codec.getNextFrame()).image;
+    final bd = await img.toByteData(format: ui.ImageByteFormat.rawRgba);
+    final px = bd!.buffer.asUint8List();
+    final m = Uint8List(maskRes * maskRes);
+    for (var i = 0; i < m.length; i++) {
+      m[i] = px[i * 4] > 127 ? 1 : 0;
+    }
+    _mask = m;
+  }
+
+  static bool isWater(double wx, double wy) {
+    final m = _mask;
+    if (m == null) return false;
+    final x = (wx / Terrain.bigSize * maskRes).floor();
+    final y = (wy / Terrain.bigSize * maskRes).floor();
+    if (x < 0 || y < 0 || x >= maskRes || y >= maskRes) return false;
+    return m[y * maskRes + x] != 0;
+  }
+
+  static Future<ui.Image> loadBase(int width) async {
+    final data = await rootBundle.load('assets/map/tashkent.webp');
+    final codec = await ui.instantiateImageCodec(data.buffer.asUint8List(), targetWidth: width);
+    return (await codec.getNextFrame()).image;
+  }
+}
 
 /// Seed asosida deterministik relyef. Balandlik funksiyasi uzluksiz,
 /// shuning uchun suv tekshiruvi va rasm bir xil formuladan foydalanadi.
 class Terrain {
-  Terrain(this.seed, [this.biome = 0]);
+  Terrain(this.seed, [this.biome = 0, this.size = 3200]);
 
   final int seed;
-  final int biome; // 0 tekislik, 1 daryo deltasi, 2 tog' vodiysi, 3 orollar
-  static const double worldSize = 3200;
+  final int biome; // 0 tekislik, 1 daryo deltasi, 2 tog' vodiysi, 3 orollar, 4 Toshkent (haqiqiy xarita)
+  final double size; // dunyo o'lchami (birlik); eski saqlashlar 3200, yangi o'yinlar 6400
+  static const int tashkent = 4;
+  static const double legacySize = 3200;
+  static const double bigSize = 6400;
   static const double waterLevel = 0.30;
 
   double _hash(int x, int y) {
@@ -46,24 +86,26 @@ class Terrain {
   }
 
   double heightAt(double wx, double wy) {
-    final nx = wx / worldSize, ny = wy / worldSize;
+    final nx = wx / size, ny = wy / size;
     if (nx < 0 || ny < 0 || nx > 1 || ny > 1) return -1;
+    if (biome == tashkent) return TashkentMap.isWater(wx, wy) ? 0.2 : 0.5;
+    final k = size / legacySize; // yirik dunyoda ham relyef xususiyatlari bir xil o'lchamda
     final dx = nx - 0.5, dy = ny - 0.5;
     final d = sqrt(dx * dx + dy * dy) * 2;
     switch (biome) {
       case 1: // daryo deltasi: egri-bugri daryolar
-        var n = (_fbm(nx * 5, ny * 5) - 0.5) * 1.6 + 0.5;
-        final r = (_fbm(nx * 3 + 9.1, ny * 3 + 4.7) - 0.5).abs();
+        var n = (_fbm(nx * 5 * k, ny * 5 * k) - 0.5) * 1.6 + 0.5;
+        final r = (_fbm(nx * 3 * k + 9.1, ny * 3 * k + 4.7) - 0.5).abs();
         if (r < 0.04) n -= 0.4 * (1 - r / 0.04);
         return n - 0.40 * d * d * d;
       case 2: // tog' vodiysi: ko'p qiyalik, tor tekis joylar
-        final n = (_fbm(nx * 5, ny * 5) - 0.5) * 2.3 + 0.58;
+        final n = (_fbm(nx * 5 * k, ny * 5 * k) - 0.5) * 2.3 + 0.58;
         return n - 0.30 * d * d * d;
       case 3: // orollar
-        final n = (_fbm(nx * 6.5, ny * 6.5) - 0.5) * 1.8 + 0.42;
+        final n = (_fbm(nx * 6.5 * k, ny * 6.5 * k) - 0.5) * 1.8 + 0.42;
         return n - 0.55 * d * d;
       default:
-        final n = (_fbm(nx * 5, ny * 5) - 0.5) * 1.6 + 0.5;
+        final n = (_fbm(nx * 5 * k, ny * 5 * k) - 0.5) * 1.6 + 0.5;
         return n - 0.45 * d * d * d;
     }
   }
@@ -107,7 +149,7 @@ class Terrain {
     var i = 0;
     for (var y = 0; y < res; y++) {
       for (var x = 0; x < res; x++) {
-        final h = heightAt((x + 0.5) / res * worldSize, (y + 0.5) / res * worldSize);
+        final h = heightAt((x + 0.5) / res * size, (y + 0.5) / res * size);
         final c = _colorAt(h);
         bytes[i++] = c[0];
         bytes[i++] = c[1];
@@ -120,9 +162,14 @@ class Terrain {
 
   /// Hisob alohida isolate'da bajariladi (ekran qotib qolmasligi uchun).
   Future<ui.Image> toImage({int res = 256}) async {
+    if (biome == tashkent) {
+      await TashkentMap.loadMask();
+      return TashkentMap.loadBase(res >= 256 ? 3200 : res);
+    }
+    if (res == 256 && size > legacySize) res = 512; // yirik dunyo: shu zichlikda (12.5 birlik/piksel)
     Uint8List bytes;
     try {
-      bytes = await compute(terrainBytes, [seed, res, biome]);
+      bytes = await compute(terrainBytes, [seed, res, biome, size.round()]);
     } catch (_) {
       bytes = _pixels(res);
     }
@@ -132,4 +179,4 @@ class Terrain {
   }
 }
 
-Uint8List terrainBytes(List<int> args) => Terrain(args[0], args[2])._pixels(args[1]);
+Uint8List terrainBytes(List<int> args) => Terrain(args[0], args[2], args[3].toDouble())._pixels(args[1]);

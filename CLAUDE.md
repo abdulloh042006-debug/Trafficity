@@ -33,14 +33,15 @@ KoreyaViza EMAS. Repo: https://github.com/abdulloh042006-debug/Trafficity (publi
 - `game/lane_graph.dart`: polosalar (id = roadId*8 + (fwd?0:4) + lane), connectors, A* marshrut, bino kirishi (Access.goals).
 - `game/traffic_sim.dart`: IDM, chorraha ruxsati (_tryGrant, geometrik to'qnashuv, adolat), ustuvor yo'llar (_minorAt), svetofor (fixed + adaptiv),
   polosa almashtirish, talab (uy->do'kon/zavod, yuk mashinasi), do'kon zaxirasi, mashinalarni yo'l o'zgarganda ko'chirish (_relocate).
+- `game/terrain.dart`: protsedura biomlar (0-3) va biom 4 = haqiqiy Toshkent (`TashkentMap`: `assets/map/tashkent.webp` + suv niqobi; markaz Amir Temur xiyoboni = (3200,3200)); `RoadGame.terrHalf` hudud yarim kengligi (1200 + 300/daraja), tashqarisi tuman; `tools/map/build_tashkent.py` aktivlarni OSM SVG'dan yaratadi (SVG repoda yo'q).
 - `game/{traffic_model,signal,terrain,building}.dart`; `test/network_test.dart` (10 test, PASS); `ci/debug.keystore`; `assets/{audio,icon}`.
-- Konstantalar: dunyo 3200x3200 birlik, 1 birlik ~0.5 m; polosa 7; yo'l eni 14; mashina 9 (yuk 22); maxVehicles 100+25*daraja (<=250).
+- Konstantalar: dunyo 6400x6400 birlik (eski saqlashlar 3200), Toshkent biomida 1 birlik ~ 1 m (tezlik km/s hisobi 0.5 m/birlik deb qoldi); polosa 7; yo'l eni 14; mashina 9 (yuk 22); maxVehicles 100+25*daraja (<=250).
 
 ## Holat (dalil bilan)
 **IMPLEMENTED AND VERIFIED** (foydalanuvchi skrinshotlari / telefon): xarita va relyef yuklanadi; kamera surish/zoom; to'g'ri va egri yo'l;
 kesishuvda chorraha bo'linishi; mashinalar yuradi va navbat hosil qiladi; mamnuniyat va daraja oshishi; tirbandlik xaritasi; aylana chorraha;
 APK o'rnatiladi.
-**VERIFIED HEADLESS** (flutter analyze + render PNG, telefonda emas): chorrahada silliq burilish (polosa to'xtash chizig'igacha qisqaradi, urinmali Bezye burilish, `LaneGraph._turnPts`/`_setback`/`smoothCorners`; 10 unit test), estakada rampasi (uchi yerga silliq tushadi, soya/chekka balandlik bilan o'sadi, `_drawElevated`), yer usti mashinalari estakada ostida, punktir yo'l belgilari, ixcham yuqori panel, 8 unit test.
+**VERIFIED HEADLESS** (flutter analyze + render PNG, telefonda emas): Toshkent xaritasi (haqiqiy OSM, Amir Temur markazi, suv niqobi, hudud kengayishi `_growTerritory`, tuman, 12 unit test), chorrahada silliq burilish (polosa to'xtash chizig'igacha qisqaradi, urinmali Bezye burilish, `LaneGraph._turnPts`/`_setback`/`smoothCorners`; 10 unit test), estakada rampasi (uchi yerga silliq tushadi, soya/chekka balandlik bilan o'sadi, `_drawElevated`), yer usti mashinalari estakada ostida, punktir yo'l belgilari, ixcham yuqori panel, 8 unit test.
 **IMPLEMENTED BUT NOT VERIFIED** (faqat CI kompilyatsiyasi o'tgan): xarita burish; binoga avtomatik tushish (ekran pikselidagi radius); tugunlarni
 birlashtirish; undo/redo; 3 saqlash uyasi; to'r asbobi; grafiklar + "eng og'ir joy"; ekologiya; do'kon zaxirasi/ta'minot; estakada/ko'prik;
 katta yo'l va magistral; polosa almashtirish; ustuvor yo'llar; adaptiv svetofor; TAYYOR SHAHAR (default); bosh menyu; musiqa; UZ/RU/EN;

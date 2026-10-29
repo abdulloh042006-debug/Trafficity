@@ -148,6 +148,13 @@ flutter build apk --release  # build/app/outputs/flutter-apk/app-release.apk
 - Binoga kirish nuqtasi qisqa polosada xavfsiz (clamp xatosi yo'q); chorrahada yo'l o'zgarsa mashinalar kengroq radiusda ko'chiriladi
 - O'lchov (3 ta shahar, 125 mashina, 8 daqiqa): burilishda 28° dan katta sakrashlar ~400-670 -> 4-7; yetib borgan safarlar 326 -> 416. Tirbandlik (mashinalarning ~85% i to'xtab qolishi) ikkala variantda ham bor: u alohida muammo (chiqish polosasida joy yo'qligi)
 
+## 20-bosqich: Toshkent xaritasi va kengayuvchi hudud (tayyor, headless sinovdan o'tgan, telefonda emas)
+- Yangi o'yin standart biomi "Toshkent": haqiqiy xarita (OpenStreetMap), markaz — Amir Temur xiyoboni, 1 birlik ~ 1 metr, dunyo 6400x6400. Xarita "ruh" ko'chalar ko'rinishida (o'yinchi yo'llari ajralib turadi); Anhor va boshqa katta kanal/daryolar suv hisoblanadi (ustidan estakada-ko'prik kerak), kichik ariqlar hisobga olinmaydi
+- O'yinchi hududi boshida markaz atrofida 2.4 x 2.4 km; har daraja +300 birlik yarim kenglik (12-darajada ~dunyo chegarasi). Hududdan tashqarisi yopiq (tuman), unda yo'l/bino qurib bo'lmaydi; xarita shahar o'sishi bilan ochilib boradi; yangi binolar kengaygan hududda ham paydo bo'ladi
+- Boshqa biomlar (tekislik, delta, tog', orollar) ham 6400 dunyoda, relyef o'lchami avvalgidek. Eski saqlashlar (3200 dunyo) o'zgarishsiz ochiladi (hudud butun xarita). Saqlashga `ws` (dunyo) va `th` (hudud) qo'shildi
+- Aktivlar: `assets/map/tashkent.webp` (3200 px, 2 m/piksel), `assets/map/tashkent_water.png` (suv niqobi). Qayta yaratish: `tools/map/build_tashkent.py` (OSM SVG eksporti kerak, repoda yo'q, 27 MB)
+- Xarita ma'lumotlari: (c) OpenStreetMap contributors (ODbL); ilovada menyuda ko'rsatiladi
+
 ## Hali yo'q
 Aylanada kiruvchiga "yo'l bering" qoidasi (hozir kim birinchi so'rasa), ko'p polosali yo'llar, magistral va ramplar, iqtisodiyot va darajalar, qo'lda svetofor fazalarini tahrirlash.
 

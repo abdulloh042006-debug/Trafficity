@@ -77,11 +77,24 @@ class RoadGame extends FlameGame {
   int _tripsAtLevel = 0;
   double _econTimer = 0;
   int _nextBuildingId = 1;
-  Offset cityCenter = const Offset(1600, 1600);
+  Offset cityCenter = const Offset(3200, 3200);
+
+  /// Dunyo o'lchami, markazi va o'yinchi qo'ygan hudud (xarita shahar o'sishi bilan kengayadi).
+  double get worldSize => terrain.size;
+  Offset get worldCenter => Offset(terrain.size / 2, terrain.size / 2);
+  double terrHalf = 1200; // hudud yarim kengligi (markaz atrofida kvadrat)
+  static const double terrStart = 1200, terrStep = 300;
+  Paragraph? _centerLabel;
+
+  /// Nuqta hudud ichidami ([pad] chetdan masofa).
+  bool inTerritory(Offset p, [double pad = 0]) {
+    final c = worldCenter;
+    return (p.dx - c.dx).abs() <= terrHalf - pad && (p.dy - c.dy).abs() <= terrHalf - pad;
+  }
   double get satTarget => min(85.0, 55 + 3.0 * level + (difficulty - 1) * 5);
 
   // o'yin sozlamalari
-  int biome = 0; // 0 tekislik, 1 daryo deltasi, 2 tog' vodiysi, 3 orollar
+  int biome = Terrain.tashkent; // 0 tekislik, 1 daryo deltasi, 2 tog' vodiysi, 3 orollar, 4 Toshkent (haqiqiy xarita)
   int difficulty = 1; // 0 oson, 1 oddiy, 2 qiyin
   bool sandbox = false;
   int roadType = 0; // 0 oddiy, 1 katta yo'l
@@ -164,7 +177,7 @@ class RoadGame extends FlameGame {
   double _hudTimer = 0;
 
   // kamera
-  Offset cam = const Offset(1600, 1600);
+  Offset cam = const Offset(3200, 3200);
   double zoom = 0.8;
 
   // chizish holati: 0 bo'sh, 1 sudrash, 2 egish kutilmoqda, 3 egishni sudrash
@@ -185,7 +198,8 @@ class RoadGame extends FlameGame {
   // ---------------------------------------------------------------- xarita
 
   /// Xarita yaratish. Xato bo'lsa ekranda ko'rsatiladi (qotib qolmaydi).
-  Future<void> newMap(int s, {int? biome, int? difficulty, bool? sandbox, bool ideal = false}) async {
+  Future<void> newMap(int s, {int? biome, int? difficulty, bool? sandbox, bool ideal = false, double? world}) async {
+    _wantWorld = world ?? Terrain.bigSize;
     if (biome != null) this.biome = biome;
     if (difficulty != null) this.difficulty = difficulty;
     if (sandbox != null) this.sandbox = sandbox;
@@ -206,6 +220,8 @@ class RoadGame extends FlameGame {
     }
   }
 
+  double _wantWorld = Terrain.bigSize;
+
   Future<void> _newMapImpl(int s) async {
     loading = true;
     loadStatus = "Relyef yaratilmoqda...";
@@ -213,8 +229,9 @@ class RoadGame extends FlameGame {
     stage = 0;
     currentPlan = null;
     hud.value++;
-    terrain = Terrain(s, biome);
+    terrain = Terrain(s, biome, _wantWorld);
     terrainImage = await terrain.toImage();
+    terrHalf = terrain.size <= Terrain.legacySize ? terrain.size / 2 : terrStart; // eski kichik dunyoda hudud butun xarita
     loadStatus = "Binolar joylashtirilmoqda...";
     hud.value++;
     net.clear();
@@ -273,14 +290,19 @@ class RoadGame extends FlameGame {
     buildings.clear();
     _nextBuildingId = 1;
     Offset? center;
-    for (final rad in const [300.0, 220.0, 150.0, 100.0]) {
-      for (var i = 0; i < 3000 && center == null; i++) {
-        final p = Offset(800 + rnd.nextDouble() * 1600, 800 + rnd.nextDouble() * 1600);
-        if (_landDisk(p, rad)) center = p;
+    final wc = worldCenter;
+    if (biome == Terrain.tashkent) {
+      center = wc; // Amir Temur xiyoboni
+    } else {
+      for (final rad in const [300.0, 220.0, 150.0, 100.0]) {
+        for (var i = 0; i < 3000 && center == null; i++) {
+          final p = wc + Offset((rnd.nextDouble() - 0.5) * 1600, (rnd.nextDouble() - 0.5) * 1600);
+          if (_landDisk(p, rad)) center = p;
+        }
+        if (center != null) break;
       }
-      if (center != null) break;
     }
-    cityCenter = center ?? const Offset(1600, 1600);
+    cityCenter = center ?? wc;
     cam = cityCenter;
     zoom = 0.9;
     _placeBatch(rnd, 14, 4, 2, 420);
@@ -295,7 +317,7 @@ class RoadGame extends FlameGame {
           final dist = sqrt(rnd.nextDouble()) * reach;
           final p = cityCenter + Offset(cos(ang), sin(ang)) * dist;
           final r = size.longestSide / 2 + 8;
-          if (!terrain.isBuildableAt(p)) continue;
+          if (!inTerritory(p, r + 30) || !terrain.isBuildableAt(p)) continue;
           if (!terrain.isBuildableAt(p + Offset(r, 0)) ||
               !terrain.isBuildableAt(p + Offset(-r, 0)) ||
               !terrain.isBuildableAt(p + Offset(0, r)) ||
@@ -418,6 +440,14 @@ class RoadGame extends FlameGame {
     if (levelTimer >= levelNeedSeconds && level < maxLevel && !sandbox) _levelUp();
   }
 
+  /// Shahar o'sishi bilan xarita hududi kengayadi (daraja boshiga terrStep). Kengaygan bo'lsa true.
+  bool _growTerritory() {
+    final target = min(worldSize / 2 - 60, terrStart + terrStep * (level - 1));
+    if (target <= terrHalf + 1) return false;
+    terrHalf = target;
+    return true;
+  }
+
   void _levelUp() {
     level++;
     levelTimer = 0;
@@ -425,11 +455,13 @@ class RoadGame extends FlameGame {
     budget += bonus;
     _tripsAtLevel = sim.completed;
     final before = buildings.length;
+    final grew = _growTerritory();
     _placeBatch(Random(seed * 31 + level), 3 + level ~/ 2, level.isEven ? 1 : 0,
-        level % 3 == 0 ? 1 : 0, 420 + 50.0 * level);
+        level % 3 == 0 ? 1 : 0, min(420 + 60.0 * level, terrHalf - 150));
     _onNetworkChanged();
     _feedback(big: true);
-    flashMsg("Daraja $level! +${bonus.round()} mablag', yangi binolar: ${buildings.length - before}");
+    flashMsg("Daraja $level! +${bonus.round()} mablag', yangi binolar: ${buildings.length - before}"
+        "${grew ? ". Hudud kengaydi" : ""}");
   }
 
   // ------------------------------------------------------------ tayyor ("ideal") shahar
@@ -668,6 +700,8 @@ class RoadGame extends FlameGame {
         'budget': budget,
         'level': level,
         'biome': biome,
+        'ws': worldSize,
+        'th': terrHalf,
         'diff': difficulty,
         'sbx': sandbox ? 1 : 0,
         'buildings': [for (final b in buildings) b.toJson()],
@@ -733,6 +767,7 @@ class RoadGame extends FlameGame {
         final bud = (m['budget'] as num).toDouble();
         final lvl = (m['level'] as num?)?.toInt() ?? 1;
         final bio = (m['biome'] as num?)?.toInt() ?? 0;
+        final ws = (m['ws'] as num?)?.toDouble() ?? (bio == Terrain.tashkent ? Terrain.bigSize : Terrain.legacySize);
         final dif = (m['diff'] as num?)?.toInt() ?? 1;
         final sbx = (m['sbx'] as num?)?.toInt() == 1;
         final savedB = <Building>[];
@@ -763,7 +798,8 @@ class RoadGame extends FlameGame {
           for (final e in (m['rbs'] as List? ?? const []))
             [for (final x in e as List) (x as num).toDouble()]
         ];
-        await newMap(s, biome: bio, difficulty: dif, sandbox: sbx);
+        await newMap(s, biome: bio, difficulty: dif, sandbox: sbx, world: ws);
+        terrHalf = ((m['th'] as num?)?.toDouble() ?? terrHalf).clamp(terrStart, terrain.size / 2).toDouble();
         for (var i = 0; i < roads.length; i++) {
           net.addRoadPts(roads[i], oneWay: oneWays[i], type: types[i], layer: layers[i]);
         }
@@ -994,9 +1030,11 @@ class RoadGame extends FlameGame {
   }
 
   void _clampCam() {
+    final c = worldCenter;
+    final lim = terrHalf + 200;
     cam = Offset(
-      cam.dx.clamp(0.0, Terrain.worldSize).toDouble(),
-      cam.dy.clamp(0.0, Terrain.worldSize).toDouble(),
+      cam.dx.clamp(c.dx - lim, c.dx + lim).toDouble(),
+      cam.dy.clamp(c.dy - lim, c.dy + lim).toDouble(),
     );
   }
 
@@ -1281,6 +1319,10 @@ class RoadGame extends FlameGame {
   void _tapBuilding(Offset w) {
     final size = const [Size(34, 26), Size(52, 34), Size(70, 46)][buildType];
     final r = size.longestSide / 2 + 8;
+    if (!inTerritory(w, r)) {
+      flashMsg("Hudud tashqarisida");
+      return;
+    }
     if (!terrain.isBuildableAt(w) ||
         !terrain.isBuildableAt(w + Offset(r, 0)) ||
         !terrain.isBuildableAt(w + Offset(-r, 0)) ||
@@ -1514,6 +1556,8 @@ class RoadGame extends FlameGame {
       err = "Juda qisqa";
     } else if (c != null && _tooSharp(a, b, c)) {
       err = "Burchak juda keskin";
+    } else if (!inTerritory(a) || !inTerritory(b) || !inTerritory(pts[pts.length ~/ 2])) {
+      err = "Hudud tashqarisida";
     } else if (roadLayer == 1 ? (terrain.isWaterAt(a) || terrain.isWaterAt(b)) : pts.any(terrain.isWaterAt)) {
       err = roadLayer == 1 ? "Ko'prik uchlari quruqlikda bo'lishi kerak" : "Suv ustiga yo'l qurib bo'lmaydi";
     } else if (_hitsBuilding(pts)) {
@@ -1638,9 +1682,39 @@ class RoadGame extends FlameGame {
     canvas.drawImageRect(
       img,
       Rect.fromLTWH(0, 0, img.width.toDouble(), img.height.toDouble()),
-      const Rect.fromLTWH(0, 0, Terrain.worldSize, Terrain.worldSize),
+      Rect.fromLTWH(0, 0, worldSize, worldSize),
       Paint()..filterQuality = FilterQuality.high,
     );
+    final c = worldCenter;
+    if (terrHalf < worldSize / 2 - 1) {
+      // hali ochilmagan hudud: xarita shahar o'sishi bilan ochilib boradi
+      final inner = Rect.fromCenter(center: c, width: terrHalf * 2, height: terrHalf * 2);
+      final fog = Path()
+        ..fillType = PathFillType.evenOdd
+        ..addRect(Rect.fromLTWH(-20000, -20000, worldSize + 40000, worldSize + 40000))
+        ..addRect(inner);
+      canvas.drawPath(fog, Paint()..color = const Color(0xFFE6E3DA));
+      canvas.drawRect(
+        inner,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = max(2.0, 2.5 / zoom)
+          ..color = const Color(0xFF8C8F96),
+      );
+    }
+    if (biome == Terrain.tashkent) {
+      final lbl = _centerLabel ??= (ParagraphBuilder(ParagraphStyle(textAlign: TextAlign.center))
+            ..pushStyle(TextStyle(color: const Color(0xFF3F4A3C), fontSize: 13, fontWeight: FontWeight.w600))
+            ..addText("Amir Temur xiyoboni"))
+          .build()
+        ..layout(const ParagraphConstraints(width: 220));
+      canvas.save();
+      canvas.translate(c.dx, c.dy);
+      canvas.rotate(-rot);
+      canvas.scale(1 / zoom);
+      canvas.drawParagraph(lbl, const Offset(-110, 18));
+      canvas.restore();
+    }
   }
 
   Path _pathOf(List<Offset> pts) {

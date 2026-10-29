@@ -325,6 +325,9 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                 item(Icons.folder_open, "Saqlangan o'yinlar", _slotsDialog),
                 item(Icons.settings, "Sozlamalar", _settingsDialog),
                 item(Icons.exit_to_app, "Chiqish", () => SystemNavigator.pop()),
+                const SizedBox(height: 14),
+                const Text("Toshkent xaritasi: © OpenStreetMap contributors",
+                    style: TextStyle(color: Colors.white54, fontSize: 11)),
               ],
             ),
           ),
@@ -381,7 +384,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                   ),
                 const SizedBox(height: 10),
                 Text(L.t("Biom")),
-                chips(const ["Tekislik", "Daryo deltasi", "Tog' vodiysi", "Orollar"], biome, (i) {
+                chips(const ["Tekislik", "Daryo deltasi", "Tog' vodiysi", "Orollar", "Toshkent"], biome, (i) {
                   biome = i;
                   regen();
                 }),

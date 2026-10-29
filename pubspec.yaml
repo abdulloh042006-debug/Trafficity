@@ -22,6 +22,8 @@ flutter:
   uses-material-design: true
   assets:
     - assets/audio/ambient.wav
+    - assets/map/tashkent.webp
+    - assets/map/tashkent_water.png
 
 flutter_launcher_icons:
   android: true
