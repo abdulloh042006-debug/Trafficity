@@ -132,6 +132,14 @@ flutter build apk --release  # build/app/outputs/flutter-apk/app-release.apk
 - "Ovoz" tugmasi / sozlamalardagi "Ovoz" musiqani ham yoqadi/o'chiradi; ilova fonga o'tganda to'xtaydi
 - Paket: `audioplayers` (xato bo'lsa o'yin davom etadi, faqat musiqasiz)
 
+## 18-bosqich: tashqi ko'rinishni soddalashtirish va estakada rampasi (tayyor, sinovdan o'tmagan)
+- Estakada uchi yer usti yo'liga endi rampa bo'lib tushadi: oxirgi ~70 birlikda yo'l yerdan silliq ko'tariladi, soya va chekka balandlik bilan o'sadi (oldin qora halqa va soya yer yo'li ustiga "yopishib" turardi). Hech narsaga ulanmagan estakada uchi ham yerga tushadi (ko'prik tayanchi)
+- Chizish tartibi: yer usti yo'li -> bino -> yer usti mashinalari -> estakada -> estakadadagi mashinalar. Estakada ostidan o'tgan mashinalar ko'prik ostida yashirinadi
+- Yo'l belgilari: ikki tomonlama oddiy yo'lda sariq punktir, katta yo'l/magistralda sariq ajratgich, polosalar orasida oq punktir; uzoqdan (zoom < 0.3) chizilmaydi
+- Yuqori panel: bitta ixcham panel (asosiy: mablag', daraja, mamnuniyat; ikkinchi qator: mashina, yetib bordi, o'rtacha, ekologiya, ta'minot); "Yo'llar" soni olib tashlandi
+- Pastki panel: Ovoz, Ranglar, Hajm, Til, Debug, Slotlar, Yangi tugmalari olib tashlandi (menyu va sozlamalarda bor; Debug sozlamalarga ko'chdi). Tugmalar guruhlarga ajratildi
+- Ortiqcha animatsiyalar olib tashlandi: bosilganda to'lqin (splash) va yuklanishdagi aylanuvchi indikator
+
 ## Hali yo'q
 Aylanada kiruvchiga "yo'l bering" qoidasi (hozir kim birinchi so'rasa), ko'p polosali yo'llar, magistral va ramplar, iqtisodiyot va darajalar, qo'lda svetofor fazalarini tahrirlash.
 

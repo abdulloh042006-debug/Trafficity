@@ -43,7 +43,11 @@ class RoadFlowApp extends StatelessWidget {
     return MaterialApp(
       title: 'RoadFlow City',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(useMaterial3: true, colorSchemeSeed: const Color(0xFF6E8F5A)),
+      theme: ThemeData(
+        useMaterial3: true,
+        colorSchemeSeed: const Color(0xFF6E8F5A),
+        splashFactory: NoSplash.splashFactory,
+      ),
       home: const GameScreen(),
     );
   }
@@ -246,6 +250,15 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                   value: game.colorBlind,
                   onChanged: (_) {
                     game.toggleColorBlind();
+                    setS(() {});
+                  },
+                ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text("Debug"),
+                  value: game.debug,
+                  onChanged: (_) {
+                    game.toggleDebug();
                     setS(() {});
                   },
                 ),
@@ -476,8 +489,6 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              if (game.loadError == null) const CircularProgressIndicator(),
-                              const SizedBox(height: 12),
                               _chip(
                                 game.loadError == null ? game.loadStatus : "Xato: ${game.loadError}",
                                 color: game.loadError == null ? null : const Color(0xFFC0392B),
@@ -563,6 +574,28 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
     );
   }
 
+  Widget _stat(String text, {Color? color, bool bold = false}) {
+    return Text(
+      L.t(text),
+      style: TextStyle(
+        fontSize: (bold ? 13 : 11.5) * _uiScale,
+        fontWeight: bold ? FontWeight.w700 : FontWeight.w500,
+        color: color ?? const Color(0xFF2B2E33),
+      ),
+    );
+  }
+
+  Widget _panel(List<Widget> children) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xEBFFFFFF),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(mainAxisSize: MainAxisSize.min, children: children),
+    );
+  }
+
   Widget _topBar(RoadPlan? plan) {
     final loaded = !game.loading;
     final sim = loaded ? game.sim : null;
@@ -571,31 +604,48 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            alignment: WrapAlignment.center,
-            children: [
-              _chip(game.sandbox ? "Sandbox: cheksiz mablag'" : "Mablag': ${game.budget.round()}"),
-              _chip("Yo'llar: ${game.net.roads.length}"),
-              _chip("Daraja: ${game.level}"),
-              _chip("Ekologiya: ${(game.env * 100).round()}%"),
-              _chip("Ta'minot: ${(game.supply * 100).round()}%"),
-              _chip(
-                "Mamnuniyat: ${game.satisfaction.round()}/${game.satTarget.round()}"
-                "${game.levelTimer > 0 ? '  (${game.levelTimer.round()}/${RoadGame.levelNeedSeconds.round()} s)' : ''}",
-                color: game.satisfaction >= game.satTarget ? const Color(0xFF2E8B3E) : null,
-              ),
-              if (sim != null) ...[
-                _chip("Mashina: ${sim.vehicles.length}"),
-                _chip("Yetib bordi: ${sim.completed}"),
-                _chip("O'rtacha: ${sim.avgTrip.round()} s"),
-                if (sim.failed > 0)
-                  _chip("Yo'l topilmadi: ${sim.failed}", color: const Color(0xFFC0392B)),
-                if (sim.lost > 0) _chip("Yo'qotilgan: ${sim.lost}"),
+          _panel([
+            Wrap(
+              spacing: 14,
+              runSpacing: 2,
+              alignment: WrapAlignment.center,
+              children: [
+                _stat(game.sandbox ? "Sandbox: cheksiz mablag'" : "Mablag': ${game.budget.round()}", bold: true),
+                _stat("Daraja: ${game.level}", bold: true),
+                _stat(
+                  "Mamnuniyat: ${game.satisfaction.round()}/${game.satTarget.round()}"
+                  "${game.levelTimer > 0 ? '  (${game.levelTimer.round()}/${RoadGame.levelNeedSeconds.round()} s)' : ''}",
+                  bold: true,
+                  color: game.satisfaction >= game.satTarget ? const Color(0xFF2E8B3E) : null,
+                ),
               ],
-            ],
-          ),
+            ),
+            const SizedBox(height: 3),
+            if (sim != null)
+              Wrap(
+                spacing: 12,
+                runSpacing: 2,
+                alignment: WrapAlignment.center,
+                children: [
+                  _stat("Mashina: ${sim.vehicles.length}"),
+                  _stat("Yetib bordi: ${sim.completed}"),
+                  _stat("O'rtacha: ${sim.avgTrip.round()} s"),
+                ],
+              ),
+            Wrap(
+              spacing: 12,
+              runSpacing: 2,
+              alignment: WrapAlignment.center,
+              children: [
+                _stat("Ekologiya: ${(game.env * 100).round()}%"),
+                _stat("Ta'minot: ${(game.supply * 100).round()}%"),
+                if (sim != null && sim.failed > 0)
+                  _stat("Yo'l topilmadi: ${sim.failed}", color: const Color(0xFFC0392B)),
+                if (sim != null && sim.lost > 0) _stat("Yo'qotilgan: ${sim.lost}"),
+              ],
+            ),
+          ]),
+          const SizedBox(height: 6),
           if (game.debug) ...[
             _chip(game.debugText()),
             const SizedBox(height: 6),
@@ -676,6 +726,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
             if (game.rot.abs() > 0.01) _btn(Icons.explore, "Shimol", game.resetRotation),
             if (game.canUndo) _btn(Icons.undo, "Ortga", game.undo),
             if (game.canRedo) _btn(Icons.redo, "Oldinga", game.redo),
+            const SizedBox(width: 10),
             _btn(Icons.horizontal_rule, "To'g'ri", () => game.setTool(Tool.straight),
                 selected: game.tool == Tool.straight),
             _btn(Icons.gesture, "Egri", () => game.setTool(Tool.curve), selected: game.tool == Tool.curve),
@@ -689,6 +740,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                 selected: game.tool == Tool.erase),
             _btn(Icons.info_outline, "Ma'lumot", () => game.setTool(Tool.inspect),
                 selected: game.tool == Tool.inspect),
+            const SizedBox(width: 10),
             _btn(Icons.alt_route, ["Oddiy yo'l", "Katta yo'l", "Magistral"][game.roadType], game.cycleRoadType),
             _btn(Icons.layers, game.roadLayer == 1 ? "Estakada" : "Yer usti", game.cycleRoadLayer, selected: game.roadLayer == 1),
             if (game.sandbox) ...[
@@ -703,33 +755,12 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
             ],
             if (game.stage != 0) _btn(Icons.close, "Bekor", game.cancel),
             if (game.tutorial) _btn(Icons.school, "O'tkazish", game.skipTutorial),
+            const SizedBox(width: 10),
             _btn(game.speed == 0 ? Icons.pause : Icons.speed, speedLabel, game.cycleSpeed),
+            const SizedBox(width: 10),
             _btn(Icons.local_fire_department, "Tirbandlik", game.toggleHeat, selected: game.heat),
             _btn(Icons.show_chart, "Grafik", game.toggleCharts, selected: game.showCharts),
             _btn(Icons.eco, "Ekologiya", game.toggleEnv, selected: game.showEnv),
-            _btn(game.soundOn ? Icons.volume_up : Icons.volume_off, "Ovoz", game.toggleSound),
-            _btn(Icons.palette, "Ranglar", game.toggleColorBlind, selected: game.colorBlind),
-            _btn(Icons.format_size, "Hajm", () async {
-              const opts = [0.9, 1.0, 1.15, 1.3];
-              final i = opts.indexOf(_uiScale);
-              setState(() => _uiScale = opts[(i + 1) % opts.length]);
-              try {
-                final p = await SharedPreferences.getInstance();
-                await p.setDouble('uiScale', _uiScale);
-              } catch (_) {}
-            }),
-            _btn(Icons.bug_report, "Debug", game.toggleDebug, selected: game.debug),
-            _btn(Icons.save_outlined, "Slotlar", _slotsDialog),
-            _btn(Icons.language, ["UZ", "RU", "EN"][L.lang], () async {
-              L.lang = (L.lang + 1) % 3;
-              setState(() {});
-              game.hud.value++;
-              try {
-                final p = await SharedPreferences.getInstance();
-                await p.setInt('lang', L.lang);
-              } catch (_) {}
-            }),
-            _btn(Icons.refresh, "Yangi", _newGameDialog),
           ],
         ),
       ),

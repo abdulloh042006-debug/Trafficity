@@ -1598,8 +1598,10 @@ class RoadGame extends FlameGame {
       b.draw(canvas);
     }
     _drawEnv(canvas);
-    _drawVehicles(canvas);
+    _drawVehicles(canvas, 0);
     _drawSignals(canvas);
+    _drawElevated(canvas); // estakada yer usti mashinalari va binolar ustidan o'tadi
+    _drawVehicles(canvas, 1);
     _drawSelected(canvas);
     _drawPreview(canvas);
 
@@ -1670,72 +1672,41 @@ class RoadGame extends FlameGame {
       r.pts.length > 2 &&
       ((r.pts[r.pts.length ~/ 2] - c).distance - roundaboutRadius).abs() < 3);
 
+  static const Color _asphalt = Color(0xFFDADCDF);
+  static const Color _edge = Color(0xFF4A4D52);
+
+  double _wOf(Road r) => RoadNetwork.roadWidth * (r.type + 1);
+
   void _drawRoads(Canvas canvas) {
     if (net.roads.isEmpty) return;
     const w = RoadNetwork.roadWidth;
-    final border = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = w + 5
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round
-      ..color = const Color(0xFF4A4D52);
-    final fill = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = w
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-    final center = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.2
-      ..color = const Color(0xCCD9B85A);
-
-    for (final layer in const [0, 1]) {
-    final roads = net.roads.values.where((r) => r.layer == layer).toList();
-    if (roads.isEmpty) continue;
-    final paths = [for (final r in roads) _pathOf(r.pts)];
-    if (layer == 1) {
-      // estakada/ko'prik: pastdagi yo'llar ustida, soyasi bilan
-      final shadow = Paint()
+    final roads = net.roads.values.where((r) => r.layer == 0).toList();
+    if (roads.isNotEmpty) {
+      final paths = [for (final r in roads) _pathOf(r.pts)];
+      final border = Paint()
         ..style = PaintingStyle.stroke
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round
-        ..color = const Color(0x50000000)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
-      for (var i = 0; i < roads.length; i++) {
-        shadow.strokeWidth = [w + 5, w * 2 + 5, w * 3 + 5][roads[i].type] + 4;
-        canvas.drawPath(paths[i].shift(const Offset(4, 6)), shadow);
-      }
-    }
-    for (var i = 0; i < roads.length; i++) {
-      border.strokeWidth = [w + 5, w * 2 + 5, w * 3 + 5][roads[i].type];
-      canvas.drawPath(paths[i], border);
-    }
-    for (var i = 0; i < roads.length; i++) {
-      fill.strokeWidth = [w, w * 2, w * 3][roads[i].type];
-      fill.color = heat ? _heatColor(_roadRatio(roads[i])) : const Color(0xFFDADCDF);
-      canvas.drawPath(paths[i], fill);
-    }
-    if (!heat) {
-      for (var i = 0; i < roads.length; i++) {
-        if (!roads[i].oneWay) canvas.drawPath(paths[i], center);
-      }
-      // ko'p polosali yo'llarda polosa chiziqlari
-      final laneLine = Paint()
+        ..color = _edge;
+      final fill = Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 1
-        ..color = const Color(0xAAFFFFFF);
-      for (final rd in roads) {
-        if (rd.type == 0) continue;
-        for (final off in rd.type == 2 ? const [-14.0, -7.0, 7.0, 14.0] : const [-7.0, 7.0]) {
-          canvas.drawPath(_pathOf(LaneGraph.offsetPath(rd.pts, off)), laneLine);
-        }
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round;
+      for (var i = 0; i < roads.length; i++) {
+        border.strokeWidth = _wOf(roads[i]) + 5;
+        canvas.drawPath(paths[i], border);
       }
-    }
+      for (var i = 0; i < roads.length; i++) {
+        fill.strokeWidth = _wOf(roads[i]);
+        fill.color = heat ? _heatColor(_roadRatio(roads[i])) : _asphalt;
+        canvas.drawPath(paths[i], fill);
+      }
+      if (!heat) _drawMarkings(canvas, roads);
     }
     if (!heat) {
-      final junction = Paint()..color = const Color(0xFFDADCDF);
+      final junction = Paint()..color = _asphalt;
       for (final n in net.nodes.values) {
-        if (n.roads.length >= 3) canvas.drawCircle(n.pos, w * 0.7, junction);
+        if (n.roads.length >= 3) canvas.drawCircle(n.pos, w * 0.66, junction);
       }
     }
     roundabouts.removeWhere((c) => !_ringExists(c));
@@ -1747,8 +1718,155 @@ class RoadGame extends FlameGame {
         Paint()
           ..style = PaintingStyle.stroke
           ..strokeWidth = 1.5
-          ..color = const Color(0xFF4A4D52),
+          ..color = _edge,
       );
+    }
+  }
+
+  /// Yo'l belgilari: ikki tomonlama oddiy yo'lda sariq punktir, katta yo'l/magistralda sariq ajratgich,
+  /// polosalar orasida oq punktir. Uzoqdan (kichik masshtabda) chizilmaydi.
+  void _drawMarkings(Canvas canvas, List<Road> roads) {
+    if (zoom < 0.3) return;
+    final solid = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2
+      ..color = const Color(0xCCD9B85A);
+    final yellow = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.3
+      ..color = const Color(0xCCD9B85A);
+    final white = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1
+      ..color = const Color(0xCCFFFFFF);
+    final yellowDashes = <Offset>[];
+    final whiteDashes = <Offset>[];
+    for (final r in roads) {
+      if (!r.oneWay) {
+        if (r.type == 0) {
+          _dash(r.pts, 6, 8, yellowDashes);
+        } else {
+          canvas.drawPath(_pathOf(r.pts), solid);
+        }
+      }
+      if (r.type == 0) continue;
+      for (final off in r.type == 2 ? const [-14.0, -7.0, 7.0, 14.0] : const [-7.0, 7.0]) {
+        _dash(LaneGraph.offsetPath(r.pts, off), 5, 7, whiteDashes);
+      }
+    }
+    canvas.drawPoints(PointMode.lines, yellowDashes, yellow);
+    canvas.drawPoints(PointMode.lines, whiteDashes, white);
+  }
+
+  /// Chiziqni [on] uzunlikda chizilib, [off] uzunlikda tashlab ketiladigan bo'laklarga ajratadi
+  /// (har bo'lak [out]ga ikki nuqta bo'lib qo'shiladi).
+  static void _dash(List<Offset> pts, double on, double off, List<Offset> out) {
+    var drawing = true;
+    var left = on;
+    for (var i = 1; i < pts.length; i++) {
+      final a = pts[i - 1], b = pts[i];
+      final len = (b - a).distance;
+      if (len < 1e-9) continue;
+      var pos = 0.0;
+      while (pos < len - 1e-9) {
+        final step = min(len - pos, left);
+        if (drawing) {
+          out.add(Offset.lerp(a, b, pos / len)!);
+          out.add(Offset.lerp(a, b, (pos + step) / len)!);
+        }
+        pos += step;
+        left -= step;
+        if (left <= 1e-9) {
+          drawing = !drawing;
+          left = drawing ? on : off;
+        }
+      }
+    }
+  }
+
+  /// Estakada yerga tushadigan uchlarida shu masofada (birlik) silliq pasayadi.
+  static const double _rampLen = 70;
+
+  /// Tugunga yer usti yo'li ulanganmi (estakada shu yerda rampa bo'lib tushadi).
+  bool _touchesGround(int nodeId) {
+    final n = net.nodes[nodeId];
+    if (n == null) return false;
+    for (final rid in n.roads) {
+      if (net.roads[rid]?.layer == 0) return true;
+    }
+    return false;
+  }
+
+  /// Estakada uchi yerga tushadimi: yer usti yo'liga ulangan yoki hech narsaga ulanmagan (ko'prik tayanchi).
+  bool _grounded(int nodeId) => _touchesGround(nodeId) || (net.nodes[nodeId]?.roads.length ?? 0) <= 1;
+
+  _Deck _deckOf(Road r) {
+    final pts = <Offset>[r.pts.first];
+    final cum = <double>[0];
+    var acc = 0.0;
+    for (var i = 1; i < r.pts.length; i++) {
+      final a = r.pts[i - 1], b = r.pts[i];
+      final len = (b - a).distance;
+      if (len < 1e-6) continue;
+      final n = max(1, (len / 6).ceil());
+      for (var k = 1; k <= n; k++) {
+        acc += len / n;
+        pts.add(Offset.lerp(a, b, k / n)!);
+        cum.add(acc);
+      }
+    }
+    final ga = _grounded(r.a), gb = _grounded(r.b);
+    final ra = ga ? min(_rampLen, acc / 2) : 0.0;
+    final rb = gb ? min(_rampLen, acc / 2) : 0.0;
+    final h = <double>[];
+    for (final s in cum) {
+      var v = 1.0;
+      if (ra > 0 && s < ra) v = min(v, s / ra);
+      if (rb > 0 && acc - s < rb) v = min(v, (acc - s) / rb);
+      h.add(v * v * (3 - 2 * v)); // silliq ko'tarilish
+    }
+    return _Deck(pts, h, _wOf(r) / 2, !ga, !gb, _touchesGround(r.a), _touchesGround(r.b));
+  }
+
+  /// Estakada: uchlarida rampa bo'lib yerdan ko'tariladi (soya va chetlari balandlik bilan ortadi),
+  /// shuning uchun yer usti yo'liga to'g'ri va ravon qo'shiladi.
+  void _drawElevated(Canvas canvas) {
+    final roads = net.roads.values.where((r) => r.layer == 1 && r.pts.length >= 2).toList();
+    if (roads.isEmpty) return;
+    final decks = [for (final r in roads) _deckOf(r)];
+    final shadow = Paint()
+      ..color = const Color(0x55000000)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+    for (final d in decks) {
+      canvas.drawPath(d.ribbon(d.half + 1.5, 0, const Offset(5, 7)), shadow);
+    }
+    final border = Paint()..color = _edge;
+    for (final d in decks) {
+      canvas.drawPath(d.ribbon(d.half, 3.5, Offset.zero), border);
+      if (d.capA) canvas.drawCircle(d.pts.first, d.half + 3.5, border);
+      if (d.capB) canvas.drawCircle(d.pts.last, d.half + 3.5, border);
+    }
+    final fill = Paint();
+    for (var i = 0; i < decks.length; i++) {
+      final d = decks[i];
+      fill.color = heat ? _heatColor(_roadRatio(roads[i])) : _asphalt;
+      canvas.drawPath(d.ribbon(d.half, 0, Offset.zero), fill);
+      if (d.capA) canvas.drawCircle(d.pts.first, d.half, fill);
+      if (d.capB) canvas.drawCircle(d.pts.last, d.half, fill);
+    }
+    if (!heat) {
+      _drawMarkings(canvas, roads);
+      final junction = Paint()..color = _asphalt;
+      // rampaning yer yo'liga tegadigan uchi: to'rtburchak burchaklar yer yo'li yuzasi bilan yopiladi
+      for (final d in decks) {
+        if (d.baseA) canvas.drawCircle(d.pts.first, d.half + 0.6, junction);
+        if (d.baseB) canvas.drawCircle(d.pts.last, d.half + 0.6, junction);
+      }
+      for (final n in net.nodes.values) {
+        if (n.roads.length >= 3 && n.roads.every((id) => net.roads[id]?.layer == 1)) {
+          canvas.drawCircle(n.pos, RoadNetwork.roadWidth * 0.7, junction);
+        }
+      }
     }
   }
 
@@ -1844,11 +1962,24 @@ class RoadGame extends FlameGame {
     }
   }
 
-  void _drawVehicles(Canvas canvas) {
+  int _layerOf(Track t) {
+    final int rid;
+    if (t is Lane) {
+      rid = t.roadId;
+    } else if (t is Connector) {
+      rid = t.from.roadId;
+    } else {
+      return 0;
+    }
+    return net.roads[rid]?.layer ?? 0;
+  }
+
+  void _drawVehicles(Canvas canvas, int layer) {
     final k = max(1.0, 3.0 / (4.4 * zoom)); // uzoqdan ham ko'rinishi uchun
     final paint = Paint();
     final glass = Paint()..color = const Color(0x55000000);
     for (final v in sim.vehicles) {
+      if (_layerOf(v.track) != layer) continue;
       final p = v.track.pointAt(v.s);
       final d = v.track.dirAt(v.s);
       final c = p - d * (v.length * k / 2) + Offset(-d.dy, d.dx) * v.lat; // lat: polosa almashtirish siljishi
@@ -1924,5 +2055,41 @@ class RoadGame extends FlameGame {
         );
       }
     }
+  }
+}
+
+/// Estakada bo'lagi: markaz chizig'i nuqtalari va har nuqtadagi balandlik (0 = yer, 1 = to'liq).
+class _Deck {
+  _Deck(this.pts, this.h, this.half, this.capA, this.capB, this.baseA, this.baseB);
+
+  final List<Offset> pts;
+  final List<double> h;
+  final double half; // yo'lning yarim eni
+  final bool capA, capB; // boshqa estakadaga ulangan uchlar (yumaloq birikma kerak)
+  final bool baseA, baseB; // yer usti yo'liga tushadigan uchlar
+
+  /// Markaz chizig'i bo'ylab lenta: eni base + grow*h, siljishi lift*h.
+  Path ribbon(double base, double grow, Offset lift) {
+    final n = pts.length;
+    final left = <Offset>[], right = <Offset>[];
+    for (var i = 0; i < n; i++) {
+      var t = pts[min(i + 1, n - 1)] - pts[max(i - 1, 0)];
+      final l = t.distance;
+      t = l < 1e-9 ? const Offset(1, 0) : t / l;
+      final nrm = Offset(-t.dy, t.dx);
+      final hw = base + grow * h[i];
+      final c = pts[i] + lift * h[i];
+      left.add(c + nrm * hw);
+      right.add(c - nrm * hw);
+    }
+    final path = Path()..moveTo(left[0].dx, left[0].dy);
+    for (var i = 1; i < n; i++) {
+      path.lineTo(left[i].dx, left[i].dy);
+    }
+    for (var i = n - 1; i >= 0; i--) {
+      path.lineTo(right[i].dx, right[i].dy);
+    }
+    path.close();
+    return path;
   }
 }
