@@ -13,7 +13,7 @@ void main() {
   Future<RoadGame> make(int biome) async {
     final g = RoadGame();
     g.onGameResize(Vector2(900, 600));
-    await g.newMap(7, biome: biome, sandbox: true, ideal: false);
+    await g.newMap(7, biome: biome, sandbox: true, ideal: false, realRoads: false);
     g.terrHalf = 2800;
     return g;
   }

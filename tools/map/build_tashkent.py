@@ -38,6 +38,11 @@ for i, m in enumerate(marks):
         key = f'{m.group(1) or m.group(2)}#{k}'
     segs[key] = s[pos[i]:pos[i + 1]]
 head = s[:pos[0]]
+sys.path.insert(0, HERE)
+import svg_layers as sl  # noqa: E402
+
+# o'yinga haqiqiy yo'l sifatida yuklanadigan sinflar asosiy xaritadan olib tashlanadi (faqat xira kichik ko'chalar qoladi)
+segs['Дороги_и_улицы'] = sl.strip_imported_roads(segs['Дороги_и_улицы'])
 box_w = WORLD_M / GROUND
 box = (CX - box_w / 2, CY - box_w / 2, box_w)
 num = re.compile(r'-?\d+\.?\d*')

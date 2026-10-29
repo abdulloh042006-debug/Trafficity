@@ -29,6 +29,7 @@ class L {
     ["Stansiya", "Станция", "Station"],
     ["Temir yo'l", "Железная дорога", "Railway"],
     ["Tunnel", "Тоннель", "Tunnel"],
+    ["Toshkent ko'chalari yuklandi", "Улицы Ташкента загружены", "Tashkent streets loaded"],
     // --- jumlalar va yo'riqnomalar
     ["Xaritani suring; 2 barmoq bilan kattalashtiring va buring", "Двигайте карту; двумя пальцами масштабируйте и вращайте", "Drag to pan; use two fingers to zoom and rotate"],
     ["Barmoqni bosib sudrang: to'g'ri yo'l shu yerda quriladi", "Проведите пальцем: здесь будет прямая дорога", "Drag your finger: a straight road will be built here"],

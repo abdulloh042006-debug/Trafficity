@@ -163,6 +163,13 @@ flutter build apk --release  # build/app/outputs/flutter-apk/app-release.apk
 - Bekor qilish/qaytarish, saqlash (`rails`, `stations`), o'chirish asbobi (stansiya yoki yo'l bo'lagi; mablag' to'liq qaytadi) temir yo'lni ham qamraydi; "Ma'lumot" asbobi stansiya va poyezd haqida aytadi
 - Kod: `lib/game/rail.dart` (marshrut, poyezd), `lib/game/rail_draw.dart` (tasnif, narx, chizish), `lib/game/deck.dart` (ko'prik lentasi, estakada bilan umumiy); testlar: `test/rail_test.dart`, `test/rail_game_test.dart`
 
+## 22-bosqich: Toshkentning haqiqiy ko'chalari 1:1 (tayyor, headless sinovdan o'tgan, telefonda emas)
+- Yo'llar OSM SVG'dagi haqiqiy ko'chalar bilan geometriyasi bo'yicha aynan bir xil (trunk/primary/secondary/tertiary/residential; kichik "service" ko'chalar va piyoda yo'llar faqat xira fonda). Yangi o'yinda boshlang'ich hududdagi (2.4 km) ko'chalar tayyor turadi, hudud kengayganda yangi halqadagi ko'chalar qo'shiladi (jami ~2500 yo'l bo'lagi)
+- Tayyorlash (`tools/map/build_tashkent_roads.py` -> `assets/map/tashkent_roads.json`): tugunlar (T-chorraha va kesishmalar), qisqa (<30 m) bo'laklar birlashtiriladi, ikki tomonlama prospektlar (parallel juft) o'ng tomonlama harakat bo'yicha bir tomonlama qilinadi (yo'nalish tugunlarda izchillashtiriladi), Amir Temur xiyoboni kabi aylanalar soat miliga teskari, suv ustidan o'tgan joylar estakada-ko'prik, trunk kesishmalari estakada, asosiy tarmoqdan uzilgan kichik orollar olib tashlanadi
+- Binolar yo'llardan uzoqda joylashadi va mahalliy yo'l bilan ulanadi; markaz yaqinidagi 4+ yo'lli chorrahalarga (<= 24 ta) adaptiv svetofor qo'yiladi. Tayyor yo'llar narxsiz: o'chirilsa mablag' qaytmaydi (saqlashda `f`, bekor qilishda narx saqlanadi)
+- Asosiy xaritadan (basemap) shu yo'l sinflari olib tashlandi (ikki marta ko'rinmasin); ko'rinadigan oyna bo'yicha chizish (culling) qo'shildi
+- Eski saqlashlar o'zgarishsiz ochiladi; tayyor yo'llar bo'lmagan eski Toshkent saqlashlarida faqat keyingi kengayishlarda haqiqiy yo'llar qo'shiladi
+
 ## Hali yo'q
 Aylanada kiruvchiga "yo'l bering" qoidasi (hozir kim birinchi so'rasa), ko'p polosali yo'llar, magistral va ramplar, iqtisodiyot va darajalar, qo'lda svetofor fazalarini tahrirlash.
 

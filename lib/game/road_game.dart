@@ -13,6 +13,7 @@ import 'deck.dart';
 import 'lane_graph.dart';
 import 'rail.dart';
 import 'rail_draw.dart';
+import 'real_roads.dart';
 import 'road_network.dart';
 import 'signal.dart';
 import 'terrain.dart';
@@ -35,7 +36,7 @@ class RoadPlan {
 class _EditState {
   _EditState(this.roads, this.roundabouts, this.signals, this.refund,
       [this.rails = const [], this.stations = const []]);
-  final List<(List<Offset>, bool, int, int)> roads; // pts, oneWay, type, layer
+  final List<(List<Offset>, bool, int, int, double)> roads; // pts, oneWay, type, layer, narx
   final List<(List<Offset>, bool, int, int)> rails; // temir yo'l bo'laklari
   final List<Offset> stations;
   final List<Offset> roundabouts;
@@ -212,8 +213,10 @@ class RoadGame extends FlameGame {
   // ---------------------------------------------------------------- xarita
 
   /// Xarita yaratish. Xato bo'lsa ekranda ko'rsatiladi (qotib qolmaydi).
-  Future<void> newMap(int s, {int? biome, int? difficulty, bool? sandbox, bool ideal = false, double? world}) async {
+  Future<void> newMap(int s,
+      {int? biome, int? difficulty, bool? sandbox, bool ideal = false, double? world, bool realRoads = true}) async {
     _wantWorld = world ?? Terrain.bigSize;
+    _importReal = realRoads;
     if (biome != null) this.biome = biome;
     if (difficulty != null) this.difficulty = difficulty;
     if (sandbox != null) this.sandbox = sandbox;
@@ -222,7 +225,11 @@ class RoadGame extends FlameGame {
       await _newMapImpl(s);
       if (ideal) {
         try {
-          _applyIdealCity();
+          if (this.biome == Terrain.tashkent && _importReal) {
+            _applyRealCity();
+          } else {
+            _applyIdealCity();
+          }
         } catch (e) {
           flashMsg("Tayyor shahar qurilmadi: $e");
         }
@@ -235,6 +242,9 @@ class RoadGame extends FlameGame {
   }
 
   double _wantWorld = Terrain.bigSize;
+  bool _importReal = true; // Toshkent: haqiqiy yo'llar yuklansinmi (saqlashdan yuklashda yo'q)
+  List<RealRoad> _real = const []; // Toshkentning haqiqiy yo'llari (hudud kengayganda qo'shiladi)
+  final Map<int, Rect> _bbox = {}; // yo'l chegara to'rtburchagi (ko'rinadigan oynaga chizish uchun)
 
   Future<void> _newMapImpl(int s) async {
     loading = true;
@@ -249,6 +259,7 @@ class RoadGame extends FlameGame {
     loadStatus = "Binolar joylashtirilmoqda...";
     hud.value++;
     net.clear();
+    _bbox.clear();
     railNet.clear();
     rail.stations.clear();
     rail.rebuild();
@@ -276,6 +287,8 @@ class RoadGame extends FlameGame {
     tutorial = !sandbox;
     tutStep = 0;
     _heatSeen = false;
+    _real = biome == Terrain.tashkent ? await RealRoads.load() : const [];
+    if (_importReal) importRealRoads(-1, terrHalf); // yo'llar avval, keyin binolar (binolar yo'ldan uzoqda joylashadi)
     _placeBuildings();
     _camStart = cam;
     _zoomStart = zoom;
@@ -289,6 +302,8 @@ class RoadGame extends FlameGame {
     rail.rebuild();
     railVis.rebuild(railNet, net, terrain);
   }
+
+  void onNetworkChanged() => _onNetworkChanged();
 
   void _onNetworkChanged() {
     if (railNet.roads.isNotEmpty) railVis.rebuild(railNet, net, terrain); // yangi yo'l temir yo'lni kesib o'tishi mumkin
@@ -471,11 +486,28 @@ class RoadGame extends FlameGame {
   }
 
   /// Shahar o'sishi bilan xarita hududi kengayadi (daraja boshiga terrStep). Kengaygan bo'lsa true.
-  bool _growTerritory() {
-    final target = min(worldSize / 2 - 60, terrStart + terrStep * (level - 1));
+  bool _growTerritory() => expandTerritory(min(worldSize / 2 - 60, terrStart + terrStep * (level - 1)));
+
+  /// Hududni [target] gacha kengaytiradi; Toshkentda yangi ochilgan halqadagi haqiqiy yo'llar qo'shiladi.
+  bool expandTerritory(double target) {
     if (target <= terrHalf + 1) return false;
+    final old = terrHalf;
     terrHalf = target;
+    if (_importReal && _real.isNotEmpty) {
+      importRealRoads(old, target);
+      onNetworkChanged();
+    }
     return true;
+  }
+
+  /// Markazdan Chebyshev masofasi (from, to] oralig'idagi haqiqiy yo'llarni qo'shadi (narxsiz); qo'shilgan soni.
+  int importRealRoads(double from, double to) {
+    var n = 0;
+    for (final r in _real) {
+      if (r.cheb <= from || r.cheb > to) continue;
+      if (net.addRoadPts(List<Offset>.of(r.pts), oneWay: r.oneWay, type: r.type, layer: r.layer, cost: 0) != null) n++;
+    }
+    return n;
   }
 
   void _levelUp() {
@@ -714,6 +746,48 @@ class RoadGame extends FlameGame {
     flashMsg("Tayyor shahar yuklandi");
   }
 
+  /// Toshkent: haqiqiy ko'chalar allaqachon yuklangan; binolar mahalliy yo'l bilan ulanadi, asosiy chorrahalarga svetofor qo'yiladi.
+  void _applyRealCity() {
+    roadType = 0;
+    roadLayer = 0;
+    budget = 1e9; // mahalliy yo'llar byudjetga bog'lanmaydi; tayyor bo'lgach qolgan mablag' belgilanadi
+    final order = [...buildings]
+      ..sort((a, b) => (a.pos - cityCenter).distance.compareTo((b.pos - cityCenter).distance));
+    for (final b in order) {
+      _linkBuilding(b);
+    }
+    _onNetworkChanged();
+    final cands = <(double, RoadNode)>[];
+    for (final n in net.nodes.values) {
+      if (n.roads.length < 3 || !inTerritory(n.pos, 30)) continue;
+      var oneWays = 0, big = 0;
+      for (final id in n.roads) {
+        final r = net.roads[id];
+        if (r == null) continue;
+        if (r.oneWay) oneWays++;
+        if (r.type == 1) big++;
+      }
+      if (n.roads.length == 3 && oneWays > 0) continue; // aylana kirish/chiqishi, qo'shilish
+      if (n.roads.length >= 4 || big >= 2) cands.add(((n.pos - cityCenter).distance, n));
+    }
+    cands.sort((a, b) => a.$1.compareTo(b.$1));
+    for (final c in cands.take(24)) {
+      sim.addSignal(c.$2.id, 12, adaptive: true);
+    }
+    roadType = 0;
+    roadLayer = 0;
+    budget = sandbox ? 1e9 : const [1500.0, 1000.0, 700.0][difficulty];
+    tutorial = false;
+    cam = cityCenter;
+    zoom = 0.6;
+    _clampCam();
+    _undo.clear();
+    _redo.clear();
+    _onNetworkChanged();
+    _notify();
+    flashMsg("Toshkent ko'chalari yuklandi");
+  }
+
   // ---------------------------------------------------------- saqlash/yuklash
 
   Future<bool> save({bool auto = false, int slot = 1}) async {
@@ -744,6 +818,7 @@ class RoadGame extends FlameGame {
               'o': r.oneWay ? 1 : 0,
               't': r.type,
               'l': r.layer,
+              if (r.cost <= 0) 'f': 1, // tayyor (tekin) yo'l: o'chirilganda mablag' qaytmaydi
             }
         ],
         'signals': [
@@ -821,6 +896,7 @@ class RoadGame extends FlameGame {
         final oneWays = <bool>[];
         final types = <int>[];
         final layers = <int>[];
+        final frees = <bool>[];
         for (final r in m['roads'] as List) {
           final raw = r is Map ? r['p'] : r;
           final f = (raw as List).map((e) => (e as num).toDouble()).toList();
@@ -829,6 +905,7 @@ class RoadGame extends FlameGame {
           oneWays.add(r is Map && r['o'] == 1);
           types.add(r is Map ? ((r['t'] as num?)?.toInt() ?? 0) : 0);
           layers.add(r is Map ? ((r['l'] as num?)?.toInt() ?? 0) : 0);
+          frees.add(r is Map && r['f'] == 1);
         }
         final sigs = <List<double>>[
           for (final e in (m['signals'] as List? ?? const []))
@@ -850,10 +927,11 @@ class RoadGame extends FlameGame {
           for (final e in (m['stations'] as List? ?? const []))
             Offset(((e as List)[0] as num).toDouble(), (e[1] as num).toDouble())
         ];
-        await newMap(s, biome: bio, difficulty: dif, sandbox: sbx, world: ws);
+        await newMap(s, biome: bio, difficulty: dif, sandbox: sbx, world: ws, realRoads: false);
+        _importReal = true; // keyingi hudud kengayishlarida haqiqiy yo'llar qo'shiladi
         terrHalf = ((m['th'] as num?)?.toDouble() ?? terrHalf).clamp(terrStart, terrain.size / 2).toDouble();
         for (var i = 0; i < roads.length; i++) {
-          net.addRoadPts(roads[i], oneWay: oneWays[i], type: types[i], layer: layers[i]);
+          net.addRoadPts(roads[i], oneWay: oneWays[i], type: types[i], layer: layers[i], cost: frees[i] ? 0.0 : null);
         }
         for (final r in rbs) {
           roundabouts.add(Offset(r[0], r[1]));
@@ -945,7 +1023,7 @@ class RoadGame extends FlameGame {
   }
 
   _EditState _capture(double refund) => _EditState(
-        [for (final rd in net.roads.values) (List<Offset>.of(rd.pts), rd.oneWay, rd.type, rd.layer)],
+        [for (final rd in net.roads.values) (List<Offset>.of(rd.pts), rd.oneWay, rd.type, rd.layer, rd.cost)],
         List<Offset>.of(roundabouts),
         [
           for (final s in sim.signals.values)
@@ -972,7 +1050,7 @@ class RoadGame extends FlameGame {
       ..clear()
       ..addAll(s.roundabouts);
     for (final rd in s.roads) {
-      net.addRoadPts(List<Offset>.of(rd.$1), oneWay: rd.$2, type: rd.$3, layer: rd.$4);
+      net.addRoadPts(List<Offset>.of(rd.$1), oneWay: rd.$2, type: rd.$3, layer: rd.$4, cost: rd.$5);
     }
     _onNetworkChanged();
     for (final sg in s.signals) {
@@ -1987,6 +2065,30 @@ class RoadGame extends FlameGame {
       r.pts.length > 2 &&
       ((r.pts[r.pts.length ~/ 2] - c).distance - roundaboutRadius).abs() < 3);
 
+  /// Ekrandagi dunyo to'rtburchagi (burilgan kamerada ham), [pad] bilan kengaytirilgan.
+  Rect _viewRect([double pad = 60]) {
+    final cs = [toWorld(Offset.zero), toWorld(Offset(size.x, 0)), toWorld(Offset(0, size.y)), toWorld(Offset(size.x, size.y))];
+    var x0 = cs[0].dx, x1 = cs[0].dx, y0 = cs[0].dy, y1 = cs[0].dy;
+    for (final c in cs) {
+      x0 = min(x0, c.dx);
+      x1 = max(x1, c.dx);
+      y0 = min(y0, c.dy);
+      y1 = max(y1, c.dy);
+    }
+    return Rect.fromLTRB(x0 - pad, y0 - pad, x1 + pad, y1 + pad);
+  }
+
+  Rect _bboxOf(Road r) => _bbox.putIfAbsent(r.id, () {
+        var x0 = r.pts[0].dx, x1 = x0, y0 = r.pts[0].dy, y1 = y0;
+        for (final p in r.pts) {
+          x0 = min(x0, p.dx);
+          x1 = max(x1, p.dx);
+          y0 = min(y0, p.dy);
+          y1 = max(y1, p.dy);
+        }
+        return Rect.fromLTRB(x0, y0, x1, y1);
+      });
+
   static const Color _asphalt = Color(0xFFDADCDF);
   static const Color _edge = Color(0xFF4A4D52);
 
@@ -1995,7 +2097,8 @@ class RoadGame extends FlameGame {
   void _drawRoads(Canvas canvas) {
     if (net.roads.isEmpty) return;
     const w = RoadNetwork.roadWidth;
-    final roads = net.roads.values.where((r) => r.layer == 0).toList();
+    final view = _viewRect(RoadNetwork.roadWidth * 3 + 10);
+    final roads = net.roads.values.where((r) => r.layer == 0 && view.overlaps(_bboxOf(r))).toList();
     if (roads.isNotEmpty) {
       final paths = [for (final r in roads) _pathOf(r.pts)];
       final border = Paint()
@@ -2021,7 +2124,7 @@ class RoadGame extends FlameGame {
     if (!heat) {
       final junction = Paint()..color = _asphalt;
       for (final n in net.nodes.values) {
-        if (n.roads.length >= 3) canvas.drawCircle(n.pos, w * 0.66, junction);
+        if (n.roads.length >= 3 && view.contains(n.pos)) canvas.drawCircle(n.pos, w * 0.66, junction);
       }
     }
     roundabouts.removeWhere((c) => !_ringExists(c));
@@ -2146,7 +2249,8 @@ class RoadGame extends FlameGame {
   /// Estakada: uchlarida rampa bo'lib yerdan ko'tariladi (soya va chetlari balandlik bilan ortadi),
   /// shuning uchun yer usti yo'liga to'g'ri va ravon qo'shiladi.
   void _drawElevated(Canvas canvas) {
-    final roads = net.roads.values.where((r) => r.layer == 1 && r.pts.length >= 2).toList();
+    final view = _viewRect(RoadNetwork.roadWidth * 3 + 10);
+    final roads = net.roads.values.where((r) => r.layer == 1 && r.pts.length >= 2 && view.overlaps(_bboxOf(r))).toList();
     if (roads.isEmpty) return;
     final decks = [for (final r in roads) _deckOf(r)];
     final shadow = Paint()
@@ -2178,7 +2282,7 @@ class RoadGame extends FlameGame {
         if (d.baseB) canvas.drawCircle(d.pts.last, d.half + 0.6, junction);
       }
       for (final n in net.nodes.values) {
-        if (n.roads.length >= 3 && n.roads.every((id) => net.roads[id]?.layer == 1)) {
+        if (n.roads.length >= 3 && view.contains(n.pos) && n.roads.every((id) => net.roads[id]?.layer == 1)) {
           canvas.drawCircle(n.pos, RoadNetwork.roadWidth * 0.7, junction);
         }
       }
