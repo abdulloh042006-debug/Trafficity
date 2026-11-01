@@ -1,0 +1,55 @@
+{
+  "schemaVersion": "3.0.0",
+  "regionId": "uz_tashkent_city",
+  "isoCode": "UZ-TK",
+  "soatoCode": "1726",
+  "parentAdminId": "UZ",
+  "adminLevel": "FIRST_LEVEL_ADMIN",
+  "names": {
+    "uz": "Toshkent shahri",
+    "ru": "г. Ташкент",
+    "en": "Tashkent City"
+  },
+  "primaryCityId": "city_tashkent",
+  "bbox": {
+    "minLon": 69.114,
+    "minLat": 41.158,
+    "maxLon": 69.479,
+    "maxLat": 41.425
+  },
+  "referenceAnchor": {
+    "lon": 69.279737,
+    "lat": 41.311081,
+    "elevationMeters": 475.0,
+    "description": "Amir Timur Square Canonical Reference Anchor"
+  },
+  "crs": {
+    "canonical": "EPSG:4326",
+    "localProjection": "LOCAL_ENU_WGS84"
+  },
+  "architectureProfileId": "tashkent_modern_soviet",
+  "datasetVersion": "2026.11.0",
+  "dataSource": [
+    "OpenStreetMap Contributors (ODbL)",
+    "Trafficity Bundled Tashkent Dataset (assets/map/tashkent_roads.json)"
+  ],
+  "attribution": "© OpenStreetMap contributors (ODbL)",
+  "availableFeatureLayers": [
+    "boundaries",
+    "roads",
+    "buildings",
+    "signals",
+    "crossings",
+    "parks",
+    "waterways",
+    "metro",
+    "landmarks"
+  ],
+  "availableDetailLevels": [1, 2, 3, 4],
+  "legacyAssetBindings": {
+    "roadsJson": "assets/map/tashkent_roads.json",
+    "baseRasterWebp": "assets/map/tashkent.webp",
+    "waterMaskPng": "assets/map/tashkent_water.png"
+  },
+  "installationStatus": "INSTALLED_DETAILED"
+}

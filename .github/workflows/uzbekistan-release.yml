@@ -1,0 +1,52 @@
+name: Build Uzbekistan Complete ZIP & Debug APK
+
+on:
+  push:
+    branches:
+      - codex/uzbekistan-expansion
+      - feat/uzbekistan-multi-region
+  workflow_dispatch:
+
+jobs:
+  build-and-archive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Migrate Tashkent legacy dataset metadata
+        run: python3 tools/map/migrate_tashkent_legacy.py
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Run Flutter Pub Get, Analyze, and Tests
+        run: |
+          flutter pub get
+          flutter analyze
+          flutter test
+
+      - name: Build Debug APK
+        run: flutter build apk --debug
+
+      - name: Generate Trafficity-Uzbekistan-Complete.zip
+        run: python3 tools/package_release.py
+
+      - name: Upload Trafficity-Uzbekistan-Complete.zip Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Trafficity-Uzbekistan-Complete
+          path: Trafficity-Uzbekistan-Complete.zip

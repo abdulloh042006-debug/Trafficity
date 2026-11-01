@@ -1,0 +1,264 @@
+{
+  "type": "FeatureCollection",
+  "name": "uzbekistan_first_level_admin_boundaries",
+  "crs": {
+    "type": "name",
+    "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" }
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "regionId": "uz_karakalpakstan",
+        "isoCode": "UZ-QR",
+        "soatoCode": "1735",
+        "name_uz": "Qoraqalpogʻiston Respublikasi",
+        "name_ru": "Республика Каракалпакстан",
+        "name_en": "Republic of Karakalpakstan"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [55.997, 45.000], [58.600, 45.590], [61.200, 44.400],
+          [62.350, 42.100], [61.400, 41.150], [60.050, 41.800],
+          [58.500, 42.600], [55.997, 41.300], [55.997, 45.000]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "regionId": "uz_khorezm",
+        "isoCode": "UZ-XO",
+        "soatoCode": "1733",
+        "name_uz": "Xorazm viloyati",
+        "name_ru": "Хорезмская область",
+        "name_en": "Khorezm Region"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [60.050, 41.800], [61.400, 41.150], [62.180, 40.980],
+          [61.300, 40.950], [59.980, 41.250], [60.050, 41.800]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "regionId": "uz_navoi",
+        "isoCode": "UZ-NW",
+        "soatoCode": "1712",
+        "name_uz": "Navoiy viloyati",
+        "name_ru": "Навоийская область",
+        "name_en": "Navoi Region"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [61.200, 44.380], [65.200, 43.650], [66.650, 41.200],
+          [66.100, 39.850], [65.050, 39.680], [63.800, 40.900],
+          [62.350, 42.100], [61.200, 44.380]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "regionId": "uz_bukhara",
+        "isoCode": "UZ-BU",
+        "soatoCode": "1706",
+        "name_uz": "Buxoro viloyati",
+        "name_ru": "Бухарская область",
+        "name_en": "Bukhara Region"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [62.180, 40.980], [63.800, 40.900], [65.050, 39.680],
+          [64.550, 38.940], [62.800, 39.850], [62.180, 40.980]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "regionId": "uz_samarkand",
+        "isoCode": "UZ-SA",
+        "soatoCode": "1718",
+        "name_uz": "Samarqand viloyati",
+        "name_ru": "Самаркандская область",
+        "name_en": "Samarkand Region"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [65.195, 39.850], [66.650, 40.550], [67.624, 39.950],
+          [67.250, 39.250], [65.650, 39.126], [65.195, 39.850]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "regionId": "uz_kashkadarya",
+        "isoCode": "UZ-QA",
+        "soatoCode": "1710",
+        "name_uz": "Qashqadaryo viloyati",
+        "name_ru": "Кашкадарьинская область",
+        "name_en": "Kashkadarya Region"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [64.550, 38.940], [65.650, 39.126], [67.250, 39.250],
+          [67.680, 38.750], [66.550, 38.280], [64.550, 38.940]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "regionId": "uz_surkhandarya",
+        "isoCode": "UZ-SU",
+        "soatoCode": "1722",
+        "name_uz": "Surxondaryo viloyati",
+        "name_ru": "Сурхандарьинская область",
+        "name_en": "Surkhandarya Region"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [66.550, 38.280], [67.680, 38.750], [68.410, 38.550],
+          [68.050, 37.172], [66.510, 37.350], [66.550, 38.280]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "regionId": "uz_jizzakh",
+        "isoCode": "UZ-JI",
+        "soatoCode": "1708",
+        "name_uz": "Jizzax viloyati",
+        "name_ru": "Джизакская область",
+        "name_en": "Jizzakh Region"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [66.650, 41.150], [68.210, 41.050], [68.650, 39.850],
+          [67.624, 39.650], [66.650, 40.550], [66.650, 41.150]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "regionId": "uz_syrdarya",
+        "isoCode": "UZ-SI",
+        "soatoCode": "1724",
+        "name_uz": "Sirdaryo viloyati",
+        "name_ru": "Сырдарьинская область",
+        "name_en": "Syrdarya Region"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [68.210, 41.050], [69.150, 40.950], [69.210, 40.220],
+          [68.650, 40.110], [68.210, 41.050]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "regionId": "uz_tashkent_region",
+        "isoCode": "UZ-TO",
+        "soatoCode": "1727",
+        "name_uz": "Toshkent viloyati",
+        "name_ru": "Ташкентская область",
+        "name_en": "Tashkent Region"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [68.650, 41.250], [70.250, 42.290], [71.150, 41.450],
+          [70.350, 40.650], [69.150, 40.220], [68.650, 41.250]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "regionId": "uz_tashkent_city",
+        "isoCode": "UZ-TK",
+        "soatoCode": "1726",
+        "name_uz": "Toshkent shahri",
+        "name_ru": "г. Ташкент",
+        "name_en": "Tashkent City"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [69.114, 41.158], [69.479, 41.158], [69.479, 41.425],
+          [69.114, 41.425], [69.114, 41.158]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "regionId": "uz_namangan",
+        "isoCode": "UZ-NG",
+        "soatoCode": "1714",
+        "name_uz": "Namangan viloyati",
+        "name_ru": "Наманганская область",
+        "name_en": "Namangan Region"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [70.480, 40.950], [71.650, 41.610], [72.520, 41.150],
+          [71.850, 40.720], [70.480, 40.950]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "regionId": "uz_fergana",
+        "isoCode": "UZ-FA",
+        "soatoCode": "1730",
+        "name_uz": "Fargʻona viloyati",
+        "name_ru": "Ферганская область",
+        "name_en": "Fergana Region"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [70.250, 40.450], [71.850, 40.720], [72.240, 40.350],
+          [71.450, 39.880], [70.250, 40.450]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "regionId": "uz_andijan",
+        "isoCode": "UZ-AN",
+        "soatoCode": "1703",
+        "name_uz": "Andijon viloyati",
+        "name_ru": "Андижанская область",
+        "name_en": "Andijan Region"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [71.850, 40.720], [72.520, 41.090], [73.132, 40.820],
+          [72.240, 40.380], [71.850, 40.720]
+        ]]
+      }
+    }
+  ]
+}
