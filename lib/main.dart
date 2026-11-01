@@ -11,6 +11,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'game/road_game.dart';
 import 'game/terrain.dart';
 import 'l10n.dart';
+import 'ui/uzbekistan_hud_button.dart';
+import 'world/admin_hierarchy.dart';
+import 'world/world_controller.dart';
 
 /// Oxirgi xatoni ekranda ko'rsatish uchun (release rejimida xatolar sezilmay qolmasligi uchun).
 class AppErr {
@@ -62,6 +65,10 @@ class GameScreen extends StatefulWidget {
 
 class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   late final RoadGame game = RoadGame();
+  late final UzbekistanWorldController _uzbekistanWorld = UzbekistanWorldController();
+  String? _worldLoadError;
+
+  String get _languageCode => const ['uz', 'ru', 'en'][L.lang.clamp(0, 2)];
   double _uiScale = 1.0;
   bool _menu = true;
 
@@ -97,6 +104,9 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     game.menuOpen = true;
+    _uzbekistanWorld.initializeFromAssets().catchError((Object error) {
+      if (mounted) setState(() => _worldLoadError = error.toString());
+    });
     // yuklashni birinchi kadrdan keyin boshlaymiz: ekran darhol chiqadi, xatolar ko'rinadi
     WidgetsBinding.instance
         .addPostFrameCallback((_) => game.newMap(game.seed, ideal: RoadGame.idealCityOnStart));
@@ -115,6 +125,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _music.dispose();
+    _uzbekistanWorld.dispose();
     super.dispose();
   }
 
@@ -611,6 +622,25 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          if (_uzbekistanWorld.isInitialized)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: UzbekistanHudButton(
+                worldController: _uzbekistanWorld,
+                languageCode: _languageCode,
+                onRegionSelected: (RegionCatalogEntry region) {
+                  final ready = _uzbekistanWorld.packageManager.resolveReadiness(region);
+                  _toast(ready == RegionReadinessStatus.installedDetailed
+                      ? '${region.names.forLang(_languageCode)} tanlandi. Batafsil paket mavjud.'
+                      : '${region.names.forLang(_languageCode)} tanlandi. Hozircha faqat umumiy xarita mavjud; shahar simulyatsiyasi hali ulanmagan.');
+                },
+              ),
+            )
+          else if (_worldLoadError != null)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: _chip('Hududlar yuklanmadi: $_worldLoadError', color: const Color(0xFFC0392B)),
+            ),
           _panel([
             Wrap(
               spacing: 14,
