@@ -68,7 +68,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   late final UzbekistanWorldController _uzbekistanWorld = UzbekistanWorldController();
   String? _worldLoadError;
 
-  String get _languageCode => const ['uz', 'ru', 'en'][L.lang.clamp(0, 2)];
+  String get _languageCode => const ['uz', 'ru', 'en'][L.lang.clamp(0, 2).toInt()];
   double _uiScale = 1.0;
   bool _menu = true;
 
@@ -495,7 +495,13 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                   final plan = game.currentPlan;
                   return Stack(
                     children: [
-                      Align(alignment: Alignment.topCenter, child: _topBar(plan)),
+                      Align(
+                        alignment: Alignment.topCenter,
+                        child: ListenableBuilder(
+                          listenable: _uzbekistanWorld,
+                          builder: (context, _) => _topBar(plan),
+                        ),
+                      ),
                       if (game.showCharts && !game.loading)
                         Align(
                           alignment: Alignment.bottomCenter,
