@@ -53,7 +53,7 @@ def build_clean_zip() -> Path:
             dirs[:] = [d for d in sorted(dirs) if d not in EXCLUDED_DIRS]
             root_path = Path(root)
             for fname in sorted(files):
-                if fname in EXCLUDED_FILES or fname.endswith(".pyc"):
+                if fname in EXCLUDED_FILES or fname.lower().endswith(".zip") or fname.endswith(".pyc"):
                     continue
                 full_path = root_path / fname
                 rel_path = full_path.relative_to(REPO_ROOT)
