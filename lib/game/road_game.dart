@@ -15,7 +15,6 @@ import 'rail.dart';
 import 'rail_draw.dart';
 import 'real_roads.dart';
 import 'road_network.dart';
-import 'signal.dart';
 import 'terrain.dart';
 import 'traffic_model.dart';
 import 'traffic_sim.dart';
