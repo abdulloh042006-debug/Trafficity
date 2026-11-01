@@ -1,33 +1,41 @@
 name: roadflow_city
-description: Top-down traffic and city simulation game (Flutter + Flame).
+description: Uzbekistan-wide 2D/3D traffic and railway engineering simulation game.
 publish_to: 'none'
-version: 0.3.0+3
+version: 1.1.0+2
 
 environment:
-  sdk: '>=3.3.0 <4.0.0'
+  sdk: ^3.11.0
 
 dependencies:
   flutter:
     sdk: flutter
-  flame: ^1.21.0
-  shared_preferences: ^2.2.0
-  audioplayers: ^6.1.0
+  flame: ^1.22.0
+  flame_audio: ^2.10.6
+  shared_preferences: ^2.3.3
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_launcher_icons: ^0.14.1
-
-flutter:
-  uses-material-design: true
-  assets:
-    - assets/audio/ambient.wav
-    - assets/map/tashkent.webp
-    - assets/map/tashkent_water.png
-    - assets/map/tashkent_roads.json
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.2
+  image: ^4.3.0
 
 flutter_launcher_icons:
   android: true
   ios: false
   image_path: "assets/icon/icon.png"
-  min_sdk_android: 21
+  adaptive_icon_background: "#1A2418"
+  adaptive_icon_foreground: "assets/icon/icon.png"
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/audio/
+    - assets/map/tashkent.webp
+    - assets/map/tashkent_water.png
+    - assets/map/tashkent_roads.json
+    - assets/world/uzbekistan/world_manifest.json
+    - assets/world/uzbekistan/region_catalog.json
+    - assets/world/uzbekistan/cities_index.json
+    - assets/world/uzbekistan/administrative_boundaries.geojson
+    - assets/world/uzbekistan/regions/tashkent_city/manifest.json
