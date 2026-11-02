@@ -13,6 +13,9 @@ class Wgs84Coord {
     this.alt = 0.0,
   });
 
+  double get latitude => lat;
+  double get longitude => lon;
+
   factory Wgs84Coord.fromJson(dynamic json) {
     if (json is List) {
       return Wgs84Coord(
@@ -23,8 +26,8 @@ class Wgs84Coord {
     }
     final map = json as Map<String, dynamic>;
     return Wgs84Coord(
-      lon: (map['lon'] as num).toDouble(),
-      lat: (map['lat'] as num).toDouble(),
+      lon: ((map['longitude'] ?? map['lon']) as num).toDouble(),
+      lat: ((map['latitude'] ?? map['lat']) as num).toDouble(),
       alt: (map['alt'] as num?)?.toDouble() ??
           (map['elevationMeters'] as num?)?.toDouble() ??
           0.0,
@@ -34,6 +37,8 @@ class Wgs84Coord {
   List<double> toJsonList() => [lon, lat, alt];
 
   Map<String, double> toJsonMap() => {
+        'latitude': lat,
+        'longitude': lon,
         'lon': lon,
         'lat': lat,
         'alt': alt,
@@ -41,7 +46,7 @@ class Wgs84Coord {
 
   @override
   String toString() =>
-      'Wgs84Coord(lon: ${lon.toStringAsFixed(6)}, lat: ${lat.toStringAsFixed(6)}, alt: ${alt.toStringAsFixed(1)})';
+      'Wgs84Coord(lat: ${lat.toStringAsFixed(6)}, lon: ${lon.toStringAsFixed(6)}, alt: ${alt.toStringAsFixed(1)})';
 }
 
 /// Local East-North-Up (ENU) metric coordinate relative to the active floating origin.

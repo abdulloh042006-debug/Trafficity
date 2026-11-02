@@ -1,5 +1,6 @@
 {
   "schemaVersion": "3.0.0",
+  "packageId": "pkg_uz_tashkent_city_l3_l4",
   "regionId": "uz_tashkent_city",
   "isoCode": "UZ-TK",
   "soatoCode": "1726",
@@ -18,6 +19,8 @@
     "maxLat": 41.425
   },
   "referenceAnchor": {
+    "latitude": 41.311081,
+    "longitude": 69.279737,
     "lon": 69.279737,
     "lat": 41.311081,
     "elevationMeters": 475.0,

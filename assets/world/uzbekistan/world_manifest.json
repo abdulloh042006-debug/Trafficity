@@ -3,8 +3,9 @@
   "countryId": "UZ",
   "isoAlpha2": "UZ",
   "isoAlpha3": "UZB",
+  "coordinateConvention": "latitude, longitude (WGS84 decimal degrees)",
   "names": {
-    "uz": "Oʻzbekiston Respublikasi",
+    "uz": "O'zbekiston Respublikasi",
     "ru": "Республика Узбекистан",
     "en": "Republic of Uzbekistan"
   },
@@ -24,6 +25,5 @@
   "catalogRef": "region_catalog.json",
   "boundariesRef": "administrative_boundaries.geojson",
   "citiesIndexRef": "cities_index.json",
-  "architectureProfilesRef": "architecture_profiles/profiles_index.json",
-  "attribution": "© OpenStreetMap contributors (ODbL)"
+  "attribution": "© OpenStreetMap contributors (ODbL-1.0)"
 }

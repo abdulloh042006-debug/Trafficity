@@ -1,13 +1,25 @@
 {
   "schemaVersion": "3.0.0",
   "countryId": "UZ",
+  "coordinateConvention": "latitude, longitude (WGS84 decimal degrees)",
   "cities": [
     {
       "cityId": "city_tashkent",
       "regionId": "uz_tashkent_city",
       "isoCode": "UZ-TK",
-      "names": { "uz": "Toshkent", "ru": "Ташкент", "en": "Tashkent" },
-      "coordinates": [69.279737, 41.311081, 475.0],
+      "names": {
+        "uz": "Toshkent",
+        "ru": "Ташкент",
+        "en": "Tashkent"
+      },
+      "latitude": 41.311081,
+      "longitude": 69.279737,
+      "elevationMeters": 475,
+      "coordinates": [
+        69.279737,
+        41.311081,
+        475
+      ],
       "population": 3040000,
       "isRegionalCapital": true,
       "hasDetailedPack": true,
@@ -17,8 +29,19 @@
       "cityId": "city_samarkand",
       "regionId": "uz_samarkand",
       "isoCode": "UZ-SA",
-      "names": { "uz": "Samarqand", "ru": "Самарканд", "en": "Samarkand" },
-      "coordinates": [66.974973, 39.654808, 702.0],
+      "names": {
+        "uz": "Samarqand",
+        "ru": "Самарканд",
+        "en": "Samarkand"
+      },
+      "latitude": 39.654808,
+      "longitude": 66.974973,
+      "elevationMeters": 702,
+      "coordinates": [
+        66.974973,
+        39.654808,
+        702
+      ],
       "population": 585000,
       "isRegionalCapital": true,
       "hasDetailedPack": false,
@@ -28,8 +51,19 @@
       "cityId": "city_bukhara",
       "regionId": "uz_bukhara",
       "isoCode": "UZ-BU",
-      "names": { "uz": "Buxoro", "ru": "Бухара", "en": "Bukhara" },
-      "coordinates": [64.421, 39.774, 225.0],
+      "names": {
+        "uz": "Buxoro",
+        "ru": "Бухара",
+        "en": "Bukhara"
+      },
+      "latitude": 39.7747,
+      "longitude": 64.4286,
+      "elevationMeters": 225,
+      "coordinates": [
+        64.4286,
+        39.7747,
+        225
+      ],
       "population": 294000,
       "isRegionalCapital": true,
       "hasDetailedPack": false,
@@ -39,8 +73,19 @@
       "cityId": "city_andijan",
       "regionId": "uz_andijan",
       "isoCode": "UZ-AN",
-      "names": { "uz": "Andijon", "ru": "Андижан", "en": "Andijan" },
-      "coordinates": [72.344, 40.782, 490.0],
+      "names": {
+        "uz": "Andijon",
+        "ru": "Андижан",
+        "en": "Andijan"
+      },
+      "latitude": 40.7821,
+      "longitude": 72.3442,
+      "elevationMeters": 490,
+      "coordinates": [
+        72.3442,
+        40.7821,
+        490
+      ],
       "population": 476000,
       "isRegionalCapital": true,
       "hasDetailedPack": false,
@@ -50,8 +95,19 @@
       "cityId": "city_fergana",
       "regionId": "uz_fergana",
       "isoCode": "UZ-FA",
-      "names": { "uz": "Fargʻona", "ru": "Фергана", "en": "Fergana" },
-      "coordinates": [71.786, 40.384, 580.0],
+      "names": {
+        "uz": "Farg'ona",
+        "ru": "Фергана",
+        "en": "Fergana"
+      },
+      "latitude": 40.3842,
+      "longitude": 71.7843,
+      "elevationMeters": 580,
+      "coordinates": [
+        71.7843,
+        40.3842,
+        580
+      ],
       "population": 314000,
       "isRegionalCapital": true,
       "hasDetailedPack": false,
@@ -61,8 +117,19 @@
       "cityId": "city_namangan",
       "regionId": "uz_namangan",
       "isoCode": "UZ-NG",
-      "names": { "uz": "Namangan", "ru": "Наманган", "en": "Namangan" },
-      "coordinates": [71.672, 40.998, 450.0],
+      "names": {
+        "uz": "Namangan",
+        "ru": "Наманган",
+        "en": "Namangan"
+      },
+      "latitude": 40.9983,
+      "longitude": 71.6726,
+      "elevationMeters": 450,
+      "coordinates": [
+        71.6726,
+        40.9983,
+        450
+      ],
       "population": 696000,
       "isRegionalCapital": true,
       "hasDetailedPack": false,
@@ -72,8 +139,19 @@
       "cityId": "city_nukus",
       "regionId": "uz_karakalpakstan",
       "isoCode": "UZ-QR",
-      "names": { "uz": "Nukus", "ru": "Нукус", "en": "Nukus" },
-      "coordinates": [59.610, 42.460, 76.0],
+      "names": {
+        "uz": "Nukus",
+        "ru": "Нукус",
+        "en": "Nukus"
+      },
+      "latitude": 42.4602,
+      "longitude": 59.6102,
+      "elevationMeters": 76,
+      "coordinates": [
+        59.6102,
+        42.4602,
+        76
+      ],
       "population": 339000,
       "isRegionalCapital": true,
       "hasDetailedPack": false,
@@ -83,8 +161,19 @@
       "cityId": "city_qarshi",
       "regionId": "uz_kashkadarya",
       "isoCode": "UZ-QA",
-      "names": { "uz": "Qarshi", "ru": "Карши", "en": "Qarshi" },
-      "coordinates": [65.789, 38.860, 374.0],
+      "names": {
+        "uz": "Qarshi",
+        "ru": "Карши",
+        "en": "Qarshi"
+      },
+      "latitude": 38.8606,
+      "longitude": 65.7891,
+      "elevationMeters": 374,
+      "coordinates": [
+        65.7891,
+        38.8606,
+        374
+      ],
       "population": 289000,
       "isRegionalCapital": true,
       "hasDetailedPack": false,
@@ -94,8 +183,19 @@
       "cityId": "city_termez",
       "regionId": "uz_surkhandarya",
       "isoCode": "UZ-SU",
-      "names": { "uz": "Termiz", "ru": "Термез", "en": "Termez" },
-      "coordinates": [67.278, 37.224, 302.0],
+      "names": {
+        "uz": "Termiz",
+        "ru": "Термез",
+        "en": "Termez"
+      },
+      "latitude": 37.2242,
+      "longitude": 67.2783,
+      "elevationMeters": 302,
+      "coordinates": [
+        67.2783,
+        37.2242,
+        302
+      ],
       "population": 195000,
       "isRegionalCapital": true,
       "hasDetailedPack": false,
@@ -105,8 +205,19 @@
       "cityId": "city_urgench",
       "regionId": "uz_khorezm",
       "isoCode": "UZ-XO",
-      "names": { "uz": "Urganch", "ru": "Ургенч", "en": "Urgench" },
-      "coordinates": [60.631, 41.550, 91.0],
+      "names": {
+        "uz": "Urganch",
+        "ru": "Ургенч",
+        "en": "Urgench"
+      },
+      "latitude": 41.55,
+      "longitude": 60.6333,
+      "elevationMeters": 91,
+      "coordinates": [
+        60.6333,
+        41.55,
+        91
+      ],
       "population": 152000,
       "isRegionalCapital": true,
       "hasDetailedPack": false,
@@ -116,8 +227,19 @@
       "cityId": "city_khiva",
       "regionId": "uz_khorezm",
       "isoCode": "UZ-XO",
-      "names": { "uz": "Xiva", "ru": "Хива", "en": "Khiva" },
-      "coordinates": [60.363, 41.378, 95.0],
+      "names": {
+        "uz": "Xiva",
+        "ru": "Хива",
+        "en": "Khiva"
+      },
+      "latitude": 41.3783,
+      "longitude": 60.3639,
+      "elevationMeters": 95,
+      "coordinates": [
+        60.3639,
+        41.3783,
+        95
+      ],
       "population": 96000,
       "isRegionalCapital": false,
       "hasDetailedPack": false,
@@ -127,8 +249,19 @@
       "cityId": "city_kokand",
       "regionId": "uz_fergana",
       "isoCode": "UZ-FA",
-      "names": { "uz": "Qoʻqon", "ru": "Коканд", "en": "Kokand" },
-      "coordinates": [70.942, 40.528, 409.0],
+      "names": {
+        "uz": "Qo'qon",
+        "ru": "Коканд",
+        "en": "Kokand"
+      },
+      "latitude": 40.5286,
+      "longitude": 70.9425,
+      "elevationMeters": 409,
+      "coordinates": [
+        70.9425,
+        40.5286,
+        409
+      ],
       "population": 266000,
       "isRegionalCapital": false,
       "hasDetailedPack": false,
@@ -138,8 +271,19 @@
       "cityId": "city_jizzakh",
       "regionId": "uz_jizzakh",
       "isoCode": "UZ-JI",
-      "names": { "uz": "Jizzax", "ru": "Джизак", "en": "Jizzakh" },
-      "coordinates": [67.842, 40.115, 378.0],
+      "names": {
+        "uz": "Jizzax",
+        "ru": "Джизак",
+        "en": "Jizzakh"
+      },
+      "latitude": 40.1158,
+      "longitude": 67.8422,
+      "elevationMeters": 378,
+      "coordinates": [
+        67.8422,
+        40.1158,
+        378
+      ],
       "population": 191000,
       "isRegionalCapital": true,
       "hasDetailedPack": false,
@@ -149,8 +293,19 @@
       "cityId": "city_navoi",
       "regionId": "uz_navoi",
       "isoCode": "UZ-NW",
-      "names": { "uz": "Navoiy", "ru": "Навои", "en": "Navoi" },
-      "coordinates": [65.379, 40.084, 382.0],
+      "names": {
+        "uz": "Navoiy",
+        "ru": "Навои",
+        "en": "Navoi"
+      },
+      "latitude": 40.0844,
+      "longitude": 65.3792,
+      "elevationMeters": 382,
+      "coordinates": [
+        65.3792,
+        40.0844,
+        382
+      ],
       "population": 156000,
       "isRegionalCapital": true,
       "hasDetailedPack": false,
@@ -160,8 +315,19 @@
       "cityId": "city_guliston",
       "regionId": "uz_syrdarya",
       "isoCode": "UZ-SI",
-      "names": { "uz": "Guliston", "ru": "Гулистан", "en": "Guliston" },
-      "coordinates": [68.784, 40.489, 271.0],
+      "names": {
+        "uz": "Guliston",
+        "ru": "Гулистан",
+        "en": "Guliston"
+      },
+      "latitude": 40.4897,
+      "longitude": 68.7842,
+      "elevationMeters": 271,
+      "coordinates": [
+        68.7842,
+        40.4897,
+        271
+      ],
       "population": 98000,
       "isRegionalCapital": true,
       "hasDetailedPack": false,
@@ -171,8 +337,19 @@
       "cityId": "city_nurafshon",
       "regionId": "uz_tashkent_region",
       "isoCode": "UZ-TO",
-      "names": { "uz": "Nurafshon", "ru": "Нурафшан", "en": "Nurafshon" },
-      "coordinates": [69.361, 41.042, 395.0],
+      "names": {
+        "uz": "Nurafshon",
+        "ru": "Нурафшан",
+        "en": "Nurafshon"
+      },
+      "latitude": 41.0422,
+      "longitude": 69.361,
+      "elevationMeters": 395,
+      "coordinates": [
+        69.361,
+        41.0422,
+        395
+      ],
       "population": 56000,
       "isRegionalCapital": true,
       "hasDetailedPack": false,

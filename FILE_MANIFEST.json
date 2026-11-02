@@ -1,0 +1,215 @@
+{
+  "schemaVersion": "1.1.0",
+  "project": "Trafficity — Uzbekistan Complete ZIP Packager",
+  "repository": "abdulloh042006-debug/Trafficity",
+  "totalFileCount": 23,
+  "expansionFileCount": 20,
+  "fullRepoBundleFileCount": 23,
+  "files": [
+    {
+      "index": 1,
+      "path": "FILE_MANIFEST.json",
+      "scope": "expansion",
+      "includeInExpansionZip": true,
+      "includeInFullRepoZip": true
+    },
+    {
+      "index": 2,
+      "path": "README.md",
+      "scope": "expansion",
+      "includeInExpansionZip": true,
+      "includeInFullRepoZip": true,
+      "sizeBytes": 3168,
+      "sha256": "5922de1a46fe8ee89bfb0434241840ccf2c480524c9bbb60652a73d6dfc1d692"
+    },
+    {
+      "index": 3,
+      "path": "package.json",
+      "scope": "expansion",
+      "includeInExpansionZip": true,
+      "includeInFullRepoZip": true,
+      "sizeBytes": 840,
+      "sha256": "6f9cbc80261d5b7ff5f6b6541a62fcebc341d5a20c4b3446f38c737f727830ab"
+    },
+    {
+      "index": 4,
+      "path": ".gitignore",
+      "scope": "full_repo_baseline",
+      "includeInExpansionZip": false,
+      "includeInFullRepoZip": true,
+      "sizeBytes": 387,
+      "sha256": "9c1750935f903a2f46c6b43c9ee7e17cc999b272f0a4eb487f2b9145be153d2b"
+    },
+    {
+      "index": 5,
+      "path": "LICENSE",
+      "scope": "expansion",
+      "includeInExpansionZip": true,
+      "includeInFullRepoZip": true,
+      "sizeBytes": 1640,
+      "sha256": "08a40ef56f5fc93c6716114a44d6f927a2fcb58d8a551d229e878d15291f029d"
+    },
+    {
+      "index": 6,
+      "path": "pubspec.yaml",
+      "scope": "full_repo_baseline",
+      "includeInExpansionZip": false,
+      "includeInFullRepoZip": true,
+      "sizeBytes": 1035,
+      "sha256": "df653fde9b9361ecd8a1278755a0467eb371a7c5d3771335ec930982bd8d4dbd"
+    },
+    {
+      "index": 7,
+      "path": "assets/world/uzbekistan/world_manifest.json",
+      "scope": "expansion",
+      "includeInExpansionZip": true,
+      "includeInFullRepoZip": true,
+      "sizeBytes": 840,
+      "sha256": "f0bcc8c1ba6ec4dd3a25f56ce54d745649746189f0e970864c78c03f46fe14a8"
+    },
+    {
+      "index": 8,
+      "path": "assets/world/uzbekistan/region_catalog.json",
+      "scope": "expansion",
+      "includeInExpansionZip": true,
+      "includeInFullRepoZip": true,
+      "sizeBytes": 14188,
+      "sha256": "710b41f116d181c784ea11d6a57bd2c5091009f822d4b84fdd4cea2fdb87db1f"
+    },
+    {
+      "index": 9,
+      "path": "assets/world/uzbekistan/cities_index.json",
+      "scope": "expansion",
+      "includeInExpansionZip": true,
+      "includeInFullRepoZip": true,
+      "sizeBytes": 8494,
+      "sha256": "68af762d244a4515703b7928d6a088ee14ecb8bd3816d47a0929cab4325d9dce"
+    },
+    {
+      "index": 10,
+      "path": "assets/world/uzbekistan/administrative_boundaries.geojson",
+      "scope": "expansion",
+      "includeInExpansionZip": true,
+      "includeInFullRepoZip": true,
+      "sizeBytes": 12990,
+      "sha256": "9803724ce627000c681ec0976e8ff4870765b63822e9671a20e9070a2cd9cd30"
+    },
+    {
+      "index": 11,
+      "path": "assets/world/uzbekistan/regions/tashkent_city/manifest.json",
+      "scope": "full_repo_baseline",
+      "includeInExpansionZip": false,
+      "includeInFullRepoZip": true,
+      "sizeBytes": 1500,
+      "sha256": "4aa22bcb87ebd63a19a1b28dc328b990491a8b7ac7b4ddb9ea6bec7d381ccec9"
+    },
+    {
+      "index": 12,
+      "path": "tools/uzbekistan_pack_cli.mjs",
+      "scope": "expansion",
+      "includeInExpansionZip": true,
+      "includeInFullRepoZip": true,
+      "sizeBytes": 10343,
+      "sha256": "59525969083adde03fcd23e52734ca0b05cdeb911dcda9312cf890e439599631"
+    },
+    {
+      "index": 13,
+      "path": "test/packager_and_cli.test.mjs",
+      "scope": "expansion",
+      "includeInExpansionZip": true,
+      "includeInFullRepoZip": true,
+      "sizeBytes": 5204,
+      "sha256": "7d3c563b47793778f336ff2e9ab6f17f4dd6ff21ef57b941713d28fd484d45bf"
+    },
+    {
+      "index": 14,
+      "path": "lib/world/geo_coordinate_system.dart",
+      "scope": "expansion",
+      "includeInExpansionZip": true,
+      "includeInFullRepoZip": true,
+      "sizeBytes": 7922,
+      "sha256": "5bf6447fc2014c9013ee0464c76de05be4e67828f8aba3f1adda7a70ee38cacf"
+    },
+    {
+      "index": 15,
+      "path": "lib/world/admin_hierarchy.dart",
+      "scope": "expansion",
+      "includeInExpansionZip": true,
+      "includeInFullRepoZip": true,
+      "sizeBytes": 7165,
+      "sha256": "e7abccc6c5ccaf72be27b95d9e662bd42f9b27c4cc9ca4120b8b930aa04881e6"
+    },
+    {
+      "index": 16,
+      "path": "lib/world/region_package_manager.dart",
+      "scope": "expansion",
+      "includeInExpansionZip": true,
+      "includeInFullRepoZip": true,
+      "sizeBytes": 9880,
+      "sha256": "3f6a593a21847da35608553b84745dc5ffcb32a1b129981cde2a00587ccf8799"
+    },
+    {
+      "index": 17,
+      "path": "lib/world/multi_scale_lod_controller.dart",
+      "scope": "expansion",
+      "includeInExpansionZip": true,
+      "includeInFullRepoZip": true,
+      "sizeBytes": 5922,
+      "sha256": "4ddbc51bb8c7e8fdf0192405f86219b41293b2572779bb51aa53a1cd28400e0b"
+    },
+    {
+      "index": 18,
+      "path": "lib/world/road_graph_linker.dart",
+      "scope": "expansion",
+      "includeInExpansionZip": true,
+      "includeInFullRepoZip": true,
+      "sizeBytes": 4249,
+      "sha256": "f8048bca67bfcc6f6696697a405eb9b772be9bdb8a11bba7c3e8fb1c33b830a1"
+    },
+    {
+      "index": 19,
+      "path": "lib/world/architecture_profile_engine.dart",
+      "scope": "expansion",
+      "includeInExpansionZip": true,
+      "includeInFullRepoZip": true,
+      "sizeBytes": 8319,
+      "sha256": "7428e6157b942786465a4dcad140de2d8cd6bf8c6d4f00523b54e5d2b8ec58bc"
+    },
+    {
+      "index": 20,
+      "path": "lib/world/national_save_manager.dart",
+      "scope": "expansion",
+      "includeInExpansionZip": true,
+      "includeInFullRepoZip": true,
+      "sizeBytes": 8123,
+      "sha256": "61be277be093584b083f573e396e65c62716ac4d0482b0a137111ebb7b2963a1"
+    },
+    {
+      "index": 21,
+      "path": "lib/world/world_controller.dart",
+      "scope": "expansion",
+      "includeInExpansionZip": true,
+      "includeInFullRepoZip": true,
+      "sizeBytes": 6251,
+      "sha256": "ce59ee2a0eaf3075f593094af10a161e2ed59b44768e0bc2c2dfca4fab37e380"
+    },
+    {
+      "index": 22,
+      "path": "lib/ui/region_selector_overlay.dart",
+      "scope": "expansion",
+      "includeInExpansionZip": true,
+      "includeInFullRepoZip": true,
+      "sizeBytes": 24412,
+      "sha256": "f392346b7c48efcc7e0dfc762092838d66be841fac779b04c41d68a3a6786162"
+    },
+    {
+      "index": 23,
+      "path": "test/uzbekistan_world_test.dart",
+      "scope": "expansion",
+      "includeInExpansionZip": true,
+      "includeInFullRepoZip": true,
+      "sizeBytes": 7431,
+      "sha256": "d3150dc0a23bcc5c8b152e9feb9aed88545b5a4aebb376e2f7e94e2610989e62"
+    }
+  ]
+}
