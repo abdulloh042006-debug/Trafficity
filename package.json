@@ -1,26 +1,16 @@
 {
   "name": "trafficity-uzbekistan-complete-packager",
-  "version": "1.1.0",
-  "description": "Uzbekistan 14-region GIS dataset, region package manager, CLI, and GitHub Git Data API pusher for Trafficity.",
+  "version": "3.0.0",
+  "description": "14-region Uzbekistan GIS expansion, package manager, CLI, and test suite for Trafficity.",
   "type": "module",
-  "main": "tools/uzbekistan_pack_cli.mjs",
   "bin": {
     "trafficity-uz": "./tools/uzbekistan_pack_cli.mjs"
   },
   "scripts": {
     "test": "node --test test/packager_and_cli.test.mjs",
-    "regions:list": "node ./tools/uzbekistan_pack_cli.mjs list-regions",
-    "regions:validate": "node ./tools/uzbekistan_pack_cli.mjs validate-regions",
-    "packages:list": "node ./tools/uzbekistan_pack_cli.mjs list-packages"
+    "regions:list": "node tools/uzbekistan_pack_cli.mjs list-regions",
+    "regions:validate": "node tools/uzbekistan_pack_cli.mjs validate-regions"
   },
-  "keywords": [
-    "trafficity",
-    "uzbekistan",
-    "gis",
-    "openstreetmap",
-    "flame",
-    "flutter"
-  ],
   "license": "MIT AND ODbL-1.0",
   "engines": {
     "node": ">=18.0.0"

@@ -1,7 +1,7 @@
 {
   "schemaVersion": "3.0.0",
   "countryId": "UZ",
-  "coordinateConvention": "latitude, longitude (WGS84 decimal degrees)",
+  "coordinateConvention": "latitude, longitude",
   "defaultRegionId": "uz_tashkent_city",
   "regions": [
     {
@@ -14,10 +14,7 @@
         "ru": "г. Ташкент",
         "en": "Tashkent City"
       },
-      "primaryCityId": "city_tashkent",
-      "supportedCities": [
-        "city_tashkent"
-      ],
+      "adminCenter": "Toshkent",
       "latitude": 41.311081,
       "longitude": 69.279737,
       "centroid": [
@@ -31,16 +28,33 @@
         "maxLat": 41.425
       },
       "architectureProfileId": "tashkent_modern_soviet",
-      "manifestPath": "regions/tashkent_city/manifest.json",
-      "availableDetailLevels": [
-        1,
-        2,
-        3,
-        4
+      "defaultReadiness": "INSTALLED_DETAILED"
+    },
+    {
+      "regionId": "uz_tashkent_region",
+      "isoCode": "UZ-TO",
+      "soatoCode": "1727",
+      "adminType": "REGION",
+      "names": {
+        "uz": "Toshkent viloyati",
+        "ru": "Ташкентская область",
+        "en": "Tashkent Region"
+      },
+      "adminCenter": "Nurafshon",
+      "latitude": 41.0422,
+      "longitude": 69.3567,
+      "centroid": [
+        69.3567,
+        41.0422
       ],
-      "defaultReadiness": "INSTALLED_DETAILED",
-      "estimatedDownloadBytes": 1859500,
-      "coordinateSource": "Verified administrative center reference (Amir Timur Square, Tashkent, WGS84)"
+      "bbox": {
+        "minLon": 68.51,
+        "minLat": 40.185,
+        "maxLon": 71.265,
+        "maxLat": 42.29
+      },
+      "architectureProfileId": "tashkent_modern_soviet",
+      "defaultReadiness": "OVERVIEW_ONLY"
     },
     {
       "regionId": "uz_karakalpakstan",
@@ -52,16 +66,11 @@
         "ru": "Республика Каракалпакстан",
         "en": "Republic of Karakalpakstan"
       },
-      "primaryCityId": "city_nukus",
-      "supportedCities": [
-        "city_nukus",
-        "city_moynaq",
-        "city_kungrad"
-      ],
+      "adminCenter": "Nukus",
       "latitude": 42.4602,
-      "longitude": 59.6102,
+      "longitude": 59.6176,
       "centroid": [
-        59.6102,
+        59.6176,
         42.4602
       ],
       "bbox": {
@@ -71,14 +80,7 @@
         "maxLat": 45.59
       },
       "architectureProfileId": "karakalpak_steppe_modern",
-      "manifestPath": "regions/karakalpakstan/manifest.json",
-      "availableDetailLevels": [
-        1,
-        2
-      ],
-      "defaultReadiness": "OVERVIEW_ONLY",
-      "estimatedDownloadBytes": 0,
-      "coordinateSource": "Verified administrative center reference (Nukus, WGS84)"
+      "defaultReadiness": "OVERVIEW_ONLY"
     },
     {
       "regionId": "uz_andijan",
@@ -90,12 +92,7 @@
         "ru": "Андижанская область",
         "en": "Andijan Region"
       },
-      "primaryCityId": "city_andijan",
-      "supportedCities": [
-        "city_andijan",
-        "city_asaka",
-        "city_khanabad"
-      ],
+      "adminCenter": "Andijon",
       "latitude": 40.7821,
       "longitude": 72.3442,
       "centroid": [
@@ -109,14 +106,7 @@
         "maxLat": 41.09
       },
       "architectureProfileId": "fergana_valley_urban",
-      "manifestPath": "regions/andijan/manifest.json",
-      "availableDetailLevels": [
-        1,
-        2
-      ],
-      "defaultReadiness": "OVERVIEW_ONLY",
-      "estimatedDownloadBytes": 0,
-      "coordinateSource": "Verified administrative center reference (Andijan, WGS84)"
+      "defaultReadiness": "OVERVIEW_ONLY"
     },
     {
       "regionId": "uz_bukhara",
@@ -128,12 +118,7 @@
         "ru": "Бухарская область",
         "en": "Bukhara Region"
       },
-      "primaryCityId": "city_bukhara",
-      "supportedCities": [
-        "city_bukhara",
-        "city_kagan",
-        "city_gijduvan"
-      ],
+      "adminCenter": "Buxoro",
       "latitude": 39.7747,
       "longitude": 64.4286,
       "centroid": [
@@ -147,14 +132,7 @@
         "maxLat": 41.45
       },
       "architectureProfileId": "bukhara_historic_oasis",
-      "manifestPath": "regions/bukhara/manifest.json",
-      "availableDetailLevels": [
-        1,
-        2
-      ],
-      "defaultReadiness": "OVERVIEW_ONLY",
-      "estimatedDownloadBytes": 0,
-      "coordinateSource": "Verified administrative center reference (Bukhara, WGS84)"
+      "defaultReadiness": "OVERVIEW_ONLY"
     },
     {
       "regionId": "uz_fergana",
@@ -166,12 +144,7 @@
         "ru": "Ферганская область",
         "en": "Fergana Region"
       },
-      "primaryCityId": "city_fergana",
-      "supportedCities": [
-        "city_fergana",
-        "city_kokand",
-        "city_margilan"
-      ],
+      "adminCenter": "Farg'ona",
       "latitude": 40.3842,
       "longitude": 71.7843,
       "centroid": [
@@ -185,14 +158,7 @@
         "maxLat": 40.76
       },
       "architectureProfileId": "fergana_valley_urban",
-      "manifestPath": "regions/fergana/manifest.json",
-      "availableDetailLevels": [
-        1,
-        2
-      ],
-      "defaultReadiness": "OVERVIEW_ONLY",
-      "estimatedDownloadBytes": 0,
-      "coordinateSource": "Verified administrative center reference (Fergana, WGS84)"
+      "defaultReadiness": "OVERVIEW_ONLY"
     },
     {
       "regionId": "uz_jizzakh",
@@ -204,11 +170,7 @@
         "ru": "Джизакская область",
         "en": "Jizzakh Region"
       },
-      "primaryCityId": "city_jizzakh",
-      "supportedCities": [
-        "city_jizzakh",
-        "city_zomin"
-      ],
+      "adminCenter": "Jizzax",
       "latitude": 40.1158,
       "longitude": 67.8422,
       "centroid": [
@@ -222,14 +184,7 @@
         "maxLat": 41.22
       },
       "architectureProfileId": "tashkent_modern_soviet",
-      "manifestPath": "regions/jizzakh/manifest.json",
-      "availableDetailLevels": [
-        1,
-        2
-      ],
-      "defaultReadiness": "OVERVIEW_ONLY",
-      "estimatedDownloadBytes": 0,
-      "coordinateSource": "Verified administrative center reference (Jizzakh, WGS84)"
+      "defaultReadiness": "OVERVIEW_ONLY"
     },
     {
       "regionId": "uz_kashkadarya",
@@ -241,11 +196,7 @@
         "ru": "Кашкадарьинская область",
         "en": "Kashkadarya Region"
       },
-      "primaryCityId": "city_qarshi",
-      "supportedCities": [
-        "city_qarshi",
-        "city_shahrisabz"
-      ],
+      "adminCenter": "Qarshi",
       "latitude": 38.8606,
       "longitude": 65.7891,
       "centroid": [
@@ -259,14 +210,7 @@
         "maxLat": 39.55
       },
       "architectureProfileId": "samarkand_timurid_heritage",
-      "manifestPath": "regions/kashkadarya/manifest.json",
-      "availableDetailLevels": [
-        1,
-        2
-      ],
-      "defaultReadiness": "OVERVIEW_ONLY",
-      "estimatedDownloadBytes": 0,
-      "coordinateSource": "Verified administrative center reference (Qarshi, WGS84)"
+      "defaultReadiness": "OVERVIEW_ONLY"
     },
     {
       "regionId": "uz_khorezm",
@@ -278,11 +222,7 @@
         "ru": "Хорезмская область",
         "en": "Khorezm Region"
       },
-      "primaryCityId": "city_urgench",
-      "supportedCities": [
-        "city_urgench",
-        "city_khiva"
-      ],
+      "adminCenter": "Urganch",
       "latitude": 41.55,
       "longitude": 60.6333,
       "centroid": [
@@ -296,14 +236,7 @@
         "maxLat": 42.02
       },
       "architectureProfileId": "khiva_ichan_kala",
-      "manifestPath": "regions/khorezm/manifest.json",
-      "availableDetailLevels": [
-        1,
-        2
-      ],
-      "defaultReadiness": "OVERVIEW_ONLY",
-      "estimatedDownloadBytes": 0,
-      "coordinateSource": "Verified administrative center reference (Urgench, WGS84)"
+      "defaultReadiness": "OVERVIEW_ONLY"
     },
     {
       "regionId": "uz_namangan",
@@ -315,11 +248,7 @@
         "ru": "Наманганская область",
         "en": "Namangan Region"
       },
-      "primaryCityId": "city_namangan",
-      "supportedCities": [
-        "city_namangan",
-        "city_chust"
-      ],
+      "adminCenter": "Namangan",
       "latitude": 40.9983,
       "longitude": 71.6726,
       "centroid": [
@@ -333,14 +262,7 @@
         "maxLat": 41.61
       },
       "architectureProfileId": "fergana_valley_urban",
-      "manifestPath": "regions/namangan/manifest.json",
-      "availableDetailLevels": [
-        1,
-        2
-      ],
-      "defaultReadiness": "OVERVIEW_ONLY",
-      "estimatedDownloadBytes": 0,
-      "coordinateSource": "Verified administrative center reference (Namangan, WGS84)"
+      "defaultReadiness": "OVERVIEW_ONLY"
     },
     {
       "regionId": "uz_navoi",
@@ -352,11 +274,7 @@
         "ru": "Навоийская область",
         "en": "Navoi Region"
       },
-      "primaryCityId": "city_navoi",
-      "supportedCities": [
-        "city_navoi",
-        "city_zarafshon"
-      ],
+      "adminCenter": "Navoiy",
       "latitude": 40.0844,
       "longitude": 65.3792,
       "centroid": [
@@ -370,14 +288,7 @@
         "maxLat": 44.38
       },
       "architectureProfileId": "bukhara_historic_oasis",
-      "manifestPath": "regions/navoi/manifest.json",
-      "availableDetailLevels": [
-        1,
-        2
-      ],
-      "defaultReadiness": "OVERVIEW_ONLY",
-      "estimatedDownloadBytes": 0,
-      "coordinateSource": "Verified administrative center reference (Navoiy, WGS84)"
+      "defaultReadiness": "OVERVIEW_ONLY"
     },
     {
       "regionId": "uz_samarkand",
@@ -389,17 +300,12 @@
         "ru": "Самаркандская область",
         "en": "Samarkand Region"
       },
-      "primaryCityId": "city_samarkand",
-      "supportedCities": [
-        "city_samarkand",
-        "city_kattakurgan",
-        "city_urgut"
-      ],
-      "latitude": 39.654808,
-      "longitude": 66.974973,
+      "adminCenter": "Samarqand",
+      "latitude": 39.6542,
+      "longitude": 66.9597,
       "centroid": [
-        66.974973,
-        39.654808
+        66.9597,
+        39.6542
       ],
       "bbox": {
         "minLon": 65.195,
@@ -408,14 +314,7 @@
         "maxLat": 40.668
       },
       "architectureProfileId": "samarkand_timurid_heritage",
-      "manifestPath": "regions/samarkand/manifest.json",
-      "availableDetailLevels": [
-        1,
-        2
-      ],
-      "defaultReadiness": "OVERVIEW_ONLY",
-      "estimatedDownloadBytes": 0,
-      "coordinateSource": "Verified administrative center reference (Samarkand, WGS84)"
+      "defaultReadiness": "OVERVIEW_ONLY"
     },
     {
       "regionId": "uz_surkhandarya",
@@ -427,11 +326,7 @@
         "ru": "Сурхандарьинская область",
         "en": "Surkhandarya Region"
       },
-      "primaryCityId": "city_termez",
-      "supportedCities": [
-        "city_termez",
-        "city_denov"
-      ],
+      "adminCenter": "Termiz",
       "latitude": 37.2242,
       "longitude": 67.2783,
       "centroid": [
@@ -445,14 +340,7 @@
         "maxLat": 39.09
       },
       "architectureProfileId": "bukhara_historic_oasis",
-      "manifestPath": "regions/surkhandarya/manifest.json",
-      "availableDetailLevels": [
-        1,
-        2
-      ],
-      "defaultReadiness": "OVERVIEW_ONLY",
-      "estimatedDownloadBytes": 0,
-      "coordinateSource": "Verified administrative center reference (Termez, WGS84)"
+      "defaultReadiness": "OVERVIEW_ONLY"
     },
     {
       "regionId": "uz_syrdarya",
@@ -464,11 +352,7 @@
         "ru": "Сырдарьинская область",
         "en": "Syrdarya Region"
       },
-      "primaryCityId": "city_guliston",
-      "supportedCities": [
-        "city_guliston",
-        "city_yangiyer"
-      ],
+      "adminCenter": "Guliston",
       "latitude": 40.4897,
       "longitude": 68.7842,
       "centroid": [
@@ -482,53 +366,7 @@
         "maxLat": 41.05
       },
       "architectureProfileId": "tashkent_modern_soviet",
-      "manifestPath": "regions/syrdarya/manifest.json",
-      "availableDetailLevels": [
-        1,
-        2
-      ],
-      "defaultReadiness": "OVERVIEW_ONLY",
-      "estimatedDownloadBytes": 0,
-      "coordinateSource": "Verified administrative center reference (Guliston, WGS84)"
-    },
-    {
-      "regionId": "uz_tashkent_region",
-      "isoCode": "UZ-TO",
-      "soatoCode": "1727",
-      "adminType": "REGION",
-      "names": {
-        "uz": "Toshkent viloyati",
-        "ru": "Ташкентская область",
-        "en": "Tashkent Region"
-      },
-      "primaryCityId": "city_nurafshon",
-      "supportedCities": [
-        "city_nurafshon",
-        "city_chirchiq",
-        "city_olmaliq",
-        "city_angren"
-      ],
-      "latitude": 41.0422,
-      "longitude": 69.361,
-      "centroid": [
-        69.361,
-        41.0422
-      ],
-      "bbox": {
-        "minLon": 68.51,
-        "minLat": 40.185,
-        "maxLon": 71.265,
-        "maxLat": 42.29
-      },
-      "architectureProfileId": "tashkent_modern_soviet",
-      "manifestPath": "regions/tashkent_region/manifest.json",
-      "availableDetailLevels": [
-        1,
-        2
-      ],
-      "defaultReadiness": "OVERVIEW_ONLY",
-      "estimatedDownloadBytes": 0,
-      "coordinateSource": "Verified administrative center reference (Nurafshon, WGS84)"
+      "defaultReadiness": "OVERVIEW_ONLY"
     }
   ]
 }

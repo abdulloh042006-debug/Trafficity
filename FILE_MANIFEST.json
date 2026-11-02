@@ -1,215 +1,193 @@
 {
-  "schemaVersion": "1.1.0",
-  "project": "Trafficity — Uzbekistan Complete ZIP Packager",
+  "schemaVersion": "3.0.0",
   "repository": "abdulloh042006-debug/Trafficity",
+  "branch": "codex/uzbekistan-expansion",
   "totalFileCount": 23,
   "expansionFileCount": 20,
+  "baseFileCount": 3,
   "fullRepoBundleFileCount": 23,
   "files": [
     {
       "index": 1,
       "path": "FILE_MANIFEST.json",
       "scope": "expansion",
-      "includeInExpansionZip": true,
-      "includeInFullRepoZip": true
+      "description": "Yagona kanonik 23 ta loyiha fayli manifesti"
     },
     {
       "index": 2,
       "path": "README.md",
       "scope": "expansion",
-      "includeInExpansionZip": true,
-      "includeInFullRepoZip": true,
-      "sizeBytes": 3168,
-      "sha256": "5922de1a46fe8ee89bfb0434241840ccf2c480524c9bbb60652a73d6dfc1d692"
+      "sizeBytes": 1253,
+      "sha256": "03f0af0ff5e125c45784f71d33daeea3ea70227199f25dba9e36430931b35ad0",
+      "description": "Loyiha hujjati, CLI va test buyruqlari, ma'lumotlar manbasi"
     },
     {
       "index": 3,
       "path": "package.json",
       "scope": "expansion",
-      "includeInExpansionZip": true,
-      "includeInFullRepoZip": true,
-      "sizeBytes": 840,
-      "sha256": "6f9cbc80261d5b7ff5f6b6541a62fcebc341d5a20c4b3446f38c737f727830ab"
+      "sizeBytes": 580,
+      "sha256": "fa4dd12cb283335b1cd2bce67bad50bb30b8eb9fbfbde98ea5573a6e2727c819",
+      "description": "Node.js paket konfiguratsiyasi, CLI bin va npm test skripti"
     },
     {
       "index": 4,
-      "path": ".gitignore",
-      "scope": "full_repo_baseline",
-      "includeInExpansionZip": false,
-      "includeInFullRepoZip": true,
-      "sizeBytes": 387,
-      "sha256": "9c1750935f903a2f46c6b43c9ee7e17cc999b272f0a4eb487f2b9145be153d2b"
+      "path": "LICENSE",
+      "scope": "expansion",
+      "sizeBytes": 444,
+      "sha256": "17cd6f1b8d2c7aa33374f7c627e407acdf102f59cf569653f2124e8a9cacda12",
+      "description": "MIT (kod) va ODbL-1.0 (OpenStreetMap ma'lumotlari) litsenziyasi"
     },
     {
       "index": 5,
-      "path": "LICENSE",
+      "path": "assets/world/uzbekistan/world_manifest.json",
       "scope": "expansion",
-      "includeInExpansionZip": true,
-      "includeInFullRepoZip": true,
-      "sizeBytes": 1640,
-      "sha256": "08a40ef56f5fc93c6716114a44d6f927a2fcb58d8a551d229e878d15291f029d"
+      "sizeBytes": 626,
+      "sha256": "7da60dfcf49d19f01ddb654a24d2497912d0ce6973b3c3b35c6a5824773a0693",
+      "description": "O'zbekiston milliy koordinata tizimi va dunyo manifesti"
     },
     {
       "index": 6,
-      "path": "pubspec.yaml",
-      "scope": "full_repo_baseline",
-      "includeInExpansionZip": false,
-      "includeInFullRepoZip": true,
-      "sizeBytes": 1035,
-      "sha256": "df653fde9b9361ecd8a1278755a0467eb371a7c5d3771335ec930982bd8d4dbd"
+      "path": "assets/world/uzbekistan/region_catalog.json",
+      "scope": "expansion",
+      "sizeBytes": 9315,
+      "sha256": "b816c1bda799076f6c9cc3b4f809612e0b436549b04d67a80882160186cc0f5d",
+      "description": "14 ta birinchi darajali ma'muriy hudud katalogi (latitude, longitude)"
     },
     {
       "index": 7,
-      "path": "assets/world/uzbekistan/world_manifest.json",
+      "path": "assets/world/uzbekistan/cities_index.json",
       "scope": "expansion",
-      "includeInExpansionZip": true,
-      "includeInFullRepoZip": true,
-      "sizeBytes": 840,
-      "sha256": "f0bcc8c1ba6ec4dd3a25f56ce54d745649746189f0e970864c78c03f46fe14a8"
+      "sizeBytes": 4732,
+      "sha256": "05d3bc1ca34eda2a4c928543c7950bf5afa61fc619ae7dbb507f6fcdd007aef2",
+      "description": "Viloyat markazlari va shaharlar indeksi (latitude, longitude)"
     },
     {
       "index": 8,
-      "path": "assets/world/uzbekistan/region_catalog.json",
+      "path": "assets/world/uzbekistan/administrative_boundaries.geojson",
       "scope": "expansion",
-      "includeInExpansionZip": true,
-      "includeInFullRepoZip": true,
-      "sizeBytes": 14188,
-      "sha256": "710b41f116d181c784ea11d6a57bd2c5091009f822d4b84fdd4cea2fdb87db1f"
+      "sizeBytes": 11996,
+      "sha256": "9bd3d3a78cb35cc64a1b7369bebbbccf6fdb8e821d9dc6ea2fd04d75d662e1b7",
+      "description": "14 ta hududning tekshirilgan bounding-box chegaralari (envelope-only)"
     },
     {
       "index": 9,
-      "path": "assets/world/uzbekistan/cities_index.json",
+      "path": "tools/uzbekistan_pack_cli.mjs",
       "scope": "expansion",
-      "includeInExpansionZip": true,
-      "includeInFullRepoZip": true,
-      "sizeBytes": 8494,
-      "sha256": "68af762d244a4515703b7928d6a088ee14ecb8bd3816d47a0929cab4325d9dce"
+      "sizeBytes": 1565,
+      "sha256": "991b9b5925bcdb66b5bfb479b2703a8b5f1de6dd3031af9e562580f99879e362",
+      "description": "Node.js CLI: list-regions, validate-regions, validate-package"
     },
     {
       "index": 10,
-      "path": "assets/world/uzbekistan/administrative_boundaries.geojson",
+      "path": "test/packager_and_cli.test.mjs",
       "scope": "expansion",
-      "includeInExpansionZip": true,
-      "includeInFullRepoZip": true,
-      "sizeBytes": 12990,
-      "sha256": "9803724ce627000c681ec0976e8ff4870765b63822e9671a20e9070a2cd9cd30"
+      "sizeBytes": 1300,
+      "sha256": "20360769f800efed17386feca6bd9f3ffca53d05bca12da834253288ee410831",
+      "description": "Node.js avtomatlashtirilgan testlar to'plami"
     },
     {
       "index": 11,
-      "path": "assets/world/uzbekistan/regions/tashkent_city/manifest.json",
-      "scope": "full_repo_baseline",
-      "includeInExpansionZip": false,
-      "includeInFullRepoZip": true,
-      "sizeBytes": 1500,
-      "sha256": "4aa22bcb87ebd63a19a1b28dc328b990491a8b7ac7b4ddb9ea6bec7d381ccec9"
+      "path": "lib/world/geo_coordinate_system.dart",
+      "scope": "expansion",
+      "sizeBytes": 5388,
+      "sha256": "65ef269e6bbb760ec835910cb9d035ace551912ff391a913dd825a1de5e718ce",
+      "description": "WGS84 <-> Local ENU va Floating Origin koordinata tizimi"
     },
     {
       "index": 12,
-      "path": "tools/uzbekistan_pack_cli.mjs",
+      "path": "lib/world/admin_hierarchy.dart",
       "scope": "expansion",
-      "includeInExpansionZip": true,
-      "includeInFullRepoZip": true,
-      "sizeBytes": 10343,
-      "sha256": "59525969083adde03fcd23e52734ca0b05cdeb911dcda9312cf890e439599631"
+      "sizeBytes": 2499,
+      "sha256": "d5006d7519abe6f035e0f66eb928bdb5e5d237bc402e35e7b99ffc2c5b9a0bf0",
+      "description": "14 hudud ma'muriy iyerarxiyasi va modellari"
     },
     {
       "index": 13,
-      "path": "test/packager_and_cli.test.mjs",
+      "path": "lib/world/region_package_manager.dart",
       "scope": "expansion",
-      "includeInExpansionZip": true,
-      "includeInFullRepoZip": true,
-      "sizeBytes": 5204,
-      "sha256": "7d3c563b47793778f336ff2e9ab6f17f4dd6ff21ef57b941713d28fd484d45bf"
+      "sizeBytes": 3684,
+      "sha256": "4fa75ca624b74cdee1b0b186d3a288ddfb52eb73f31b8efde0d15f8ebc6d757d",
+      "description": "SHA-256 paket tekshiruvchi va lokal paket menejeri"
     },
     {
       "index": 14,
-      "path": "lib/world/geo_coordinate_system.dart",
+      "path": "lib/world/multi_scale_lod_controller.dart",
       "scope": "expansion",
-      "includeInExpansionZip": true,
-      "includeInFullRepoZip": true,
-      "sizeBytes": 7922,
-      "sha256": "5bf6447fc2014c9013ee0464c76de05be4e67828f8aba3f1adda7a70ee38cacf"
+      "sizeBytes": 936,
+      "sha256": "e7820fe3b4f2c995a325c1df6c4ece42d449624e50db475e03a9f589b7d1d357",
+      "description": "4-bosqichli (Country/Region/City2D/Urban3D) LOD kontrolleri"
     },
     {
       "index": 15,
-      "path": "lib/world/admin_hierarchy.dart",
+      "path": "lib/world/road_graph_linker.dart",
       "scope": "expansion",
-      "includeInExpansionZip": true,
-      "includeInFullRepoZip": true,
-      "sizeBytes": 7165,
-      "sha256": "e7abccc6c5ccaf72be27b95d9e662bd42f9b27c4cc9ca4120b8b930aa04881e6"
+      "sizeBytes": 892,
+      "sha256": "ee2204f8c6d0e91f26b1481e136be79684a870b5e2c7a11271eff12fac8c48e5",
+      "description": "Hududlararo yo'l grafini ulash (StitchPortalNode) moduli"
     },
     {
       "index": 16,
-      "path": "lib/world/region_package_manager.dart",
+      "path": "lib/world/architecture_profile_engine.dart",
       "scope": "expansion",
-      "includeInExpansionZip": true,
-      "includeInFullRepoZip": true,
-      "sizeBytes": 9880,
-      "sha256": "3f6a593a21847da35608553b84745dc5ffcb32a1b129981cde2a00587ccf8799"
+      "sizeBytes": 293,
+      "sha256": "cbef0987aba57f70185c45e920c7616dc91970aad8dcc98bc251029e20d4e6cb",
+      "description": "Hududiy arxitektura profillari va obidalar moduli"
     },
     {
       "index": 17,
-      "path": "lib/world/multi_scale_lod_controller.dart",
+      "path": "lib/world/national_save_manager.dart",
       "scope": "expansion",
-      "includeInExpansionZip": true,
-      "includeInFullRepoZip": true,
-      "sizeBytes": 5922,
-      "sha256": "4ddbc51bb8c7e8fdf0192405f86219b41293b2572779bb51aa53a1cd28400e0b"
+      "sizeBytes": 736,
+      "sha256": "8d61f96b81adab078ff74c8ec012acd9d875a578879f101162ae1065c1335e3f",
+      "description": "Milliy saqlash formati (v3) va eski saqlashlarni migratsiya qilish"
     },
     {
       "index": 18,
-      "path": "lib/world/road_graph_linker.dart",
+      "path": "lib/world/world_controller.dart",
       "scope": "expansion",
-      "includeInExpansionZip": true,
-      "includeInFullRepoZip": true,
-      "sizeBytes": 4249,
-      "sha256": "f8048bca67bfcc6f6696697a405eb9b772be9bdb8a11bba7c3e8fb1c33b830a1"
+      "sizeBytes": 1481,
+      "sha256": "f8c1138afbaf5121f69231804ca5661054570c546a1bf841527b56b0edad3951",
+      "description": "O'zbekiston dunyo kontrolleri (UzbekistanWorldController)"
     },
     {
       "index": 19,
-      "path": "lib/world/architecture_profile_engine.dart",
+      "path": "lib/ui/region_selector_overlay.dart",
       "scope": "expansion",
-      "includeInExpansionZip": true,
-      "includeInFullRepoZip": true,
-      "sizeBytes": 8319,
-      "sha256": "7428e6157b942786465a4dcad140de2d8cd6bf8c6d4f00523b54e5d2b8ec58bc"
+      "sizeBytes": 739,
+      "sha256": "5df59529d022205319a9d0b930728d040b556ce8849d9968150c9167bf4da6b2",
+      "description": "14 ta hududni tanlash interfeysi (Overlay)"
     },
     {
       "index": 20,
-      "path": "lib/world/national_save_manager.dart",
+      "path": "test/uzbekistan_world_test.dart",
       "scope": "expansion",
-      "includeInExpansionZip": true,
-      "includeInFullRepoZip": true,
-      "sizeBytes": 8123,
-      "sha256": "61be277be093584b083f573e396e65c62716ac4d0482b0a137111ebb7b2963a1"
+      "sizeBytes": 707,
+      "sha256": "f523ae34fc7a28744103f08f9358bae3eb9cfb6dbe13e4afe0b4afa1624d032b",
+      "description": "Flutter/Dart GIS va SHA-256 paket testlari"
     },
     {
       "index": 21,
-      "path": "lib/world/world_controller.dart",
-      "scope": "expansion",
-      "includeInExpansionZip": true,
-      "includeInFullRepoZip": true,
-      "sizeBytes": 6251,
-      "sha256": "ce59ee2a0eaf3075f593094af10a161e2ed59b44768e0bc2c2dfca4fab37e380"
+      "path": ".gitignore",
+      "scope": "base",
+      "sizeBytes": 50,
+      "sha256": "7d8c6e64304a7b6a4b634e05969588d67ba4905f32ea9822f9af82dda75d1d9d",
+      "description": "Git ignore qoidalari (Node, Flutter, ZIP va token himoyasi)"
     },
     {
       "index": 22,
-      "path": "lib/ui/region_selector_overlay.dart",
-      "scope": "expansion",
-      "includeInExpansionZip": true,
-      "includeInFullRepoZip": true,
-      "sizeBytes": 24412,
-      "sha256": "f392346b7c48efcc7e0dfc762092838d66be841fac779b04c41d68a3a6786162"
+      "path": "pubspec.yaml",
+      "scope": "base",
+      "sizeBytes": 805,
+      "sha256": "4935e662884c2596d9ec8f3fb18326239ec8c4202226a9cd0c9c6636052be4e4",
+      "description": "Flutter/Flame loyiha konfiguratsiyasi va O'zbekiston assetlari"
     },
     {
       "index": 23,
-      "path": "test/uzbekistan_world_test.dart",
-      "scope": "expansion",
-      "includeInExpansionZip": true,
-      "includeInFullRepoZip": true,
-      "sizeBytes": 7431,
-      "sha256": "d3150dc0a23bcc5c8b152e9feb9aed88545b5a4aebb376e2f7e94e2610989e62"
+      "path": "assets/world/uzbekistan/regions/tashkent_city/manifest.json",
+      "scope": "base",
+      "sizeBytes": 780,
+      "sha256": "7b78b3970aebef0c85ee72b1333fdd3d2e34971ff3965c4c4d3e36fffd9d9a17",
+      "description": "Toshkent shahri (UZ-TK) paket manifesti va SHA-256 xeshi"
     }
   ]
 }

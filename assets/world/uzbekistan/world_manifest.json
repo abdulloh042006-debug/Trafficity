@@ -4,26 +4,16 @@
   "isoAlpha2": "UZ",
   "isoAlpha3": "UZB",
   "coordinateConvention": "latitude, longitude (WGS84 decimal degrees)",
-  "names": {
-    "uz": "O'zbekiston Respublikasi",
-    "ru": "Республика Узбекистан",
-    "en": "Republic of Uzbekistan"
-  },
-  "crs": {
-    "canonical": "EPSG:4326",
-    "localProjection": "LOCAL_ENU_WGS84",
-    "floatingOriginRebaseThresholdMeters": 2000.0
-  },
+  "firstLevelAdminCount": 14,
+  "initialPlayableRegionId": "uz_tashkent_city",
   "nationalBbox": {
     "minLon": 55.997,
     "minLat": 37.172,
     "maxLon": 73.132,
-    "maxLat": 45.590
+    "maxLat": 45.59
   },
-  "firstLevelAdminCount": 14,
-  "initialPlayableRegionId": "uz_tashkent_city",
-  "catalogRef": "region_catalog.json",
-  "boundariesRef": "administrative_boundaries.geojson",
-  "citiesIndexRef": "cities_index.json",
+  "catalogRef": "assets/world/uzbekistan/region_catalog.json",
+  "boundariesRef": "assets/world/uzbekistan/administrative_boundaries.geojson",
+  "citiesIndexRef": "assets/world/uzbekistan/cities_index.json",
   "attribution": "© OpenStreetMap contributors (ODbL-1.0)"
 }

@@ -1,14 +1,8 @@
 {
   "type": "FeatureCollection",
-  "name": "uzbekistan_first_level_admin_boundaries",
+  "name": "uzbekistan_first_level_admin_envelopes",
   "geometryAccuracy": "verified_bounding_box_envelope_only",
-  "limitationNote": "High-resolution multi-vertex administrative boundary polygons are not fabricated. Each feature stores the verified regional bounding-box envelope until offline OSM PBF relation ingestion is run.",
-  "crs": {
-    "type": "name",
-    "properties": {
-      "name": "urn:ogc:def:crs:OGC:1.3:CRS84"
-    }
-  },
+  "limitationNote": "High-resolution administrative polygons are not fabricated; verified bounding-box envelopes are provided for each of the 14 first-level administrative divisions.",
   "features": [
     {
       "type": "Feature",
@@ -16,12 +10,11 @@
         "regionId": "uz_tashkent_city",
         "isoCode": "UZ-TK",
         "soatoCode": "1726",
+        "name_uz": "Toshkent shahri",
+        "name_en": "Tashkent City",
         "latitude": 41.311081,
         "longitude": 69.279737,
-        "geometryAccuracy": "verified_bounding_box_envelope_only",
-        "name_uz": "Toshkent shahri",
-        "name_ru": "г. Ташкент",
-        "name_en": "Tashkent City"
+        "geometryAccuracy": "verified_bounding_box_envelope_only"
       },
       "geometry": {
         "type": "Polygon",
@@ -54,15 +47,54 @@
     {
       "type": "Feature",
       "properties": {
+        "regionId": "uz_tashkent_region",
+        "isoCode": "UZ-TO",
+        "soatoCode": "1727",
+        "name_uz": "Toshkent viloyati",
+        "name_en": "Tashkent Region",
+        "latitude": 41.0422,
+        "longitude": 69.3567,
+        "geometryAccuracy": "verified_bounding_box_envelope_only"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              68.51,
+              40.185
+            ],
+            [
+              71.265,
+              40.185
+            ],
+            [
+              71.265,
+              42.29
+            ],
+            [
+              68.51,
+              42.29
+            ],
+            [
+              68.51,
+              40.185
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
         "regionId": "uz_karakalpakstan",
         "isoCode": "UZ-QR",
         "soatoCode": "1735",
-        "latitude": 42.4602,
-        "longitude": 59.6102,
-        "geometryAccuracy": "verified_bounding_box_envelope_only",
         "name_uz": "Qoraqalpog'iston Respublikasi",
-        "name_ru": "Республика Каракалпакстан",
-        "name_en": "Republic of Karakalpakstan"
+        "name_en": "Republic of Karakalpakstan",
+        "latitude": 42.4602,
+        "longitude": 59.6176,
+        "geometryAccuracy": "verified_bounding_box_envelope_only"
       },
       "geometry": {
         "type": "Polygon",
@@ -98,12 +130,11 @@
         "regionId": "uz_andijan",
         "isoCode": "UZ-AN",
         "soatoCode": "1703",
+        "name_uz": "Andijon viloyati",
+        "name_en": "Andijan Region",
         "latitude": 40.7821,
         "longitude": 72.3442,
-        "geometryAccuracy": "verified_bounding_box_envelope_only",
-        "name_uz": "Andijon viloyati",
-        "name_ru": "Андижанская область",
-        "name_en": "Andijan Region"
+        "geometryAccuracy": "verified_bounding_box_envelope_only"
       },
       "geometry": {
         "type": "Polygon",
@@ -139,12 +170,11 @@
         "regionId": "uz_bukhara",
         "isoCode": "UZ-BU",
         "soatoCode": "1706",
+        "name_uz": "Buxoro viloyati",
+        "name_en": "Bukhara Region",
         "latitude": 39.7747,
         "longitude": 64.4286,
-        "geometryAccuracy": "verified_bounding_box_envelope_only",
-        "name_uz": "Buxoro viloyati",
-        "name_ru": "Бухарская область",
-        "name_en": "Bukhara Region"
+        "geometryAccuracy": "verified_bounding_box_envelope_only"
       },
       "geometry": {
         "type": "Polygon",
@@ -180,12 +210,11 @@
         "regionId": "uz_fergana",
         "isoCode": "UZ-FA",
         "soatoCode": "1730",
+        "name_uz": "Farg'ona viloyati",
+        "name_en": "Fergana Region",
         "latitude": 40.3842,
         "longitude": 71.7843,
-        "geometryAccuracy": "verified_bounding_box_envelope_only",
-        "name_uz": "Farg'ona viloyati",
-        "name_ru": "Ферганская область",
-        "name_en": "Fergana Region"
+        "geometryAccuracy": "verified_bounding_box_envelope_only"
       },
       "geometry": {
         "type": "Polygon",
@@ -221,12 +250,11 @@
         "regionId": "uz_jizzakh",
         "isoCode": "UZ-JI",
         "soatoCode": "1708",
+        "name_uz": "Jizzax viloyati",
+        "name_en": "Jizzakh Region",
         "latitude": 40.1158,
         "longitude": 67.8422,
-        "geometryAccuracy": "verified_bounding_box_envelope_only",
-        "name_uz": "Jizzax viloyati",
-        "name_ru": "Джизакская область",
-        "name_en": "Jizzakh Region"
+        "geometryAccuracy": "verified_bounding_box_envelope_only"
       },
       "geometry": {
         "type": "Polygon",
@@ -262,12 +290,11 @@
         "regionId": "uz_kashkadarya",
         "isoCode": "UZ-QA",
         "soatoCode": "1710",
+        "name_uz": "Qashqadaryo viloyati",
+        "name_en": "Kashkadarya Region",
         "latitude": 38.8606,
         "longitude": 65.7891,
-        "geometryAccuracy": "verified_bounding_box_envelope_only",
-        "name_uz": "Qashqadaryo viloyati",
-        "name_ru": "Кашкадарьинская область",
-        "name_en": "Kashkadarya Region"
+        "geometryAccuracy": "verified_bounding_box_envelope_only"
       },
       "geometry": {
         "type": "Polygon",
@@ -303,12 +330,11 @@
         "regionId": "uz_khorezm",
         "isoCode": "UZ-XO",
         "soatoCode": "1733",
+        "name_uz": "Xorazm viloyati",
+        "name_en": "Khorezm Region",
         "latitude": 41.55,
         "longitude": 60.6333,
-        "geometryAccuracy": "verified_bounding_box_envelope_only",
-        "name_uz": "Xorazm viloyati",
-        "name_ru": "Хорезмская область",
-        "name_en": "Khorezm Region"
+        "geometryAccuracy": "verified_bounding_box_envelope_only"
       },
       "geometry": {
         "type": "Polygon",
@@ -344,12 +370,11 @@
         "regionId": "uz_namangan",
         "isoCode": "UZ-NG",
         "soatoCode": "1714",
+        "name_uz": "Namangan viloyati",
+        "name_en": "Namangan Region",
         "latitude": 40.9983,
         "longitude": 71.6726,
-        "geometryAccuracy": "verified_bounding_box_envelope_only",
-        "name_uz": "Namangan viloyati",
-        "name_ru": "Наманганская область",
-        "name_en": "Namangan Region"
+        "geometryAccuracy": "verified_bounding_box_envelope_only"
       },
       "geometry": {
         "type": "Polygon",
@@ -385,12 +410,11 @@
         "regionId": "uz_navoi",
         "isoCode": "UZ-NW",
         "soatoCode": "1712",
+        "name_uz": "Navoiy viloyati",
+        "name_en": "Navoi Region",
         "latitude": 40.0844,
         "longitude": 65.3792,
-        "geometryAccuracy": "verified_bounding_box_envelope_only",
-        "name_uz": "Navoiy viloyati",
-        "name_ru": "Навоийская область",
-        "name_en": "Navoi Region"
+        "geometryAccuracy": "verified_bounding_box_envelope_only"
       },
       "geometry": {
         "type": "Polygon",
@@ -426,12 +450,11 @@
         "regionId": "uz_samarkand",
         "isoCode": "UZ-SA",
         "soatoCode": "1718",
-        "latitude": 39.654808,
-        "longitude": 66.974973,
-        "geometryAccuracy": "verified_bounding_box_envelope_only",
         "name_uz": "Samarqand viloyati",
-        "name_ru": "Самаркандская область",
-        "name_en": "Samarkand Region"
+        "name_en": "Samarkand Region",
+        "latitude": 39.6542,
+        "longitude": 66.9597,
+        "geometryAccuracy": "verified_bounding_box_envelope_only"
       },
       "geometry": {
         "type": "Polygon",
@@ -467,12 +490,11 @@
         "regionId": "uz_surkhandarya",
         "isoCode": "UZ-SU",
         "soatoCode": "1722",
+        "name_uz": "Surxondaryo viloyati",
+        "name_en": "Surkhandarya Region",
         "latitude": 37.2242,
         "longitude": 67.2783,
-        "geometryAccuracy": "verified_bounding_box_envelope_only",
-        "name_uz": "Surxondaryo viloyati",
-        "name_ru": "Сурхандарьинская область",
-        "name_en": "Surkhandarya Region"
+        "geometryAccuracy": "verified_bounding_box_envelope_only"
       },
       "geometry": {
         "type": "Polygon",
@@ -508,12 +530,11 @@
         "regionId": "uz_syrdarya",
         "isoCode": "UZ-SI",
         "soatoCode": "1724",
+        "name_uz": "Sirdaryo viloyati",
+        "name_en": "Syrdarya Region",
         "latitude": 40.4897,
         "longitude": 68.7842,
-        "geometryAccuracy": "verified_bounding_box_envelope_only",
-        "name_uz": "Sirdaryo viloyati",
-        "name_ru": "Сырдарьинская область",
-        "name_en": "Syrdarya Region"
+        "geometryAccuracy": "verified_bounding_box_envelope_only"
       },
       "geometry": {
         "type": "Polygon",
@@ -538,47 +559,6 @@
             [
               68.21,
               40.11
-            ]
-          ]
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "regionId": "uz_tashkent_region",
-        "isoCode": "UZ-TO",
-        "soatoCode": "1727",
-        "latitude": 41.0422,
-        "longitude": 69.361,
-        "geometryAccuracy": "verified_bounding_box_envelope_only",
-        "name_uz": "Toshkent viloyati",
-        "name_ru": "Ташкентская область",
-        "name_en": "Tashkent Region"
-      },
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [
-          [
-            [
-              68.51,
-              40.185
-            ],
-            [
-              71.265,
-              40.185
-            ],
-            [
-              71.265,
-              42.29
-            ],
-            [
-              68.51,
-              42.29
-            ],
-            [
-              68.51,
-              40.185
             ]
           ]
         ]

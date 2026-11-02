@@ -1,25 +1,6 @@
-# Flutter / Dart / Android build artifacts
-.dart_tool/
-.packages
-build/
-android/.gradle/
-android/local.properties
-android/gradlew
-android/gradlew.bat
-
-# Node.js & Python tooling
 node_modules/
-__pycache__/
-*.pyc
-npm-debug.log*
-.DS_Store
-
-# Generated archives & local registries
+.dart_tool/
+build/
 *.zip
-.installed_packages_registry.json
-
-# Security: Never commit tokens or secrets
 .env
-.env.*
 *.pat
-*.token
