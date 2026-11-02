@@ -77,26 +77,8 @@ def migrate_tashkent() -> Path:
         if isinstance(raw_roads, list):
             road_count = len(raw_roads)
             for idx, r in enumerate(raw_roads[:250]):
+                pts = r.get("points") or r.get("pts") or []
                 wgs_pts = []
-                # The current Tashkent dataset stores each road as
-                # [class, flags, metadata, [x1, y1, x2, y2]].
-                # Older/imported datasets may instead use points/pts objects.
-                if isinstance(r, list):
-                    coords = next(
-                        (item for item in reversed(r)
-                         if isinstance(item, list) and len(item) >= 4
-                         and all(isinstance(v, (int, float)) for v in item[:4])),
-                        None,
-                    )
-                    if coords:
-                        pts = [[coords[0], coords[1]], [coords[2], coords[3]]]
-                    else:
-                        pts = []
-                elif isinstance(r, dict):
-                    pts = r.get("points") or r.get("pts") or []
-                else:
-                    pts = []
-
                 for p in pts:
                     if isinstance(p, list) and len(p) >= 2:
                         wgs_pts.append(legacy_xy_to_wgs84(float(p[0]), float(p[1])))
