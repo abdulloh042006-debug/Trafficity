@@ -99,6 +99,16 @@ class RoadGame extends FlameGame {
   int _nextBuildingId = 1;
   Offset cityCenter = const Offset(3200, 3200);
 
+  /// Region the player selected in the Uzbekistan selector. The playable map is always Tashkent City; when the
+  /// selected region has no detailed package ([regionDetailed] false) the screen covers and pauses the game.
+  String activeRegionId = 'uz_tashkent_city';
+  bool regionDetailed = true;
+
+  void setRegion(String? regionId, {required bool detailed}) {
+    activeRegionId = regionId ?? activeRegionId;
+    regionDetailed = detailed;
+  }
+
   /// Dunyo o'lchami, markazi va o'yinchi qo'ygan hudud (xarita shahar o'sishi bilan kengayadi).
   double get worldSize => terrain.size;
   Offset get worldCenter => Offset(terrain.size / 2, terrain.size / 2);

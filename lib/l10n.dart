@@ -6,6 +6,29 @@ class L {
 
   // [uz, ru, en]
   static const List<List<String>> _t = [
+    // --- O'zbekiston viloyatlari (uzun jumlalar oldin)
+    [
+      "Batafsil xarita (yo'llar, binolar) bu viloyat uchun hali o'rnatilmagan. O'yin faqat Toshkent shahri xaritasida o'ynaladi.",
+      "Подробная карта (дороги, здания) для этого региона пока не установлена. Игра идёт только на карте города Ташкент.",
+      "The detailed map (roads, buildings) is not installed for this region yet. The game is played only on the Tashkent City map.",
+    ],
+    [
+      "Batafsil xarita hozircha faqat Toshkent shahri uchun mavjud.",
+      "Подробная карта пока доступна только для города Ташкент.",
+      "The detailed map is currently available only for Tashkent City.",
+    ],
+    ["O'zbekiston viloyatlari", "Регионы Узбекистана", "Regions of Uzbekistan"],
+    ["Toshkent shahriga qaytish", "Вернуться в город Ташкент", "Back to Tashkent City"],
+    ["SOATO kodi tasdiqlanmagan", "Код СОАТО не подтверждён", "SOATO code unverified"],
+    ["Faqat umumiy ko'rinish", "Только общий обзор", "Overview only"],
+    ["Ko'rinish darajasi", "Уровень детализации", "Detail level"],
+    ["1/4 · Butun mamlakat", "1/4 · Вся страна", "1/4 · Whole country"],
+    ["2/4 · Viloyat ko'rinishi", "2/4 · Вид региона", "2/4 · Regional view"],
+    ["3/4 · Shahar (2D)", "3/4 · Город (2D)", "3/4 · City (2D)"],
+    ["4/4 · Shahar (3D)", "4/4 · Город (3D)", "4/4 · City (3D)"],
+    ["Katalog yuklanmadi", "Каталог не загружен", "Catalog failed to load"],
+    ["Batafsil xarita", "Подробная карта", "Detailed map"],
+    ["Viloyatlar", "Регионы", "Regions"],
     // --- temir yo'l (uzun jumlalar oldin, qisqa so'zlar keyin)
     [
       "Barmoqni bosib sudrang: temir yo'l quriladi (suv ustida ko'prik, tog'da tunnel)",

@@ -9,6 +9,9 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'game/road_game.dart';
+import 'ui/region_selector_overlay.dart';
+import 'ui/uzbekistan_hud_button.dart';
+import 'world/world_controller.dart';
 import 'game/terrain.dart';
 import 'l10n.dart';
 
@@ -62,8 +65,55 @@ class GameScreen extends StatefulWidget {
 
 class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   late final RoadGame game = RoadGame();
+  // The one Uzbekistan world controller of this screen: created once, disposed with the screen.
+  final UzbekistanWorldController world = UzbekistanWorldController();
   double _uiScale = 1.0;
   bool _menu = true;
+  bool _overview = false; // active region has no detailed package: show the overview card, pause the game
+  bool _selectorOpen = false;
+
+  static const _langCodes = ['uz', 'ru', 'en'];
+  String get _langCode => _langCodes[L.lang.clamp(0, 2)];
+
+  /// The game runs only while neither the main menu nor an overview-only region covers it.
+  void _syncPause() {
+    game.menuOpen = _menu || _overview;
+  }
+
+  void _onWorldChanged() {
+    if (!mounted) return;
+    final overview = world.isReady && !world.isActiveDetailed;
+    if (overview != _overview) {
+      _overview = overview;
+      _syncPause();
+      game.setRegion(world.activeRegion?.regionId, detailed: !overview);
+      game.hud.value++;
+    } else {
+      game.setRegion(world.activeRegion?.regionId, detailed: !overview);
+    }
+    setState(() {});
+  }
+
+  void _onGameHud() => world.updateCamera(zoom: game.zoom);
+
+  Future<void> _openSelector() async {
+    if (_selectorOpen || !mounted) return;
+    _selectorOpen = true;
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => UzbekistanRegionSelectorOverlay(
+        worldController: world,
+        languageCode: _langCode,
+        scale: _uiScale,
+        onRegionConfirmed: (r) {
+          world.selectRegion(r.regionId);
+          Navigator.of(ctx).pop();
+        },
+        onClose: () => Navigator.of(ctx).pop(),
+      ),
+    );
+    _selectorOpen = false;
+  }
 
   // fon musiqasi (24 soniyalik uzluksiz sokin pad, loyiha ichida yaratilgan)
   final AudioPlayer _music = AudioPlayer();
@@ -97,6 +147,9 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     game.menuOpen = true;
+    world.addListener(_onWorldChanged);
+    game.hud.addListener(_onGameHud);
+    world.initializeFromAssets();
     // yuklashni birinchi kadrdan keyin boshlaymiz: ekran darhol chiqadi, xatolar ko'rinadi
     WidgetsBinding.instance.addPostFrameCallback((_) => game.newMap(game.seed, ideal: RoadGame.idealCityOnStart));
     SharedPreferences.getInstance()
@@ -115,6 +168,9 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    game.hud.removeListener(_onGameHud);
+    world.removeListener(_onWorldChanged);
+    world.dispose();
     _music.dispose();
     super.dispose();
   }
@@ -189,7 +245,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   void _closeMenu() {
     if (!mounted) return;
     setState(() => _menu = false);
-    game.menuOpen = false;
+    _syncPause();
     game.hud.value++;
   }
 
@@ -513,6 +569,16 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
               ),
             ),
           ),
+          if (_overview)
+            Positioned.fill(
+              child: RegionOverviewCard(
+                worldController: world,
+                languageCode: _langCode,
+                scale: _uiScale,
+                onBackToDetailed: () => world.selectRegion('uz_tashkent_city'),
+                onOpenSelector: _openSelector,
+              ),
+            ),
           if (_menu) Positioned.fill(child: _menuOverlay()),
         ],
       ),
@@ -604,6 +670,13 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
         mainAxisSize: MainAxisSize.min,
         children: [
           _panel([
+            UzbekistanHudButton(
+              worldController: world,
+              languageCode: _langCode,
+              scale: _uiScale,
+              onPressed: _openSelector,
+            ),
+            const SizedBox(height: 2),
             Wrap(
               spacing: 14,
               runSpacing: 2,
@@ -720,7 +793,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
           children: [
             _btn(Icons.menu, "Menyu", () {
               setState(() => _menu = true);
-              game.menuOpen = true;
+              _syncPause();
             }),
             _btn(Icons.open_with, "Kamera", () => game.setTool(Tool.pan), selected: game.tool == Tool.pan),
             if (game.rot.abs() > 0.01) _btn(Icons.explore, "Shimol", game.resetRotation),
