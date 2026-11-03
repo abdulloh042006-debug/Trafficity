@@ -404,8 +404,8 @@ Release-ready only if **every** applicable box is true with evidence; otherwise 
 - [x] CLI, Python, `npm test` suites pass (41 Node, 49 Python); no check replaced by a mock.
 - [x] HTML packager exists; ZIP validation tests pass; push flow proven non-force and `main`-proof. **MOCK-ONLY / PASS (manual)**: Chromium run 29/29 with a mocked GitHub API; no real push was performed through the page.
 - [x] Selector visible and working in the real game (11 widget tests incl. all 14 regions); other regions overview-only.
-- [ ] Debug APK built and non-empty: **BLOCKED (local)** (no Android SDK); CI run result in §18 (P10).
-- [ ] CI run for the final commit is `success` with APK and ZIP artifacts: see §18 (P10, P12).
+- [x] Debug APK built and non-empty: **CI-PASS**. Locally BLOCKED (no Android SDK), but CI runs 41698996726 (`f2a474e`) and 41700238463 (`2e654f5`) built `app-debug.apk` (79 212 058-byte artifact `trafficity-debug-apk`, step "APK exists and is not empty" passed).
+- [x] **CI-PASS** for the last code/docs commit `2e654f5`: run [41700238463](https://github.com/abdulloh042006-debug/Trafficity/actions/runs/41700238463) concluded `success`; artifacts `Trafficity-Uzbekistan-Complete` (2 322 635 bytes, sha256 `646488514a2b…`) and `trafficity-debug-apk` (79 212 058 bytes). The ledger-only commit that records this evidence is pushed with `[skip ci]` and changes only this file.
 - [x] Manifest sizes/digests/counts match the final files (`validate-bundle` OK in both modes); documentation matches reality.
 - [x] Secrets scan clean (only the documented intentional fixtures); `git diff --check` clean.
 
@@ -429,7 +429,8 @@ Last updated at the end of the rev. 3 execution. A push, commit title, mock, or 
 | **P7** | Selector in the real game | `3367155` | `uzbekistan_selector_widget_test.dart` 11/11: controller (idempotent init, unknown region rejected, LOD, notifications, broken catalog), real screen (HUD button, open/close, **all 14 regions selected**, overview card pauses the game and covers the map, back/reopen, Russian labels, dispose safety). Screenshots reviewed. |
 | **P8** | CLI and strict packager | `898fe5b`, `03a3f77`, `797fbcc` | `validate-regions`, `validate-package`, `validate-bundle --mode expansion|full` OK. `package_release.py --allow-blocked` locally: all checks PASS, ZIP created and validated, APK step **BLOCKED** (SDK); 49 Python tests incl. SDK and scaffold behaviour. |
 | **P9** | HTML packager | `797fbcc` | `test/packager_html.test.mjs` 9 tests; `node tools/sync_packager_html.mjs --check` OK. **PASS (manual)**: headless Chromium 29/29 (local-files source, 20/23 validation, tampered/missing file rejected, ZIP re-downloaded and re-opened by Python, mocked GitHub push sequence with `force:false`, parent = previous tip, token only in the Authorization header and cleared, 422 conflict without retry, `main` refused, no CDN). |
-| **P10** | CI workflow | `f2a474e` | Pushed and accepted by the server. Run [41698996726](https://github.com/abdulloh042006-debug/Trafficity/actions/runs/41698996726) on `f2a474e`: every discrete check step (format, analyze, `flutter test`, `npm test`, Python, HTML sync, CLI, reproducible migration) concluded **success** in CI; the strict packager step (ZIP, Android scaffold, debug APK) was **still running when this ledger was written** — its conclusion and the artifacts are therefore **not verified here** (see PENDING). |
+| **P10** | CI workflow | `f2a474e`, `2e654f5` | Workflow pushed and accepted. Run [41698996726](https://github.com/abdulloh042006-debug/Trafficity/actions/runs/41698996726) (`f2a474e`) and run [41700238463](https://github.com/abdulloh042006-debug/Trafficity/actions/runs/41700238463) (`2e654f5`) both concluded **success**: format, analyze, `flutter test`, `npm test`, Python tests, HTML sync, CLI validation, reproducible migration, strict packager (ZIP, Android scaffold, debug APK), APK check, ZIP re-validation, both uploads. Artifacts listed via the API for each run (ZIP ≈ 2.3 MB, debug APK 79 212 058 bytes). The artifacts' contents were not downloaded or installed in this session. |
+| **P12** | Final gate | `2e654f5` + ledger commit | §17 ticked with the evidence above; `origin/main` re-checked unchanged (`ee406fc`); secrets scan clean with the documented exclusions; `git diff --check` clean. |
 | **P11** | Manifest and documentation | this commit | `update-manifest` → `validate-bundle` OK (expansion 20, full 23); `README.md`, `UZBEKISTAN_EXPANSION_README.md`, `CLAUDE.md` rewritten to real behaviour; game history kept in `docs/GAME_STAGES.md`. |
 
 ### NOT DONE — PENDING (crossed out = done, see COMPLETED)
@@ -444,15 +445,15 @@ Last updated at the end of the rev. 3 execution. A push, commit title, mock, or 
 - ~~**P7** Selector integrated into the real game.~~
 - ~~**P8** Strict CLI and release packager.~~
 - ~~**P9** Browser HTML packager with safe Direct Push.~~
-- [ ] **P10** CI `success` for the *final* commit with both artifacts (ZIP + debug APK). Not yet verified when this ledger was written: run 41698996726 (`f2a474e`) was still in its APK step and the run for the final commit had not started. Check Actions; until then report **CI not green / not verified**.
+- ~~**P10** CI green with both artifacts.~~
 - ~~**P11** Manifest, README, and CLAUDE.md accuracy.~~
-- [ ] **P12** Final gate: two boxes depend on P10 (APK built, final-commit CI); everything else ticked in §17.
+- ~~**P12** Final gate.~~
 - [ ] Independent verification of the Tashkent coordinate conversion (P5 step 2) — still `unverified`.
 - [ ] Wiring `national_save_manager`, `road_graph_linker`, `architecture_profile_engine` into the game's own code (outside this prompt's acceptance criteria; modules and tests exist).
 
 ### BLOCKED
 
-- **Local `flutter build apk --debug`** — BLOCKED (local): `No Android SDK found. Try setting the ANDROID_HOME environment variable.` Unblocks with an Android SDK (CI has one).
+- **Local `flutter build apk --debug`** — BLOCKED (local): `No Android SDK found. Try setting the ANDROID_HOME environment variable.` Unblocks with an Android SDK; the same build is **CI-PASS** in GitHub Actions (see P10). The APK was not installed or run on a device.
 - **Coordinate verification against independent anchors** — no cited survey points are available offline. An export georeference (`map.wld`, EPSG:3857) exists but its pixel-origin convention differs by about 3 m between the `.wld` and the SVG metadata, so it was not used to claim "verified".
 
 ### OWNER DECISIONS NEEDED
