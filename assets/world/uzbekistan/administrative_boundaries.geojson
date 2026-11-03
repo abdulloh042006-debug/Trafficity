@@ -1,8 +1,8 @@
 {
   "type": "FeatureCollection",
   "name": "uzbekistan_first_level_admin_envelopes",
-  "geometryAccuracy": "verified_bounding_box_envelope_only",
-  "limitationNote": "High-resolution administrative polygons are not fabricated; verified bounding-box envelopes are provided for each of the 14 first-level administrative divisions.",
+  "geometryAccuracy": "approximate_bounding_box_envelope",
+  "limitationNote": "These polygons are rectangular bounding-box envelopes. They are approximate, not surveyed, and are NOT administrative boundaries; do not use them for border-accuracy claims. Authoritative boundary polygons have not been sourced or licensed.",
   "features": [
     {
       "type": "Feature",
@@ -14,7 +14,7 @@
         "name_en": "Tashkent City",
         "latitude": 41.311081,
         "longitude": 69.279737,
-        "geometryAccuracy": "verified_bounding_box_envelope_only"
+        "geometryAccuracy": "approximate_bounding_box_envelope"
       },
       "geometry": {
         "type": "Polygon",
@@ -54,7 +54,7 @@
         "name_en": "Tashkent Region",
         "latitude": 41.0422,
         "longitude": 69.3567,
-        "geometryAccuracy": "verified_bounding_box_envelope_only"
+        "geometryAccuracy": "approximate_bounding_box_envelope"
       },
       "geometry": {
         "type": "Polygon",
@@ -94,7 +94,7 @@
         "name_en": "Republic of Karakalpakstan",
         "latitude": 42.4602,
         "longitude": 59.6176,
-        "geometryAccuracy": "verified_bounding_box_envelope_only"
+        "geometryAccuracy": "approximate_bounding_box_envelope"
       },
       "geometry": {
         "type": "Polygon",
@@ -134,7 +134,7 @@
         "name_en": "Andijan Region",
         "latitude": 40.7821,
         "longitude": 72.3442,
-        "geometryAccuracy": "verified_bounding_box_envelope_only"
+        "geometryAccuracy": "approximate_bounding_box_envelope"
       },
       "geometry": {
         "type": "Polygon",
@@ -174,7 +174,7 @@
         "name_en": "Bukhara Region",
         "latitude": 39.7747,
         "longitude": 64.4286,
-        "geometryAccuracy": "verified_bounding_box_envelope_only"
+        "geometryAccuracy": "approximate_bounding_box_envelope"
       },
       "geometry": {
         "type": "Polygon",
@@ -214,7 +214,7 @@
         "name_en": "Fergana Region",
         "latitude": 40.3842,
         "longitude": 71.7843,
-        "geometryAccuracy": "verified_bounding_box_envelope_only"
+        "geometryAccuracy": "approximate_bounding_box_envelope"
       },
       "geometry": {
         "type": "Polygon",
@@ -254,7 +254,7 @@
         "name_en": "Jizzakh Region",
         "latitude": 40.1158,
         "longitude": 67.8422,
-        "geometryAccuracy": "verified_bounding_box_envelope_only"
+        "geometryAccuracy": "approximate_bounding_box_envelope"
       },
       "geometry": {
         "type": "Polygon",
@@ -294,7 +294,7 @@
         "name_en": "Kashkadarya Region",
         "latitude": 38.8606,
         "longitude": 65.7891,
-        "geometryAccuracy": "verified_bounding_box_envelope_only"
+        "geometryAccuracy": "approximate_bounding_box_envelope"
       },
       "geometry": {
         "type": "Polygon",
@@ -334,7 +334,7 @@
         "name_en": "Khorezm Region",
         "latitude": 41.55,
         "longitude": 60.6333,
-        "geometryAccuracy": "verified_bounding_box_envelope_only"
+        "geometryAccuracy": "approximate_bounding_box_envelope"
       },
       "geometry": {
         "type": "Polygon",
@@ -374,7 +374,7 @@
         "name_en": "Namangan Region",
         "latitude": 40.9983,
         "longitude": 71.6726,
-        "geometryAccuracy": "verified_bounding_box_envelope_only"
+        "geometryAccuracy": "approximate_bounding_box_envelope"
       },
       "geometry": {
         "type": "Polygon",
@@ -414,7 +414,7 @@
         "name_en": "Navoi Region",
         "latitude": 40.0844,
         "longitude": 65.3792,
-        "geometryAccuracy": "verified_bounding_box_envelope_only"
+        "geometryAccuracy": "approximate_bounding_box_envelope"
       },
       "geometry": {
         "type": "Polygon",
@@ -454,7 +454,7 @@
         "name_en": "Samarkand Region",
         "latitude": 39.6542,
         "longitude": 66.9597,
-        "geometryAccuracy": "verified_bounding_box_envelope_only"
+        "geometryAccuracy": "approximate_bounding_box_envelope"
       },
       "geometry": {
         "type": "Polygon",
@@ -494,7 +494,7 @@
         "name_en": "Surkhandarya Region",
         "latitude": 37.2242,
         "longitude": 67.2783,
-        "geometryAccuracy": "verified_bounding_box_envelope_only"
+        "geometryAccuracy": "approximate_bounding_box_envelope"
       },
       "geometry": {
         "type": "Polygon",
@@ -534,7 +534,7 @@
         "name_en": "Syrdarya Region",
         "latitude": 40.4897,
         "longitude": 68.7842,
-        "geometryAccuracy": "verified_bounding_box_envelope_only"
+        "geometryAccuracy": "approximate_bounding_box_envelope"
       },
       "geometry": {
         "type": "Polygon",

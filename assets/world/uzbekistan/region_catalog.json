@@ -1,8 +1,25 @@
 {
   "schemaVersion": "3.0.0",
   "countryId": "UZ",
-  "coordinateConvention": "latitude, longitude",
+  "coordinateConvention": "Named fields 'latitude' and 'longitude' are WGS84 decimal degrees. Array positions (representativePoint, GeoJSON coordinates) are [longitude, latitude]. Bounding boxes use minLon/minLat/maxLon/maxLat.",
   "defaultRegionId": "uz_tashkent_city",
+  "provenance": {
+    "isoCodes": {
+      "status": "verified_against_secondary_source",
+      "source": "https://statoids.com/uuz.html",
+      "verifiedOn": "2026-11-03",
+      "note": "All 14 ISO 3166-2:UZ codes match Statoids (a secondary source). The ISO Online Browsing Platform itself was not consulted. UZ-TK is listed there as valid if the division is confirmed (ISO Newsletter I-4)."
+    },
+    "soatoCodes": {
+      "status": "unverified",
+      "note": "No authoritative SOATO source could be reached from the build environment; treat these codes as unconfirmed."
+    },
+    "coordinates": {
+      "latitude/longitude": "Position of the administrative-center city. Approximate; not surveyed in this repository.",
+      "representativePoint": "The same administrative-center point. It is NOT a computed geometric centroid.",
+      "bbox": "Approximate bounding-box envelope. It is NOT an administrative boundary."
+    }
+  },
   "regions": [
     {
       "regionId": "uz_tashkent_city",
@@ -17,7 +34,7 @@
       "adminCenter": "Toshkent",
       "latitude": 41.311081,
       "longitude": 69.279737,
-      "centroid": [
+      "representativePoint": [
         69.279737,
         41.311081
       ],
@@ -43,7 +60,7 @@
       "adminCenter": "Nurafshon",
       "latitude": 41.0422,
       "longitude": 69.3567,
-      "centroid": [
+      "representativePoint": [
         69.3567,
         41.0422
       ],
@@ -69,7 +86,7 @@
       "adminCenter": "Nukus",
       "latitude": 42.4602,
       "longitude": 59.6176,
-      "centroid": [
+      "representativePoint": [
         59.6176,
         42.4602
       ],
@@ -95,7 +112,7 @@
       "adminCenter": "Andijon",
       "latitude": 40.7821,
       "longitude": 72.3442,
-      "centroid": [
+      "representativePoint": [
         72.3442,
         40.7821
       ],
@@ -121,7 +138,7 @@
       "adminCenter": "Buxoro",
       "latitude": 39.7747,
       "longitude": 64.4286,
-      "centroid": [
+      "representativePoint": [
         64.4286,
         39.7747
       ],
@@ -147,7 +164,7 @@
       "adminCenter": "Farg'ona",
       "latitude": 40.3842,
       "longitude": 71.7843,
-      "centroid": [
+      "representativePoint": [
         71.7843,
         40.3842
       ],
@@ -173,7 +190,7 @@
       "adminCenter": "Jizzax",
       "latitude": 40.1158,
       "longitude": 67.8422,
-      "centroid": [
+      "representativePoint": [
         67.8422,
         40.1158
       ],
@@ -199,7 +216,7 @@
       "adminCenter": "Qarshi",
       "latitude": 38.8606,
       "longitude": 65.7891,
-      "centroid": [
+      "representativePoint": [
         65.7891,
         38.8606
       ],
@@ -225,7 +242,7 @@
       "adminCenter": "Urganch",
       "latitude": 41.55,
       "longitude": 60.6333,
-      "centroid": [
+      "representativePoint": [
         60.6333,
         41.55
       ],
@@ -251,7 +268,7 @@
       "adminCenter": "Namangan",
       "latitude": 40.9983,
       "longitude": 71.6726,
-      "centroid": [
+      "representativePoint": [
         71.6726,
         40.9983
       ],
@@ -277,7 +294,7 @@
       "adminCenter": "Navoiy",
       "latitude": 40.0844,
       "longitude": 65.3792,
-      "centroid": [
+      "representativePoint": [
         65.3792,
         40.0844
       ],
@@ -303,7 +320,7 @@
       "adminCenter": "Samarqand",
       "latitude": 39.6542,
       "longitude": 66.9597,
-      "centroid": [
+      "representativePoint": [
         66.9597,
         39.6542
       ],
@@ -329,7 +346,7 @@
       "adminCenter": "Termiz",
       "latitude": 37.2242,
       "longitude": 67.2783,
-      "centroid": [
+      "representativePoint": [
         67.2783,
         37.2242
       ],
@@ -355,7 +372,7 @@
       "adminCenter": "Guliston",
       "latitude": 40.4897,
       "longitude": 68.7842,
-      "centroid": [
+      "representativePoint": [
         68.7842,
         40.4897
       ],

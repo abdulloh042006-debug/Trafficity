@@ -1,7 +1,7 @@
 {
   "schemaVersion": "3.0.0",
   "countryId": "UZ",
-  "coordinateConvention": "latitude, longitude",
+  "coordinateConvention": "Named fields 'latitude' and 'longitude' are WGS84 decimal degrees. Array positions (representativePoint, GeoJSON coordinates) are [longitude, latitude]. Bounding boxes use minLon/minLat/maxLon/maxLat.",
   "cities": [
     {
       "cityId": "city_toshkent",

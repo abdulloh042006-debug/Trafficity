@@ -34,7 +34,7 @@ class UzbekistanWorldController extends ChangeNotifier {
 
   void selectRegion(String regionId) {
     _activeRegion = _regions.firstWhere((r) => r.regionId == regionId, orElse: () => _regions.first);
-    coordinateSystem.setFloatingOrigin(_activeRegion!.centroid);
+    coordinateSystem.setFloatingOrigin(_activeRegion!.representativePoint);
     notifyListeners();
   }
 }

@@ -173,11 +173,11 @@ def ingest_region(
         "parentAdminId": "UZ",
         "adminLevel": "FIRST_LEVEL_ADMIN",
         "names": region_entry["names"],
-        "primaryCityId": region_entry["primaryCityId"],
+        "primaryCityId": region_entry.get("primaryCityId", ""),
         "bbox": region_entry["bbox"],
         "referenceAnchor": {
-            "lon": region_entry["centroid"][0],
-            "lat": region_entry["centroid"][1],
+            "lon": region_entry.get("representativePoint", region_entry.get("centroid"))[0],
+            "lat": region_entry.get("representativePoint", region_entry.get("centroid"))[1],
             "elevationMeters": 450.0,
         },
         "crs": {

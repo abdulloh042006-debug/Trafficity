@@ -70,7 +70,7 @@ RegionCatalogEntry _entry(String id, RegionReadinessStatus readiness) => RegionC
       isoCode: 'UZ-XX',
       soatoCode: '0000',
       names: const LocalizedName(uz: 'x', ru: 'x', en: 'x'),
-      centroid: const Wgs84Coord(lon: 66.9, lat: 39.6),
+      representativePoint: const Wgs84Coord(lon: 66.9, lat: 39.6),
       bbox: const GeoBoundingBox(minLon: 66.0, minLat: 39.0, maxLon: 68.0, maxLat: 40.0),
       architectureProfileId: 'p',
       defaultReadiness: readiness,

@@ -24,7 +24,7 @@ class UzbekistanRegionSelectorOverlay extends StatelessWidget {
         final r = worldController.regions[index];
         return ListTile(
           title: Text(r.names.forLang(languageCode)),
-          subtitle: Text('${r.isoCode} (${r.centroid.lat}, ${r.centroid.lon})'),
+          subtitle: Text('${r.isoCode} (${r.representativePoint.lat}, ${r.representativePoint.lon})'),
           onTap: () {
             worldController.selectRegion(r.regionId);
             onRegionConfirmed(r);

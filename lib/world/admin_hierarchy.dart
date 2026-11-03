@@ -23,7 +23,8 @@ class RegionCatalogEntry {
   final String isoCode;
   final String soatoCode;
   final LocalizedName names;
-  final Wgs84Coord centroid;
+  /// Administrative-center point as listed in the catalog. Approximate; NOT a computed geometric centroid.
+  final Wgs84Coord representativePoint;
   final GeoBoundingBox bbox;
   final String architectureProfileId;
   final RegionReadinessStatus defaultReadiness;
@@ -33,21 +34,22 @@ class RegionCatalogEntry {
     required this.isoCode,
     required this.soatoCode,
     required this.names,
-    required this.centroid,
+    required this.representativePoint,
     required this.bbox,
     required this.architectureProfileId,
     required this.defaultReadiness,
   });
 
   factory RegionCatalogEntry.fromJson(Map<String, dynamic> json) {
-    final double lat = (json['latitude'] as num?)?.toDouble() ?? ((json['centroid'] as List)[1] as num).toDouble();
-    final double lon = (json['longitude'] as num?)?.toDouble() ?? ((json['centroid'] as List)[0] as num).toDouble();
+    final Object? rep = json['representativePoint'] ?? json['centroid']; // 'centroid' is the pre-rev.2 key
+    final double lat = (json['latitude'] as num?)?.toDouble() ?? ((rep as List)[1] as num).toDouble();
+    final double lon = (json['longitude'] as num?)?.toDouble() ?? ((rep as List)[0] as num).toDouble();
     return RegionCatalogEntry(
       regionId: json['regionId'] as String,
       isoCode: json['isoCode'] as String,
       soatoCode: json['soatoCode'] as String? ?? '',
       names: LocalizedName.fromJson(json['names'] as Map<String, dynamic>),
-      centroid: Wgs84Coord(lon: lon, lat: lat),
+      representativePoint: Wgs84Coord(lon: lon, lat: lat),
       bbox: GeoBoundingBox.fromJson(json['bbox'] as Map<String, dynamic>),
       architectureProfileId: json['architectureProfileId'] as String? ?? 'tashkent_modern_soviet',
       defaultReadiness: parseReadinessStatus(json['defaultReadiness'] as String? ?? 'OVERVIEW_ONLY'),

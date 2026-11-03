@@ -3,7 +3,7 @@
   "countryId": "UZ",
   "isoAlpha2": "UZ",
   "isoAlpha3": "UZB",
-  "coordinateConvention": "latitude, longitude (WGS84 decimal degrees)",
+  "coordinateConvention": "Named fields 'latitude' and 'longitude' are WGS84 decimal degrees. Array positions (representativePoint, GeoJSON coordinates) are [longitude, latitude]. Bounding boxes use minLon/minLat/maxLon/maxLat.",
   "firstLevelAdminCount": 14,
   "initialPlayableRegionId": "uz_tashkent_city",
   "nationalBbox": {
