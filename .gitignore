@@ -4,3 +4,5 @@ build/
 *.zip
 .env
 *.pat
+__pycache__/
+*.pyc
