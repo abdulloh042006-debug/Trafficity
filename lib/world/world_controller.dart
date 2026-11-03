@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'admin_hierarchy.dart';
 import 'geo_coordinate_system.dart';
 import 'multi_scale_lod_controller.dart';
@@ -12,9 +13,17 @@ class UzbekistanWorldController extends ChangeNotifier {
 
   List<RegionCatalogEntry> _regions = [];
   RegionCatalogEntry? _activeRegion;
+  bool _isInitialized = false;
 
   List<RegionCatalogEntry> get regions => List.unmodifiable(_regions);
   RegionCatalogEntry? get activeRegion => _activeRegion;
+
+  Future<void> initializeFromAssets() async {
+    if (_isInitialized) return;
+    final raw = await rootBundle.loadString('assets/world/uzbekistan/region_catalog.json');
+    loadFromCatalogJson(raw);
+    _isInitialized = true;
+  }
 
   void loadFromCatalogJson(String catalogJson) {
     final map = jsonDecode(catalogJson) as Map<String, dynamic>;
@@ -26,8 +35,6 @@ class UzbekistanWorldController extends ChangeNotifier {
   void selectRegion(String regionId) {
     _activeRegion = _regions.firstWhere((r) => r.regionId == regionId, orElse: () => _regions.first);
     coordinateSystem.setFloatingOrigin(_activeRegion!.centroid);
-    final hasPack = packageManager.resolveReadiness(_activeRegion!) == RegionReadinessStatus.installedDetailed;
-    lodController.evaluateFromCamera(cameraZoom: hasPack ? 1.0 : 0.2, is3DPerspectiveActive: false, regionHasDetailedPack: hasPack);
     notifyListeners();
   }
 }

@@ -2,14 +2,8 @@ import 'geo_coordinate_system.dart';
 
 enum RegionReadinessStatus { installedDetailed, updateAvailable, availableForDownload, overviewOnly }
 
-RegionReadinessStatus parseReadinessStatus(String raw) {
-  switch (raw) {
-    case 'INSTALLED_DETAILED': return RegionReadinessStatus.installedDetailed;
-    case 'UPDATE_AVAILABLE': return RegionReadinessStatus.updateAvailable;
-    case 'AVAILABLE_FOR_DOWNLOAD': return RegionReadinessStatus.availableForDownload;
-    default: return RegionReadinessStatus.overviewOnly;
-  }
-}
+RegionReadinessStatus parseReadinessStatus(String raw) =>
+    raw == 'INSTALLED_DETAILED' ? RegionReadinessStatus.installedDetailed : RegionReadinessStatus.overviewOnly;
 
 class LocalizedName {
   final String uz;
@@ -59,6 +53,4 @@ class RegionCatalogEntry {
       defaultReadiness: parseReadinessStatus(json['defaultReadiness'] as String? ?? 'OVERVIEW_ONLY'),
     );
   }
-
-  bool get hasDetailedPlayablePack => defaultReadiness == RegionReadinessStatus.installedDetailed;
 }

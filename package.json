@@ -9,7 +9,8 @@
   "scripts": {
     "test": "node --test test/packager_and_cli.test.mjs",
     "regions:list": "node tools/uzbekistan_pack_cli.mjs list-regions",
-    "regions:validate": "node tools/uzbekistan_pack_cli.mjs validate-regions"
+    "regions:validate": "node tools/uzbekistan_pack_cli.mjs validate-regions",
+    "migrate:tashkent": "python3 tools/map/migrate_tashkent_legacy.py"
   },
   "license": "MIT AND ODbL-1.0",
   "engines": {

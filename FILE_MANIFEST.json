@@ -17,16 +17,16 @@
       "index": 2,
       "path": "README.md",
       "scope": "expansion",
-      "sizeBytes": 1253,
-      "sha256": "03f0af0ff5e125c45784f71d33daeea3ea70227199f25dba9e36430931b35ad0",
+      "sizeBytes": 876,
+      "sha256": "6791e6720bdb694ca080db79020578c6356401deb475c732888262d7bdf30e27",
       "description": "Loyiha hujjati, CLI va test buyruqlari, ma'lumotlar manbasi"
     },
     {
       "index": 3,
       "path": "package.json",
       "scope": "expansion",
-      "sizeBytes": 580,
-      "sha256": "fa4dd12cb283335b1cd2bce67bad50bb30b8eb9fbfbde98ea5573a6e2727c819",
+      "sizeBytes": 652,
+      "sha256": "0fe8f99ab1cca31b8fa486458bdba1f5ee3ea8b77551f6fc96ba2af4075e44ea",
       "description": "Node.js paket konfiguratsiyasi, CLI bin va npm test skripti"
     },
     {
@@ -71,6 +71,14 @@
     },
     {
       "index": 9,
+      "path": "tools/map/migrate_tashkent_legacy.py",
+      "scope": "expansion",
+      "sizeBytes": 2125,
+      "sha256": "ce12327b640a518cd8b596bf14c4c85915b08ad88665e66b946c98866fb9426e",
+      "description": "Tuzatilgan Toshkent yo'llari migratsiya skripti (list va dict formatlarini qo'llab-quvvatlaydi)"
+    },
+    {
+      "index": 10,
       "path": "tools/uzbekistan_pack_cli.mjs",
       "scope": "expansion",
       "sizeBytes": 1565,
@@ -78,7 +86,7 @@
       "description": "Node.js CLI: list-regions, validate-regions, validate-package"
     },
     {
-      "index": 10,
+      "index": 11,
       "path": "test/packager_and_cli.test.mjs",
       "scope": "expansion",
       "sizeBytes": 1300,
@@ -86,84 +94,76 @@
       "description": "Node.js avtomatlashtirilgan testlar to'plami"
     },
     {
-      "index": 11,
+      "index": 12,
       "path": "lib/world/geo_coordinate_system.dart",
       "scope": "expansion",
-      "sizeBytes": 5388,
-      "sha256": "65ef269e6bbb760ec835910cb9d035ace551912ff391a913dd825a1de5e718ce",
+      "sizeBytes": 2583,
+      "sha256": "078c9b4c0dc8ce11f4b991a0a8d1b527e2eb67d2865494e7a2dee0dabccf26ab",
       "description": "WGS84 <-> Local ENU va Floating Origin koordinata tizimi"
     },
     {
-      "index": 12,
+      "index": 13,
       "path": "lib/world/admin_hierarchy.dart",
       "scope": "expansion",
-      "sizeBytes": 2499,
-      "sha256": "d5006d7519abe6f035e0f66eb928bdb5e5d237bc402e35e7b99ffc2c5b9a0bf0",
+      "sizeBytes": 2193,
+      "sha256": "7d543a2bbad5976b389ac6de8918dad9864be07da95b45d3c2b1cc56a9dcc10d",
       "description": "14 hudud ma'muriy iyerarxiyasi va modellari"
     },
     {
-      "index": 13,
+      "index": 14,
       "path": "lib/world/region_package_manager.dart",
       "scope": "expansion",
-      "sizeBytes": 3684,
-      "sha256": "4fa75ca624b74cdee1b0b186d3a288ddfb52eb73f31b8efde0d15f8ebc6d757d",
+      "sizeBytes": 568,
+      "sha256": "137a377f9606d175c4733bac02c8a8a7c8c3d68b3dc5b1b2a0dc08d068b01000",
       "description": "SHA-256 paket tekshiruvchi va lokal paket menejeri"
     },
     {
-      "index": 14,
+      "index": 15,
       "path": "lib/world/multi_scale_lod_controller.dart",
       "scope": "expansion",
-      "sizeBytes": 936,
-      "sha256": "e7820fe3b4f2c995a325c1df6c4ece42d449624e50db475e03a9f589b7d1d357",
+      "sizeBytes": 603,
+      "sha256": "7b918b18a7f4bef40df6f6f447ce2155e3d903b265c385c6573008474ca98c57",
       "description": "4-bosqichli (Country/Region/City2D/Urban3D) LOD kontrolleri"
     },
     {
-      "index": 15,
+      "index": 16,
       "path": "lib/world/road_graph_linker.dart",
       "scope": "expansion",
-      "sizeBytes": 892,
-      "sha256": "ee2204f8c6d0e91f26b1481e136be79684a870b5e2c7a11271eff12fac8c48e5",
-      "description": "Hududlararo yo'l grafini ulash (StitchPortalNode) moduli"
-    },
-    {
-      "index": 16,
-      "path": "lib/world/architecture_profile_engine.dart",
-      "scope": "expansion",
-      "sizeBytes": 293,
-      "sha256": "cbef0987aba57f70185c45e920c7616dc91970aad8dcc98bc251029e20d4e6cb",
-      "description": "Hududiy arxitektura profillari va obidalar moduli"
+      "sizeBytes": 245,
+      "sha256": "184aed680d574980ef402aeedd8ab6d801df0fd36143bbb835392734a943ade4",
+      "description": "Hududlararo yo'l grafini ulash moduli"
     },
     {
       "index": 17,
-      "path": "lib/world/national_save_manager.dart",
+      "path": "lib/world/architecture_profile_engine.dart",
       "scope": "expansion",
-      "sizeBytes": 736,
-      "sha256": "8d61f96b81adab078ff74c8ec012acd9d875a578879f101162ae1065c1335e3f",
-      "description": "Milliy saqlash formati (v3) va eski saqlashlarni migratsiya qilish"
+      "sizeBytes": 255,
+      "sha256": "77cbe2cdcab79a4dfda5bfc6ca24950bbed4730736774e7d3964506505673b5c",
+      "description": "Hududiy arxitektura profillari va obidalar moduli"
     },
     {
       "index": 18,
-      "path": "lib/world/world_controller.dart",
+      "path": "lib/world/national_save_manager.dart",
       "scope": "expansion",
-      "sizeBytes": 1481,
-      "sha256": "f8c1138afbaf5121f69231804ca5661054570c546a1bf841527b56b0edad3951",
-      "description": "O'zbekiston dunyo kontrolleri (UzbekistanWorldController)"
+      "sizeBytes": 159,
+      "sha256": "af22f1a7d94291d0d8a33ed7c26395c8522b365d21a3e254a156925b5d486e3a",
+      "description": "Milliy saqlash formati (v3) moduli"
     },
     {
       "index": 19,
-      "path": "lib/ui/region_selector_overlay.dart",
+      "path": "lib/world/world_controller.dart",
       "scope": "expansion",
-      "sizeBytes": 739,
-      "sha256": "5df59529d022205319a9d0b930728d040b556ce8849d9968150c9167bf4da6b2",
-      "description": "14 ta hududni tanlash interfeysi (Overlay)"
+      "sizeBytes": 1555,
+      "sha256": "b2b6b6244bc160577e05e77acde30acb3db90d29c32bb313e7d8b94bf701baac",
+      "description": "O'zbekiston dunyo kontrolleri (initializeFromAssets bilan)"
     },
     {
       "index": 20,
-      "path": "test/uzbekistan_world_test.dart",
+      "path": "lib/ui/region_selector_overlay.dart",
       "scope": "expansion",
-      "sizeBytes": 707,
-      "sha256": "f523ae34fc7a28744103f08f9358bae3eb9cfb6dbe13e4afe0b4afa1624d032b",
-      "description": "Flutter/Dart GIS va SHA-256 paket testlari"
+      "sizeBytes": 1083,
+      "sha256": "3dc431cd7333bd6ba7d7561f467b9afc9389863e355d1c4cea4960e89d13ee1d",
+      "description": "14 ta hududni tanlash interfeysi (Overlay)"
     },
     {
       "index": 21,

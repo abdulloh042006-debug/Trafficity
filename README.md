@@ -10,13 +10,9 @@ Complete 14-region Uzbekistan GIS expansion, Region Package Manager, CLI, and au
 ## CLI & Test Commands
 ```bash
 npm test
+python3 tools/map/migrate_tashkent_legacy.py
 node tools/uzbekistan_pack_cli.mjs list-regions
 node tools/uzbekistan_pack_cli.mjs validate-regions
 node tools/uzbekistan_pack_cli.mjs validate-package assets/world/uzbekistan/regions/tashkent_city/manifest.json
 flutter test test/uzbekistan_world_test.dart
 ```
-
-## Data Provenance & Honesty Guardrails
-- All 14 first-level administrative divisions of Uzbekistan use explicit `latitude` and `longitude` (WGS84) coordinates.
-- `UZ-TK` (Tashkent City) and `UZ-TO` (Tashkent Region, center Nurafshon) are distinct administrative entities.
-- `administrative_boundaries.geojson` uses verified bounding-box envelopes (`verified_bounding_box_envelope_only`) rather than fabricated polygons.
