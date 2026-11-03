@@ -1,52 +1,136 @@
-name: Build Uzbekistan Complete ZIP & Debug APK
+name: Uzbekistan release (checks, debug APK, ZIP)
 
+# Every check below fails the job on error. The ZIP and the debug APK are uploaded only when
+# the whole job is green. build-apk.yml (the `main` release-APK workflow) is intentionally left untouched.
 on:
   push:
     branches:
       - codex/uzbekistan-expansion
-      - feat/uzbekistan-multi-region
+      - ccr-7e104e07-0xa8wr
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: uzbekistan-release-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  build-and-archive:
+  release:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
-      - name: Checkout repository
+      - name: Checkout the exact commit
         uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-
-      - name: Migrate Tashkent legacy dataset metadata
-        run: python3 tools/map/migrate_tashkent_legacy.py
+          python-version: '3.12'
 
       - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
+          distribution: temurin
           java-version: '17'
 
-      - name: Set up Flutter
+      - name: Set up Flutter (stable; pubspec needs Dart ^3.11)
         uses: subosito/flutter-action@v2
         with:
-          channel: 'stable'
+          channel: stable
+          cache: true
 
-      - name: Run Flutter Pub Get, Analyze, and Tests
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Tool versions
         run: |
-          flutter pub get
-          flutter analyze
-          flutter test
+          flutter --version
+          dart --version
+          node --version
+          python3 --version
+          java -version
 
-      - name: Build Debug APK
-        run: flutter build apk --debug
+      - name: flutter pub get
+        run: flutter pub get
 
-      - name: Generate Trafficity-Uzbekistan-Complete.zip
+      - name: Format check
+        run: dart format --output=none --set-exit-if-changed lib test
+
+      - name: flutter analyze
+        run: flutter analyze
+
+      - name: flutter test
+        run: flutter test
+
+      - name: npm test (CLI, packager core, HTML packager)
+        run: npm test
+
+      - name: Python tests (migration and release packager)
+        run: python3 -m unittest discover -s tools/tests -v
+
+      - name: HTML packager embeds the current core
+        run: node tools/sync_packager_html.mjs --check
+
+      - name: CLI validation (regions, package, bundles)
+        run: |
+          node tools/uzbekistan_pack_cli.mjs validate-regions
+          node tools/uzbekistan_pack_cli.mjs validate-package assets/world/uzbekistan/regions/tashkent_city/manifest.json
+          node tools/uzbekistan_pack_cli.mjs validate-bundle --mode expansion
+          node tools/uzbekistan_pack_cli.mjs validate-bundle --mode full
+
+      - name: Tashkent migration is reproducible (same bytes) and valid
+        run: |
+          python3 tools/map/migrate_tashkent_legacy.py
+          git diff --exit-code -- assets/world/uzbekistan assets/map
+          node tools/uzbekistan_pack_cli.mjs validate-package assets/world/uzbekistan/regions/tashkent_city/manifest.json
+
+      # Strict mode (no --allow-blocked). The packager re-runs every check, builds and re-opens the deterministic ZIP FIRST,
+      # then creates the Android scaffold (the repository only ships launcher icons; generated files must not enter the
+      # ZIP) and builds the debug APK. A missing Android SDK, a failing step or an empty APK fails the job.
+      - name: "Release packager (strict) - ZIP, Android scaffold, debug APK"
         run: python3 tools/package_release.py
 
-      - name: Upload Trafficity-Uzbekistan-Complete.zip Artifact
+      - name: APK exists and is not empty
+        run: |
+          test -s build/app/outputs/flutter-apk/app-debug.apk
+          ls -l build/app/outputs/flutter-apk/app-debug.apk
+
+      - name: Re-validate the ZIP
+        run: |
+          python3 - <<'EOF'
+          import hashlib, json, re, zipfile
+          z = zipfile.ZipFile("Trafficity-Uzbekistan-Complete.zip")
+          assert z.testzip() is None, "corrupt ZIP"
+          names = z.namelist()
+          assert names == sorted(names), "entries are not sorted"
+          assert len(set(names)) == len(names), "duplicate entries"
+          required = {"pubspec.yaml", "FILE_MANIFEST.json", "lib/main.dart", "lib/game/road_game.dart",
+                      "tools/package_release.py", "tools/packager_core.mjs",
+                      "Trafficity-Uzbekistan-Complete-Packager.html"}
+          prefix = names[0].split("/")[0]
+          have = {n[len(prefix) + 1:] for n in names}
+          missing = (required | {f["path"] for f in json.loads(z.read(prefix + "/FILE_MANIFEST.json"))["files"]}) - have
+          assert not missing, f"missing from ZIP: {sorted(missing)}"
+          bad = [n for n in names if re.search(r"(^|/)(\.git|build|node_modules|__pycache__)/|\.zip$|\.pat$|(^|/)\.env$|local\.properties$", n)]
+          assert not bad, f"forbidden entries: {bad}"
+          data = open("Trafficity-Uzbekistan-Complete.zip", "rb").read()
+          print(f"OK: {len(names)} entries, {len(data)} bytes, sha256 {hashlib.sha256(data).hexdigest()}")
+          EOF
+
+      - name: Upload Trafficity-Uzbekistan-Complete.zip
         uses: actions/upload-artifact@v4
         with:
           name: Trafficity-Uzbekistan-Complete
           path: Trafficity-Uzbekistan-Complete.zip
+          if-no-files-found: error
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: trafficity-debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
