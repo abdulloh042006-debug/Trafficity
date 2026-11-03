@@ -15,7 +15,7 @@ KoreyaViza EMAS. Repo: https://github.com/abdulloh042006-debug/Trafficity (publi
 - Yangi funksiya qo'shishdan oldin foydalanuvchi so'ragan narsa ekanini tekshir ("ortiqcha yangilik qo'shma" degan edi).
 
 ## Muhit va ishlash tartibi
-- Flutter bu muhitda oldindan YO'Q, lekin o'rnatsa bo'ladi (proxy orqali ishladi): scratchpad'da `git clone --depth 1 -b stable https://github.com/flutter/flutter.git`, so'ng `flutter pub get` (~3 daqiqa; PATH ga `flutter/bin`, `CI=true`). Shunda `flutter analyze` va `flutter test` (20 ta test PASS) ishlaydi. Renderni tekshirish: vaqtinchalik `test/zz_*_test.dart` da `testWidgets` + `tester.runAsync`, `RoadGame().render(canvas)` yoki `RepaintBoundary.toImage` -> PNG (shrift: `bin/cache/artifacts/material_fonts` dan `FontLoader`); keyin faylni o'chiring. Telefon sinovi o'rnini baribir bosmaydi.
+- Flutter bu muhitda oldindan YO'Q, lekin o'rnatsa bo'ladi (proxy orqali ishladi): scratchpad'da `git clone --depth 1 -b stable https://github.com/flutter/flutter.git`, so'ng `flutter pub get` (~3 daqiqa; PATH ga `flutter/bin`, `CI=true`). Shunda `flutter analyze` va `flutter test` ishlaydi (hozir 112 Flutter + 41 Node + 49 Python test). Renderni tekshirish: vaqtinchalik `test/zz_*_test.dart` da `testWidgets` + `tester.runAsync`, `RoadGame().render(canvas)` yoki `RepaintBoundary.toImage` -> PNG (shrift: `bin/cache/artifacts/material_fonts` dan `FontLoader`); keyin faylni o'chiring. Telefon sinovi o'rnini baribir bosmaydi.
 - Mantiqni Python'da modellashtirish mumkin (foydalanuvchi ruxsat bergan): geometriya/marshrut/rejalashtirish.
 - Loyiha nusxasi: `/mnt/user-data/outputs/roadflow_city/` (repo bilan bir xil). Push: vaqtinchalik klon, `cp -r`, `git checkout HEAD -- .github`
   (token `workflow` ruxsatisiz: workflow faylini o'zgartirib push qilib bo'lmaydi), commit, push, token URL'dan olib tashlanadi.
@@ -35,7 +35,8 @@ KoreyaViza EMAS. Repo: https://github.com/abdulloh042006-debug/Trafficity (publi
   polosa almashtirish, talab (uy->do'kon/zavod, yuk mashinasi), do'kon zaxirasi, mashinalarni yo'l o'zgarganda ko'chirish (_relocate).
 - `game/terrain.dart`: protsedura biomlar (0-3) va biom 4 = haqiqiy Toshkent (`TashkentMap`: `assets/map/tashkent.webp` + suv niqobi; markaz Amir Temur xiyoboni = (3200,3200)); `RoadGame.terrHalf` hudud yarim kengligi (1200 + 300/daraja), tashqarisi tuman; `tools/map/build_tashkent.py` (basemap + suv) va `tools/map/build_tashkent_roads.py` (haqiqiy yo'llar JSON: tugun/kesishma, qisqa bo'lak birlashtirish, bir tomonlama juftlar, aylanalar, ko'priklar) aktivlarni OSM SVG'dan yaratadi (SVG repoda yo'q). Toshkentda yo'llar `RealRoads`/`RoadGame.importRealRoads` orqali tayyor (narxsiz, cost=0) yuklanadi, hudud kengayganda halqa bo'yicha qo'shiladi; `_applyRealCity` binolarni ulaydi va svetofor qo'yadi.
 - `game/rail.dart` (RailSim: poyezd, stansiya, Dijkstra marshrut, teskari yo'nalish, to'qnashuvdan saqlanish), `game/rail_draw.dart` (RailVis: yer/ko'prik/tunnel/yo'l-usti tasnifi, narx `RailVis.analyze`, chizish), `game/deck.dart` (ko'prik/estakada lentasi). Temir yo'l tarmog'i `RoadGame.railNet` (RoadNetwork nusxasi, layer 1 = yer osti tunnel); qatlam tugmasi `roadLayer` 0..3 (2 = temir yo'l, 3 = tunnel).
-- `game/{traffic_model,signal,terrain,building}.dart`; `test/*_test.dart` (20 test, PASS); `ci/debug.keystore`; `assets/{audio,icon}`.
+- `lib/world/*` (WGS84/ENU koordinatalar, katalog, LOD, paket menejeri, saqlash v3, portallar, `UzbekistanWorldController`) va `lib/ui/*` (HUD tugmasi, viloyat tanlagich, «faqat umumiy ko'rinish» kartasi): `main.dart` bitta controller yaratadi va dispose qiladi; Toshkentdan boshqa hudud tanlansa o'yin to'xtaydi va karta xaritani yopadi. `tools/*.mjs` (CLI, packager core), `Trafficity-Uzbekistan-Complete-Packager.html` (core `tools/sync_packager_html.mjs` bilan joylanadi), `tools/package_release.py`, `.github/workflows/uzbekistan-release.yml`.
+- `game/{traffic_model,signal,terrain,building}.dart`; `test/*_test.dart` (Flutter), `test/*.test.mjs` (Node), `tools/tests/` (Python); `ci/debug.keystore`; `assets/{audio,icon}`.
 - Konstantalar: dunyo 6400x6400 birlik (eski saqlashlar 3200), Toshkent biomida 1 birlik ~ 1 m (tezlik km/s hisobi 0.5 m/birlik deb qoldi); polosa 7; yo'l eni 14; mashina 9 (yuk 22); maxVehicles 100+25*daraja (<=250).
 
 ## Holat (dalil bilan)
@@ -70,7 +71,7 @@ Chorrahada qotib qolish (gridlock) headless o'lchandi: ideal shaharda 125 mashin
 5. Faqat so'ralsa: polosa qo'shish/yangilash asbobi, stop/yield, svetofor fazalari.
 
 ## Sinov (foydalanuvchi/AI agent bajaradi, Flutter bor muhitda)
-`flutter pub get && flutter analyze && flutter test && flutter build apk --release`. Kutiladi: analyze xatosiz, `flutter test` 20 ta test PASS,
+`flutter pub get && flutter analyze && flutter test && flutter build apk --release`. Kutiladi: analyze xatosiz, format tekshiruvi (`dart format --set-exit-if-changed lib test`, kenglik 120), `flutter test` hammasi PASS,
 APK yig'iladi. Xato bo'lsa: to'liq chiqishni yuboring (PASS/FAIL/BLOCKED/NOT TESTED). Telefonda: ochilganda tayyor shahar, mashinalar yuradi,
 "Debug" yoqilganda qizil va sariq halqa ustma-ust, Ortga/Oldinga, To'r, Estakada, Magistral, til tugmasi, musiqa.
 
@@ -79,3 +80,11 @@ APK yig'iladi. Xato bo'lsa: to'liq chiqishni yuboring (PASS/FAIL/BLOCKED/NOT TES
 kerakli fayl joylarini grep/sed bilan ko'r. Tejamkor bo'l: uzun chiqish, ortiqcha push/CI kutish, uzoq sinov yo'q. Dart ishga tushmaydi: mantiqni
 Python'da <=60 s sinab ko'r, kompilyatsiyani CI tekshiradi. Faqat foydalanuvchi so'ragan ishni qil, yangi funksiya qo'shma. 'Keyingi qadamlar'
 dagi eng yuqori tugallanmagan vazifadan davom et, o'zbekcha qisqa yoz va nima tekshirilmaganini ochiq ayt."
+
+## O'zbekiston kengaytmasi (haqiqiy holat, 2026-11-03)
+Batafsil: `README.md`, `UZBEKISTAN_EXPANSION_README.md`, `TRAFFICITY_REPAIR_EXECUTION_PROMPT.md` (ledger = dalil). Qisqacha:
+- Paket nomi `trafficity` (importlar `package:trafficity/...`; eski `roadflow_city` emas). Android ilova identifikatori scaffold'dan keladi: `uz.abdulloh.trafficity` (eski `uz.abdulloh.roadflow_city` bilan yonma-yon o'rnatiladi).
+- Faqat Toshkent shahri batafsil; 13 hudud `OVERVIEW_ONLY`; GeoJSON to'rtburchaklar chegara emas; SOATO tasdiqlanmagan; Toshkent koordinata o'tkazmasi `unverified`.
+- Ulanmagan modullar: `national_save_manager`, `road_graph_linker`, `architecture_profile_engine` (testlangan, lekin o'yin saqlash/yo'l/bino kodiga ulanmagan). Ilova ichida hudud paketini yuklab olish yo'q.
+- FILE_MANIFEST (20/23) kodni o'zgartirgandan keyin `node tools/uzbekistan_pack_cli.mjs update-manifest` bilan qayta hisoblanadi, aks holda `npm test` yiqiladi.
+- HTML packager yoki HUD tugmasi/main.dart integratsiyasi 20/23 ro'yxatda yo'q (egasi qarori kerak).

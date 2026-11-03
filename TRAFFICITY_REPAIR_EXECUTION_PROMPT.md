@@ -1,15 +1,17 @@
-# TRAFFICITY — Repair Execution Master Prompt (rev. 2)
+# TRAFFICITY — Repair Execution Master Prompt (rev. 3)
 
 **Purpose:** single source of truth for repairing, completing, testing, documenting, and packaging the Uzbekistan expansion of Trafficity.
 
 | Item | Value |
 |---|---|
 | Repository | `abdulloh042006-debug/Trafficity` (GitHub URLs are case-insensitive; the clone remote is lower-case `trafficity`) |
-| Working branch | `codex/uzbekistan-expansion` |
+| Working branch | `codex/uzbekistan-expansion` (the owner's integration branch). A session bound to another branch (rev. 3 was executed on `ccr-7e104e07-0xa8wr`) keeps that branch a **fast-forward descendant** of the codex tip, so the owner can fast-forward/merge it without conflicts. |
 | Protected branch | `main` — never modify, merge into, rebase onto, or force-push without explicit owner approval |
-| Baseline re-audited at | commit `a960dfb` ("docs(trafficity): add verified repair execution master prompt"), a single grafted commit |
-| Previously audited commit | `5f190b92347a5b78a396d8c2fdc5858a79e4fa0c` (historical; its CI run #15 / ID `41574007338` failed at `flutter analyze` with 70 issues) |
+| Baseline at the start of rev. 3 | commit `03a3f77` (tip of `codex/uzbekistan-expansion`: P1, P2, P3, P4, P5, P6 and most of P8 already committed, but the ledger was never updated, `flutter test` had **1 failing test**, the format check failed and 4 phases were untouched) |
+| Earlier audits (historical) | rev. 2 audited `a960dfb` (single grafted commit, 70 analyzer issues in CI run #15); history is no longer shallow (see B1) |
 | Owner language | Uzbek. Final report and chat replies to the owner are written in Uzbek. Code, commits, and this file stay in English. |
+
+**Revision note (rev. 3):** written after actually executing the plan. Changes: the baseline table (§2) now records what was true at the start of rev. 3 *and* what is true now; new §0.2 lists the pitfalls that cost real time so they are not rediscovered; the CI order of §15 was corrected (the Android scaffold must run **after** the ZIP is built and its generated `test/widget_test.dart` must be removed); the secrets scan (§1.7) is refined because the redaction tests legitimately contain fake tokens; P1/P2/P7/P8/P9 got concrete implementation notes; §18 is a real ledger with evidence (commits, commands, counts) and crossed-out pending items; the final-gate checklist (§17) is ticked only where evidence exists.
 
 **Revision note (rev. 2):** rewritten after re-checking every baseline claim against the actual files. Changes: removed claims that no longer match the tree, added the environment/bootstrap section, added the decisions section (so the executor does not stall on ambiguities), fixed the unusable "recover from Git history" instruction (the clone is shallow), documented the real `tashkent_roads.json` schema, defined the missing package/chunk layout, added the blocker protocol for credentials and workflow-file pushes, and added a status vocabulary.
 
@@ -18,7 +20,7 @@
 ## 0. HOW TO USE THIS FILE
 
 1. Read this whole file, then `CLAUDE.md` (project identity, constraints, economy rules), then `UZBEKISTAN_EXPANSION_README.md`.
-2. Work phases **P0 → P12 in order**. Each phase has a *Dependencies* line and a *Done when* checklist. Do not start a phase whose dependencies are not green.
+2. Work phases **P0 → P12 in order**. Phases already listed under *COMPLETED — VERIFIED* in §18 are not redone: re-run their evidence commands (cheap) and continue with the first item that is still unchecked or crossed-in.  Each phase has a *Dependencies* line and a *Done when* checklist. Do not start a phase whose dependencies are not green.
 3. One coherent phase = one commit (then push, if credentials exist — see §3). Message format: `type(scope): summary` + the attribution trailer required by the session.
 4. If budget or time runs out: finish the current phase cleanly (tests green, ledger updated, committed) and stop. A smaller truthful state beats a larger broken one.
 5. Priority if you must triage: **P1 (analyzer/tests green) → P3 (real SHA-256) → P2 → P5 → P4 → P7 → P8 → P10 → P6 → P9 → P11 → P12.** Order of *execution* stays P0 → P12 unless a dependency forces otherwise.
@@ -33,6 +35,20 @@
 | **MOCK-ONLY** | Covered only by mocks/fixtures; proves request construction or logic, not a real integration. |
 | **BLOCKED** | A concrete external dependency is missing (credential, network, SDK). Record evidence and what unblocks it. |
 | **NOT RUN** | Not attempted or no tool available. Never describe as passed. |
+| **PASS (manual)** | Verified by a one-off real run that is not part of CI (for example the HTML packager in headless Chromium). State exactly what was run. |
+
+### 0.2 Pitfalls found while executing (read before you start)
+
+1. **`flutter test` count.** `CLAUDE.md` says 20 tests; those are the original game tests (`network_test` 10, `map_test` 3, `rail_test` 4, `rail_game_test` 3). New suites add to that; compare like with like.
+2. **Formatter width.** The game code was written for 120 columns. Without `analysis_options.yaml` containing `formatter: page_width: 120`, `dart format` rewrites ~31 files at 80 columns. Keep that file and format once.
+3. **`flutter create .` side effects.** It adds `test/widget_test.dart` (the counter test, which does not compile against this app), `.idea/`, `*.iml`, `.metadata` and the whole `android/` tree. Never run it before building the release ZIP and always delete `test/widget_test.dart` afterwards. The app id becomes `uz.abdulloh.<pubspec name>` = `uz.abdulloh.trafficity` (not the old `...roadflow_city`).
+4. **Flame `Vector2` is float32.** Round-trips through it lose ~5e-4 at x ≈ 6000. Provide a double-precision API for data/IO (`wgs84ToLegacyUnitsExact`) and test both.
+5. **Widget tests of the real screen.** `audioplayers` opens one platform channel per player id (`xyz.luan/audioplayers/events/<uuid>`); mock them with `defaultBinaryMessenger.allMessagesHandler` returning `StandardMethodCodec().encodeSuccessEnvelope(null)` for every channel that starts with `xyz.luan/audioplayers`. The Flame game ticks forever, so `pumpAndSettle` never returns: pump a fixed number of frames and use `tester.runAsync` for real async work. A `ListView.builder` item that is *built* (cache extent) is not necessarily *on screen*: call `ensureVisible` before `tap`.
+6. **`FILE_MANIFEST.json` goes stale.** Any edit (including formatting) of a listed file breaks `npm test`, `validate-bundle` and the release packager. Run `node tools/uzbekistan_pack_cli.mjs update-manifest` after the last edit of every listed file.
+7. **Secrets scan false positives.** `test/packager_and_cli.test.mjs`, `tools/packager_core.mjs` and the HTML packager intentionally contain fake tokens or the redaction regex. Scan with the exclusions in §1.7; anything else that matches is real.
+8. **CI triggers.** `workflow_dispatch` only works for workflows present on the default branch, so CI evidence for a working branch needs that branch in the `push:` trigger list. Pushing a workflow file worked with the session's credentials; still treat a `workflow`-scope rejection as BLOCKED if it happens.
+9. **Android SDK.** A local `flutter build apk` without `ANDROID_HOME` ends with a vague error; the packager now detects it and reports BLOCKED (`--allow-blocked`) or FAIL (strict) *before* running the build.
+10. **Shared `main`.** `origin/main` moved during the work (owner's parallel Codex commits). Record its SHA at P0 and re-check at P12; never merge it into the working branch.
 
 ---
 
@@ -44,7 +60,7 @@
 4. A task is **COMPLETED** only when its implementation is committed, the relevant real command ran with exit code 0, and the output was inspected. Never claim analyze/test/APK/ZIP/CI success without that.
 5. Do not continue silently after a failed command. Record the exact command, exit code, and meaningful error; fix the cause before dependent phases.
 6. Do not invent GIS boundaries, road geometry, coordinates, sources, checksums, package contents, or test evidence. If verified data is unavailable, record it under **BLOCKED** or **NOT DONE** and leave the app truthful.
-7. Never expose tokens or secrets in code, logs, commits, URLs, reports, or browser storage. Before every push run a secrets scan: `git grep -nE "ghp_|github_pat_|gho_|ghs_|BEGIN (RSA|OPENSSH|PRIVATE) KEY" -- . ':!TRAFFICITY_REPAIR_EXECUTION_PROMPT.md'` over tracked files (this file is excluded because it contains the pattern itself) and the staged diff must return nothing new.
+7. Never expose tokens or secrets in code, logs, commits, URLs, reports, or browser storage. Before every push run a secrets scan: `git grep -nE "ghp_|github_pat_|gho_|ghs_|BEGIN (RSA|OPENSSH|PRIVATE) KEY" -- . ':!TRAFFICITY_REPAIR_EXECUTION_PROMPT.md'` over tracked files and the staged diff must return nothing new. Exclusions that are known, intentional false positives: this file (contains the pattern), `test/packager_and_cli.test.mjs` (fake tokens for the redaction tests) and `tools/packager_core.mjs` and `Trafficity-Uzbekistan-Complete-Packager.html` (both contain the redaction regex; the page embeds the core). Add `':!test/packager_and_cli.test.mjs' ':!tools/packager_core.mjs' ':!Trafficity-Uzbekistan-Complete-Packager.html'` to the command; any other hit is a finding.
 8. No `git push --force` / `--force-with-lease`. Fast-forward pushes only. Do not reconcile divergence with `main`.
 9. Keep diffs focused and reviewable. Do not add features the owner did not ask for (`CLAUDE.md`: "ortiqcha yangilik qo'shma").
 10. Do not ask the owner to repeat information already in this file or in `CLAUDE.md`. Decisions already made are in §4.
@@ -53,27 +69,27 @@
 
 ---
 
-## 2. RE-AUDITED BASELINE (commit `a960dfb`) — recheck before editing
+## 2. BASELINE FINDINGS — STATE AT REV. 2 AND AT REV. 3
 
-Verified by inspection in the revision session. Re-run the check in the right column; if the result differs, believe the repository, not this table.
+Rev. 2 re-audited `a960dfb`. Rev. 3 re-checked every row against the tree: the right column is the state after the rev. 3 work (evidence in §18). Re-run the check in the *how* column before trusting either.
 
-| # | Finding | How to recheck |
-|---|---|---|
-| B1 | The clone is **shallow/grafted: exactly 1 commit**. Git history, `git log -- file`, `git show <old>:file`, and the "15 ahead / 4 behind `main`" figure are unavailable. | `git rev-list --count HEAD`, `git rev-parse --is-shallow-repository` |
-| B2 | `pubspec.yaml`: package name `trafficity`, `sdk: ^3.11.0`, deps `flame ^1.22.0`, `flame_audio ^2.10.6`, `shared_preferences ^2.3.3`, dev `flutter_test`, `flutter_lints ^6.0.0`. **No** `crypto`, `archive`, `path_provider`, `path`. | `sed -n 1,40p pubspec.yaml` |
-| B3 | **12 stale imports** `package:roadflow_city/...` in 4 tests: `test/rail_test.dart`, `test/map_test.dart`, `test/network_test.dart`, `test/rail_game_test.dart`. `test/uzbekistan_world_test.dart` already uses `package:trafficity/...`. | `grep -rn roadflow_city lib test` |
-| B4 | `lib/world/region_package_manager.dart` (13 lines): `Sha256Verifier.sha256Hex` returns the literal `'verified_sha256'` for any non-empty input. The existing test only asserts `digest.length == 64`, so it cannot pass today and is too weak to prove SHA-256. | `grep -n verified_sha256 -r lib tools` |
-| B5 | Stub-sized world modules: `geo_coordinate_system.dart` (66 lines; defines `LocalEnuCoord` but no WGS84↔ENU conversion, ellipsoid scaling, or rebasing found), `multi_scale_lod_controller.dart` (10), `national_save_manager.dart` (5), `road_graph_linker.dart` (7), `architecture_profile_engine.dart` (5). `admin_hierarchy.dart` (56) and `world_controller.dart` (40) exist. | `wc -l lib/world/*.dart`, read each file |
-| B6 | Nothing in `lib/main.dart` or `lib/game/road_game.dart` references `UzbekistanWorldController` or the selector/HUD widgets. | `grep -n "Uzbekistan\|WorldController" lib/main.dart lib/game/road_game.dart` |
-| B7 | `tools/map/migrate_tashkent_legacy.py` (53 lines) only counts roads and prints "Verified N roads". It writes no chunks, converts no coordinates, updates no digests. Its `parse_road_points` is written for a shape that does **not** match the real file (see §4.5) and, by inspection, yields zero points for real entries — confirm by running it. | read the script; run it on the real file |
-| B8 | `tools/package_release.py`: `allow_missing_binary=True` turns a missing `flutter` into success, and `main()` **ignores every step's return code**, so any failure still produces a ZIP. Its exclusion list does not cover `.env`/`*.pat`/`*.zip` patterns. | read the script |
-| B9 | `.github/workflows/uzbekistan-release.yml`: no format check, no Node/`npm test`, no Python tests, no CLI validation, no Android scaffold step, no APK upload, no caching. `flutter analyze` and `flutter test` share one `run:` block. `build-apk.yml` (for `main`) runs `flutter create --platforms=android --org uz.abdulloh .` before building. | read both workflows |
-| B10 | `android/` contains **only** `app/src/main/res/mipmap-*/ic_launcher.png`. No Gradle files, no `AndroidManifest.xml`. A bare `flutter build apk` will fail without scaffolding. | `find android -type f` |
-| B11 | `Trafficity-Uzbekistan-Complete-Packager.html` does not exist. `tools/uzbekistan_pack_cli.mjs` is 37 lines; `test/packager_and_cli.test.mjs` has 3 tests (catalog, CLI checksum, manifest counts). | `ls`, `wc -l` |
-| B12 | `FILE_MANIFEST.json` lists 23 files (20 `expansion` + 3 `base`); every entry except itself currently has a matching size and SHA-256. It does **not** list: `lib/ui/uzbekistan_hud_button.dart`, `test/uzbekistan_world_test.dart`, `tools/package_release.py`, `tools/map/trafficity_ingest.py`, `UZBEKISTAN_EXPANSION_README.md`, either workflow, or the files that P7 must edit (`lib/main.dart`, `lib/game/road_game.dart`). The 3 `base` files are `.gitignore`, `pubspec.yaml`, `assets/world/uzbekistan/regions/tashkent_city/manifest.json`. | run the digest check from §4.6 |
-| B13 | Catalog coordinate semantics are mixed: `region_catalog.json` and `world_manifest.json` declare `"coordinateConvention": "latitude, longitude"`, while `centroid` is `[lon, lat]` and `bbox` uses `minLon/minLat/…`. For Tashkent City `centroid` equals the administrative-center point, so it is not a computed centroid. | read `region_catalog.json` |
-| B14 | `administrative_boundaries.geojson` declares `"geometryAccuracy": "verified_bounding_box_envelope_only"`. The envelopes are honest about being envelopes, but the word **"verified"** overstates what was checked. | read the GeoJSON header |
-| B15 | `CLAUDE.md` describes the project as *RoadFlow City* (Flutter + Flame traffic game; original package name `roadflow_city`) and claims 20 passing tests on `main`. It also states the owner's push token lacks the `workflow` scope, so pushing changes to `.github/workflows/*` can be rejected. | read `CLAUDE.md` |
+| # | Finding at rev. 2 | State at rev. 3 | How to recheck |
+|---|---|---|---|
+| B1 | Shallow clone, 1 commit | **Resolved.** Not shallow: 58+ commits, history readable. | `git rev-list --count HEAD`, `git rev-parse --is-shallow-repository` |
+| B2 | No `crypto`/`archive`/`path_provider`/`path` | **Resolved.** `crypto ^3.0.6`, `archive ^3.6.1`, `path ^1.9.0` added. `path_provider` is not needed (the package manager takes an explicit root directory). | `sed -n 1,45p pubspec.yaml` |
+| B3 | 12 stale `package:roadflow_city/...` imports | **Resolved** (`e91ed85`). | `grep -rn roadflow_city lib test` (empty) |
+| B4 | `Sha256Verifier` returned the literal `verified_sha256` | **Resolved** (`9ea8905`): real SHA-256 via `crypto`; the literal now appears only in negative tests. | `git grep verified_sha256` |
+| B5 | Stub-sized world modules | **Resolved.** `geo_coordinate_system` 332 lines, `region_package_manager` 572, `national_save_manager` 146, `road_graph_linker` 85, `multi_scale_lod_controller` 63, `architecture_profile_engine` 36, `world_controller` 130. **But** `national_save_manager`, `road_graph_linker`, `architecture_profile_engine` are unit-tested only and not wired into the game's own save/road/building code (documented, not hidden). | `wc -l lib/world/*.dart` |
+| B6 | Nothing in `main.dart`/`road_game.dart` used the selector | **Resolved** in P7 (`3367155`): one controller per screen, HUD button, selector dialog, overview card. | `grep -n "UzbekistanWorldController" lib/main.dart` |
+| B7 | Migration script only counted roads | **Resolved** (`565eb1d`): all 2495 roads converted to WGS84 chunks, manifest with digests, deterministic. Coordinate verification is honestly `unverified`. | `python3 tools/map/migrate_tashkent_legacy.py && git diff --exit-code -- assets` |
+| B8 | `package_release.py` ignored failures, `allow_missing_binary` | **Resolved** (`03a3f77`, `797fbcc`): strict, every return code checked, deterministic validated ZIP, missing Android SDK = BLOCKED/FAIL, generated `widget_test.dart` removed. | `python3 -m unittest discover -s tools/tests` |
+| B9 | Naive workflow (no checks, no scaffold, no APK upload) | **Resolved** (`f2a474e`): ordered strict workflow, both artifacts uploaded. | read `.github/workflows/uzbekistan-release.yml`; Actions run |
+| B10 | `android/` has only launcher icons | **Still true by design.** The project is generated by `flutter create --platforms=android --org uz.abdulloh .` after the ZIP is built; nothing generated is committed. | `find android -type f` |
+| B11 | No HTML packager; CLI 37 lines, 3 Node tests | **Resolved.** `Trafficity-Uzbekistan-Complete-Packager.html` + `tools/sync_packager_html.mjs`; CLI 328 lines; 41 Node tests. | `ls`, `npm test` |
+| B12 | `FILE_MANIFEST.json` misses files; 20/23 contract | **Partly still true.** The 20/23 list is unchanged (owner decision, §18); digests are refreshed with `update-manifest`. Not listed: HUD button, `main.dart`/`road_game.dart` integration, the HTML packager, workflows, new tests. | digest check of §4.6 |
+| B13 | Mixed coordinate semantics (`centroid` was the admin center) | **Resolved** (`898fe5b`): `representativePoint`, explicit convention text. | read `region_catalog.json` |
+| B14 | GeoJSON `geometryAccuracy` said "verified" | **Resolved**: `approximate_bounding_box_envelope` plus a limitation note. | read the GeoJSON header |
+| B15 | `CLAUDE.md` outdated | **Updated** (Uzbekistan section appended, counts corrected). | read `CLAUDE.md` |
 
 ---
 
@@ -88,7 +104,7 @@ Verified by inspection in the revision session. Re-run the check in the right co
 
 ### 3.2 Git credentials and CI visibility
 
-- Check whether pushing is possible (`git push --dry-run origin codex/uzbekistan-expansion`). If no credentials exist, **commit locally per phase, do not fake a push**, and at the end export `git bundle create trafficity-uzbekistan.bundle origin/codex/uzbekistan-expansion..HEAD` (or `git format-patch`) and report phases as "committed locally, not pushed".
+- Check whether pushing is possible (`git push --dry-run origin <your working branch>`). In rev. 3 plain `git push` worked (fast-forward only) and even a workflow-file change was accepted. If no credentials exist, **commit locally per phase, do not fake a push**, and at the end export `git bundle create trafficity-uzbekistan.bundle origin/codex/uzbekistan-expansion..HEAD` (or `git format-patch`) and report phases as "committed locally, not pushed".
 - CI status for a public repo may be readable without a token (GitHub REST `actions/runs`), but artifact download usually needs auth. Report CI as **CI-PASS** only if you read a `success` conclusion for the exact final SHA; report artifacts as unverified if you could not list them.
 - **Workflow-file pushes:** per `CLAUDE.md` the token may lack `workflow` scope. Prepare the workflow change fully; if the push is rejected for that reason, record **BLOCKED** with the exact server message and place the complete YAML in the final report so the owner can paste it. Do not try to bypass the restriction.
 - The owner's token was previously exposed in chat. In the final report, remind the owner to revoke it and use a fresh fine-grained token limited to this repository.
@@ -182,6 +198,8 @@ assets/world/uzbekistan/regions/tashkent_city/
 3. Run and record, from the repo root: `flutter pub get`; `dart format --output=none --set-exit-if-changed lib test` (if it reports changes, run `dart format lib test`, inspect the diff, rerun); `flutter analyze`; `flutter test`.
 4. Do not hide diagnostics with broad `// ignore` or analyzer excludes. An unrelated legacy warning is documented, not suppressed.
 
+**Notes from execution:** add `analysis_options.yaml` (`formatter: page_width: 120`, exclude `build/**` and `android/**`) *before* formatting; remove unused imports instead of ignoring them; widget tests that boot the real screen need the audioplayers mock of §0.2.5.
+
 **Done when:** `flutter analyze` exits 0, the full existing suite passes with nothing skipped, the analyzer issue count before/after is recorded, and the test count matches or explains the `CLAUDE.md` baseline.
 
 ---
@@ -199,6 +217,8 @@ Implement a real coordinate system, not data classes:
 5. Floating-origin update with threshold rebasing (documented named constant; the README states 2000 m) returning the shift and resetting local displacement.
 6. Geodesic distance with numeric-domain protection (clamp before `asin`/`acos`).
 7. Validation: reject NaN/infinite and out-of-range lon/lat with a typed error.
+
+**Implementation note:** keep a double-precision API next to every Flame `Vector2` API (§0.2.4).
 
 **Tests:** origin → ~0 m; point east → +east; point north → +north; WGS84→ENU→WGS84 round trip within a documented tolerance; legacy round trip; rebasing shift and reset; invalid inputs rejected; geodesic distance for known pairs (cite the reference value). **Done when:** all pass and the existing Tashkent map behaviour is unchanged.
 
@@ -288,6 +308,8 @@ Known answers: `"abc"` → `ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410
 6. Non-Tashkent regions without a package show an explicit overview-only state. **Never** show the Tashkent road map under another region's label.
 7. Preserve Tashkent flow, saves, tutorial, audio, HUD.
 
+**Implementation notes:** the controller must reject unknown region ids (never silently fall back to the first region); notifications after `dispose` must be ignored; a region without a detailed package covers and pauses the game with an *opaque* card so the Tashkent map is never visible under another label; keep the HUD style of `main.dart` (light panel) rather than adding a second visual language.
+
 **Tests (widget):** controller loads 14 entries; button present on the real screen; open/close; every region selectable; labels follow language; Tashkent stays detailed-ready; others overview-only; all prior game widget tests still pass. **Done when:** the feature is visible in the real app and regression-free.
 
 ---
@@ -298,6 +320,8 @@ Known answers: `"abc"` → `ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410
 
 ### 13.1 `tools/uzbekistan_pack_cli.mjs`
 Commands: `list-regions`, `validate-regions`, `validate-package <manifest-path>`, plus bundle validation needed by CI (`validate-bundle --mode expansion|full`). Requirements: validate arguments, non-zero exit on error; resolve paths from the repository root, not the caller's cwd; check 14 records, keys, uniqueness, ranges, Tashkent split; verify every required file exists; **recompute SHA-256 from file bytes** and compare with the manifest; print success only after all checks pass; `validate-package` must verify the package-level digest exactly as defined in §4.4.
+
+**Implementation note (rev. 3):** `tools/packager_core.mjs` is the only logic module (no imports; `export` is stripped when it is embedded). `tools/sync_packager_html.mjs --check` is a CI step and `test/packager_html.test.mjs` asserts equality, so the CLI, the page and the tests cannot drift.
 
 ### 13.2 `tools/package_release.py`
 1. Remove `allow_missing_binary`. A missing required tool is a **failure**.
@@ -338,12 +362,14 @@ Manifest parsing; exact 20/23 modes; missing-file rejection; digest-mismatch rej
 
 ---
 
-## 15. PHASE P10 — CI WORKFLOW
+## 15. PHASE P10 — CI WORKFLOW (corrected in rev. 3)
 
 *Dependencies:* P1–P9. *File:* `.github/workflows/uzbekistan-release.yml` (pushing it may hit the `workflow` scope limit — see §3.2).
 
-Triggers: push to `codex/uzbekistan-expansion` and `workflow_dispatch`. Ordered steps, each failing the job on error (no `continue-on-error` on checks):
-1. checkout exact commit; 2. Python; 3. Java 17; 4. Flutter (pinned or stable, compatible with `^3.11.0`); 5. Node (≥18, per `package.json`); 6. **Android scaffold** — `flutter create --platforms=android --org uz.abdulloh .` as in `build-apk.yml` (B10) unless P8/P10 adds a complete `android/` tree; 7. `flutter pub get`; 8. format check; 9. `flutter analyze`; 10. `flutter test`; 11. `npm test`; 12. Python tests; 13. CLI region/package/bundle validation; 14. Tashkent migration + output validation; 15. `flutter build apk --debug`; 16. `tools/package_release.py` in strict mode; 17. re-validate the ZIP; 18. upload `Trafficity-Uzbekistan-Complete.zip`; 19. upload the debug APK.
+Triggers: push to `codex/uzbekistan-expansion` (plus the working branch of the executing session, §0.2.8) and `workflow_dispatch`. Ordered steps, each failing the job on error (no `continue-on-error` on checks):
+1. checkout exact commit; 2. Python; 3. Java 17; 4. Flutter (stable, compatible with `^3.11.0`); 5. Node ≥ 18; 6. tool versions; 7. `flutter pub get`; 8. format check; 9. `flutter analyze`; 10. `flutter test`; 11. `npm test`; 12. Python tests; 13. `node tools/sync_packager_html.mjs --check`; 14. CLI region/package/bundle validation; 15. Tashkent migration is reproducible (`git diff --exit-code -- assets/world/uzbekistan assets/map`) and valid; 16. `python3 tools/package_release.py` in strict mode — it builds and re-opens the deterministic ZIP **first**, then creates the Android scaffold (`flutter create --platforms=android --org uz.abdulloh .`, then deletes the generated `test/widget_test.dart`) and builds `flutter build apk --debug`; 17. APK exists and is non-empty; 18. re-validate the ZIP (central directory, sorted unique entries, required and manifest files present, no `.git`/`build`/`*.zip`/`.env`/`local.properties`); 19. upload `Trafficity-Uzbekistan-Complete.zip`; 20. upload the debug APK.
+
+The scaffold is **not** a separate early step (rev. 2 listed it as step 6): generated Android/IDE files would otherwise enter the ZIP and the generated counter test would break analyze and test.
 
 Use caching for speed but never as a substitute for running a check. Leave `build-apk.yml` (the `main` workflow) untouched unless a change is required and justified.
 
@@ -365,54 +391,77 @@ Use caching for speed but never as a substitute for running a check. Leave `buil
 
 ## 17. PHASE P12 — FINAL ACCEPTANCE GATE
 
-Release-ready only if **every** applicable box is true with evidence; otherwise report **NOT READY**.
+Release-ready only if **every** applicable box is true with evidence; otherwise report **NOT READY**. Boxes are ticked only where §18 holds the evidence.
 
-- [ ] Correct branch; `origin/main` SHA is unchanged from the P0 record and no push targeted `main`.
-- [ ] No original test or feature deleted or weakened; baseline vs final test counts reported.
-- [ ] No stale package imports; `flutter analyze` exit 0 (before/after counts).
-- [ ] Format check passes; full `flutter test` exit 0.
-- [ ] SHA-256 known-answer tests pass; `verified_sha256` no longer exists.
-- [ ] Coordinate, floating-origin, LOD, save-migration, road-portal tests pass.
-- [ ] Package install/update/removal/path-traversal tests pass.
-- [ ] Tashkent migration converts all valid roads, counts add up to the source, second run is byte-identical, source unchanged.
-- [ ] CLI, Python, `npm test` suites pass (no check replaced by a mock).
-- [ ] HTML packager exists; ZIP validation tests pass; push flow proven non-force and `main`-proof (**MOCK-ONLY** unless a real push was performed and read back).
-- [ ] Selector visible and working in the real game; other regions truthfully overview-only.
-- [ ] Debug APK built (CI or local) and non-empty; release ZIP generated, re-opened, validated.
-- [ ] CI run for the final commit is `success`; APK and ZIP artifacts present (or reported as not verifiable).
-- [ ] Manifest sizes/digests/counts match final files; documentation matches reality.
-- [ ] Secrets scan clean; `git diff --check` clean; final diff reviewed.
+- [x] Correct branch; `origin/main` unchanged (`ee406fc` at P0 and at the end) and no push targeted `main`. (Work was pushed only to `ccr-7e104e07-0xa8wr`, a fast-forward descendant of the codex tip.)
+- [x] No original test or feature deleted or weakened. Baseline 99 tests (98 pass, 1 FAIL) → 112 pass. The 20 original game tests are unchanged apart from formatting. The single changed assertion (`legacy points round-trip`) kept its 1e-5 tolerance on the new double-precision API and added a 1e-3 check for the float32 `Vector2` path.
+- [x] No stale package imports; `flutter analyze` exit 0 (1 issue at `03a3f77` → 0).
+- [x] Format check exit 0; full `flutter test` exit 0 (112/112).
+- [x] SHA-256 known-answer tests pass; `verified_sha256` exists only in negative tests.
+- [x] Coordinate, floating-origin, LOD, save-migration, road-portal tests pass (`geo_coordinate_system_test` 19, `world_core_test` 24).
+- [x] Package install/update/removal/path-traversal tests pass (`region_package_manager_test` 35).
+- [x] Tashkent migration: 2495 source = 2495 converted + 0 rejected; second run byte-identical (`git diff` clean, CI step "reproducible"); source file unchanged (`sha256 d4faf65d…`).
+- [x] CLI, Python, `npm test` suites pass (41 Node, 49 Python); no check replaced by a mock.
+- [x] HTML packager exists; ZIP validation tests pass; push flow proven non-force and `main`-proof. **MOCK-ONLY / PASS (manual)**: Chromium run 29/29 with a mocked GitHub API; no real push was performed through the page.
+- [x] Selector visible and working in the real game (11 widget tests incl. all 14 regions); other regions overview-only.
+- [ ] Debug APK built and non-empty: **BLOCKED (local)** (no Android SDK); CI run result in §18 (P10).
+- [ ] CI run for the final commit is `success` with APK and ZIP artifacts: see §18 (P10, P12).
+- [x] Manifest sizes/digests/counts match the final files (`validate-bundle` OK in both modes); documentation matches reality.
+- [x] Secrets scan clean (only the documented intentional fixtures); `git diff --check` clean.
 
 ---
 
-## 18. EXECUTION STATUS LEDGER — UPDATE DURING THE WORK
+## 18. EXECUTION STATUS LEDGER
 
-Starts with **no repair task completed**. A push, commit title, mock, or chat claim does not count.
+Last updated at the end of the rev. 3 execution. A push, commit title, mock, or chat claim does not count; every entry below names the command that ran.
 
 ### COMPLETED — VERIFIED
-**NONE.**
-Move an item here only after it is committed and its real command passed. Each entry needs: task ID and outcome; files changed; exact commands; exit codes and test counts; commit SHA; CI run URL/status if applicable.
 
-### NOT DONE — PENDING
-- [ ] **P0** Safe start, bootstrap, inventory, baseline numbers.
-- [ ] **P1** Imports, dependencies, analyzer/format/tests green.
-- [ ] **P2** Coordinate system and floating origin.
-- [ ] **P3** Real SHA-256 and package manager.
-- [ ] **P4** LOD, save migration, road portals, architecture profiles.
-- [ ] **P5** Tashkent migration (all roads, chunks, manifest, idempotent).
-- [ ] **P6** GIS data quality and honest labelling.
-- [ ] **P7** Selector integrated into the real game.
-- [ ] **P8** Strict CLI and release packager.
-- [ ] **P9** Browser HTML packager with safe Direct Push.
-- [ ] **P10** CI workflow green with artifacts.
-- [ ] **P11** Manifest, README, and CLAUDE.md accuracy.
-- [ ] **P12** Final gate, final push, final CI check.
+| ID | Outcome | Commits | Evidence (real commands, exit codes) |
+|---|---|---|---|
+| **P0** | Safe start, bootstrap, inventory, baseline | — | Tools: Flutter 3.47.8, Dart 3.13.7, Node 22.22, Python 3.13, Java 17 (no Android SDK). Baseline at `03a3f77`: `flutter pub get` 0; `flutter analyze` **1 issue**, exit 1; `dart format --set-exit-if-changed` **exit 1** (31/32 files); `flutter test` **98 pass / 1 FAIL**; `npm test` 32/32; Python 45/45. `origin/main` = `ee406fc`. |
+| **P1** | Package, imports, analyzer, format | `e91ed85`, `8e11926` | After: `flutter analyze` **No issues**, exit 0; format check exit 0 (`analysis_options.yaml`, width 120); `flutter test` exit 0. Issues: 70 (historical CI #15) → 1 → 0. |
+| **P2** | Coordinate system | `a6a42de`, `8e11926` | `geo_coordinate_system_test.dart` 19/19 incl. WGS84↔ENU round trip, legacy frame, Y-sign, floating origin, validation, geodesic. Found and fixed the failing legacy round-trip (float32 `Vector2`): added `wgs84ToLegacyUnitsExact`. Constants stay labelled unverified. |
+| **P3** | Real SHA-256, package manager | `9ea8905` | `region_package_manager_test.dart` 35/35: known answers (`abc`, empty), traversal/absolute/drive/symlink, corrupt/missing/extra file, interrupted install, failed update keeps old, crash rollback, persistence, removal, unknown region. `git grep verified_sha256` → only negative tests. New `tashkent_package_real_test.dart` (2): Dart verifies the real Tashkent manifest, package digest and all 16 chunk SHA-256 (cross-implementation proof with Python and Node). |
+| **P4** | LOD, save v3 migration, portals, profiles | `01096d6` | `world_core_test.dart` 24/24 (LOD boundaries × 2D/3D × installed/not, v1/v2→v3, malformed/unknown version, portal rules, profile metadata). Not wired into game code (documented). |
+| **P5** | Tashkent migration | `565eb1d` | `python3 tools/map/migrate_tashkent_legacy.py` exit 0: source 2495, converted 2495, rejected 0, 6076 points, 16 chunks, packageSha256 `303f1946…`; rerun → `git diff` clean. `coordinateVerification: unverified`. 26 migration tests. |
+| **P6** | GIS data honesty | `898fe5b` | 14 divisions, `UZ-TK`/`UZ-TO` separate, `representativePoint`, `approximate_bounding_box_envelope`, ISO verified vs statoids (secondary), SOATO unverified. `validate-regions` OK. |
+| **P7** | Selector in the real game | `3367155` | `uzbekistan_selector_widget_test.dart` 11/11: controller (idempotent init, unknown region rejected, LOD, notifications, broken catalog), real screen (HUD button, open/close, **all 14 regions selected**, overview card pauses the game and covers the map, back/reopen, Russian labels, dispose safety). Screenshots reviewed. |
+| **P8** | CLI and strict packager | `898fe5b`, `03a3f77`, `797fbcc` | `validate-regions`, `validate-package`, `validate-bundle --mode expansion|full` OK. `package_release.py --allow-blocked` locally: all checks PASS, ZIP created and validated, APK step **BLOCKED** (SDK); 49 Python tests incl. SDK and scaffold behaviour. |
+| **P9** | HTML packager | `797fbcc` | `test/packager_html.test.mjs` 9 tests; `node tools/sync_packager_html.mjs --check` OK. **PASS (manual)**: headless Chromium 29/29 (local-files source, 20/23 validation, tampered/missing file rejected, ZIP re-downloaded and re-opened by Python, mocked GitHub push sequence with `force:false`, parent = previous tip, token only in the Authorization header and cleared, 422 conflict without retry, `main` refused, no CDN). |
+| **P10** | CI workflow | `f2a474e` | Pushed and accepted by the server. Run [41698996726](https://github.com/abdulloh042006-debug/Trafficity/actions/runs/41698996726) on `f2a474e`: every discrete check step (format, analyze, `flutter test`, `npm test`, Python, HTML sync, CLI, reproducible migration) concluded **success** in CI; the strict packager step (ZIP, Android scaffold, debug APK) was **still running when this ledger was written** — its conclusion and the artifacts are therefore **not verified here** (see PENDING). |
+| **P11** | Manifest and documentation | this commit | `update-manifest` → `validate-bundle` OK (expansion 20, full 23); `README.md`, `UZBEKISTAN_EXPANSION_README.md`, `CLAUDE.md` rewritten to real behaviour; game history kept in `docs/GAME_STAGES.md`. |
+
+### NOT DONE — PENDING (crossed out = done, see COMPLETED)
+
+- ~~**P0** Safe start, bootstrap, inventory, baseline numbers.~~
+- ~~**P1** Imports, dependencies, analyzer/format/tests green.~~
+- ~~**P2** Coordinate system and floating origin.~~
+- ~~**P3** Real SHA-256 and package manager.~~
+- ~~**P4** LOD, save migration, road portals, architecture profiles.~~
+- ~~**P5** Tashkent migration (all roads, chunks, manifest, idempotent).~~
+- ~~**P6** GIS data quality and honest labelling.~~
+- ~~**P7** Selector integrated into the real game.~~
+- ~~**P8** Strict CLI and release packager.~~
+- ~~**P9** Browser HTML packager with safe Direct Push.~~
+- [ ] **P10** CI `success` for the *final* commit with both artifacts (ZIP + debug APK). Not yet verified when this ledger was written: run 41698996726 (`f2a474e`) was still in its APK step and the run for the final commit had not started. Check Actions; until then report **CI not green / not verified**.
+- ~~**P11** Manifest, README, and CLAUDE.md accuracy.~~
+- [ ] **P12** Final gate: two boxes depend on P10 (APK built, final-commit CI); everything else ticked in §17.
+- [ ] Independent verification of the Tashkent coordinate conversion (P5 step 2) — still `unverified`.
+- [ ] Wiring `national_save_manager`, `road_graph_linker`, `architecture_profile_engine` into the game's own code (outside this prompt's acceptance criteria; modules and tests exist).
 
 ### BLOCKED
-**NONE KNOWN.** Add an entry only after the task was attempted and a concrete missing dependency, source, or permission was identified; include the evidence and what unblocks it. Pre-identified risks to check early: no push credentials; `workflow`-scope rejection; no Flutter/Android SDK locally; no network for anchor verification; shallow history.
+
+- **Local `flutter build apk --debug`** — BLOCKED (local): `No Android SDK found. Try setting the ANDROID_HOME environment variable.` Unblocks with an Android SDK (CI has one).
+- **Coordinate verification against independent anchors** — no cited survey points are available offline. An export georeference (`map.wld`, EPSG:3857) exists but its pixel-origin convention differs by about 3 m between the `.wld` and the SVG metadata, so it was not used to claim "verified".
 
 ### OWNER DECISIONS NEEDED
-Add here (do not stop work for them unless a decision is irreversible): any change to the 20/23 file list, relabelled GeoJSON/catalog fields, any scope not covered by §4.
+
+1. **20/23 file list.** The lists do not contain `lib/ui/uzbekistan_hud_button.dart`, the `main.dart`/`road_game.dart` integration, `Trafficity-Uzbekistan-Complete-Packager.html`, `tools/sync_packager_html.mjs`, `tools/package_release.py`, the workflows or the new tests, so the 20/23 ZIPs cannot reproduce the selector integration by themselves. Extending the lists changes the counts everywhere (manifest, CLI, Node tests, HTML, README).
+2. **Branches.** The work is on `ccr-7e104e07-0xa8wr` (fast-forward descendant of `codex/uzbekistan-expansion`); decide when to fast-forward the codex branch. `main` already contains a different Uzbekistan implementation (`1ae8545`, `ee406fc`) — choose which one wins before merging anything into `main`.
+3. **Token.** Revoke the previously exposed token and use a fresh fine-grained one limited to this repository.
+4. **README.** On this lineage `README.md` is the packager README; the game's stage log moved to `docs/GAME_STAGES.md`.
+5. **Android id.** Builds now use `uz.abdulloh.trafficity` (pubspec name) instead of `uz.abdulloh.roadflow_city`; both can be installed side by side.
 
 ### HOW TO MAINTAIN THE LEDGER
 After a task: run its tests → commit → (push if possible) → move it to COMPLETED with evidence in the **same branch**. Partial work or failing tests stay under NOT DONE with a note. At the end of every session the ledger must agree with the Git tree and the test evidence.
@@ -431,4 +480,4 @@ After a task: run its tests → commit → (push if possible) → move it to COM
 8. GitHub Actions run URL, conclusion, artifact links (or why unverifiable).
 9. Confirmation that `main` was not modified, that no secrets were committed, and a reminder to revoke the previously exposed token.
 
-**Never write "all done", "fully working", "N/N passed", or "release-ready" without the matching evidence. Start with P0 and proceed in order.**
+**Never write "all done", "fully working", "N/N passed", or "release-ready" without the matching evidence. Start with P0 (re-verify the ledger's evidence against the tree) and continue with the first unfinished item.**
