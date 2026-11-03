@@ -78,11 +78,7 @@ class LocalEnuCoord {
 
   /// Inverse of [toFlameWorld].
   static LocalEnuCoord fromFlameWorld(Vector2 world, {double pixelsPerMeter = 1.0, double upMeters = 0.0}) =>
-      LocalEnuCoord(
-        eastMeters: world.x / pixelsPerMeter,
-        northMeters: -world.y / pixelsPerMeter,
-        upMeters: upMeters,
-      );
+      LocalEnuCoord(eastMeters: world.x / pixelsPerMeter, northMeters: -world.y / pixelsPerMeter, upMeters: upMeters);
 }
 
 class GeoBoundingBox {
@@ -92,11 +88,11 @@ class GeoBoundingBox {
   final double maxLat;
   const GeoBoundingBox({required this.minLon, required this.minLat, required this.maxLon, required this.maxLat});
   factory GeoBoundingBox.fromJson(Map<String, dynamic> json) => GeoBoundingBox(
-        minLon: (json['minLon'] as num).toDouble(),
-        minLat: (json['minLat'] as num).toDouble(),
-        maxLon: (json['maxLon'] as num).toDouble(),
-        maxLat: (json['maxLat'] as num).toDouble(),
-      );
+    minLon: (json['minLon'] as num).toDouble(),
+    minLat: (json['minLat'] as num).toDouble(),
+    maxLon: (json['maxLon'] as num).toDouble(),
+    maxLat: (json['maxLat'] as num).toDouble(),
+  );
 }
 
 /// WGS84 ellipsoid constants and derived per-degree lengths.
@@ -150,8 +146,15 @@ class LegacyTashkentFrame {
   static LocalEnuCoord unitsToEnu(double x, double y) =>
       LocalEnuCoord(eastMeters: (x - worldCenter) * metersPerUnit, northMeters: -(y - worldCenter) * metersPerUnit);
 
-  static Vector2 enuToUnits(LocalEnuCoord enu) =>
-      Vector2(worldCenter + enu.eastMeters / metersPerUnit, worldCenter - enu.northMeters / metersPerUnit);
+  /// Full double precision (use this for data/IO). [enuToUnits] returns a Flame [Vector2], which stores
+  /// float32 and therefore loses ~5e-4 units of precision at x ~ 6000.
+  static ({double x, double y}) enuToUnitsExact(LocalEnuCoord enu) =>
+      (x: worldCenter + enu.eastMeters / metersPerUnit, y: worldCenter - enu.northMeters / metersPerUnit);
+
+  static Vector2 enuToUnits(LocalEnuCoord enu) {
+    final e = enuToUnitsExact(enu);
+    return Vector2(e.x, e.y);
+  }
 }
 
 /// Result of a floating-origin rebase.
@@ -169,8 +172,12 @@ class FloatingOriginRebase {
 
 class NationalCoordinateSystem {
   static const Wgs84Coord legacyTashkentOrigin = Wgs84Coord(lon: 69.279737, lat: 41.311081, alt: 475.0);
-  static const GeoBoundingBox uzbekistanNationalBbox =
-      GeoBoundingBox(minLon: 55.997, minLat: 37.172, maxLon: 73.132, maxLat: 45.590);
+  static const GeoBoundingBox uzbekistanNationalBbox = GeoBoundingBox(
+    minLon: 55.997,
+    minLat: 37.172,
+    maxLon: 73.132,
+    maxLat: 45.590,
+  );
 
   /// Horizontal distance from the floating origin after which the origin is rebased.
   static const double rebaseThresholdMeters = 2000.0;
@@ -279,9 +286,13 @@ class NationalCoordinateSystem {
     return enuToWgs84(LegacyTashkentFrame.unitsToEnu(x, y), legacyTashkentOrigin);
   }
 
-  /// WGS84 -> legacy Tashkent map units.
+  /// WGS84 -> legacy Tashkent map units as a Flame [Vector2] (float32 storage, ~5e-4 units precision).
   static Vector2 wgs84ToLegacyUnits(Wgs84Coord point) =>
       LegacyTashkentFrame.enuToUnits(wgs84ToEnu(point, legacyTashkentOrigin));
+
+  /// WGS84 -> legacy Tashkent map units in full double precision.
+  static ({double x, double y}) wgs84ToLegacyUnitsExact(Wgs84Coord point) =>
+      LegacyTashkentFrame.enuToUnitsExact(wgs84ToEnu(point, legacyTashkentOrigin));
 
   /// Position of [point] relative to the current floating origin.
   LocalEnuCoord toLocal(Wgs84Coord point) => wgs84ToEnu(point, _floatingOrigin);

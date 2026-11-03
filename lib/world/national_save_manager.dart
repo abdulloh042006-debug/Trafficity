@@ -38,13 +38,13 @@ class NationalSaveV3 {
   });
 
   Map<String, dynamic> toJson() => {
-        'v': saveFormatVersion,
-        'country': countryId,
-        'region': regionId,
-        if (cameraPosition != null) 'camera': [cameraPosition!.lon, cameraPosition!.lat],
-        'zoom': cameraZoom,
-        'migratedFrom': migratedFromVersion,
-      };
+    'v': saveFormatVersion,
+    'country': countryId,
+    'region': regionId,
+    if (cameraPosition != null) 'camera': [cameraPosition!.lon, cameraPosition!.lat],
+    'zoom': cameraZoom,
+    'migratedFrom': migratedFromVersion,
+  };
 
   /// Reads a v3 save. Throws [SaveFormatException] for anything else or for invalid values.
   factory NationalSaveV3.fromJson(Object? json) {

@@ -66,15 +66,15 @@ Uint8List _buildZip({
 }
 
 RegionCatalogEntry _entry(String id, RegionReadinessStatus readiness) => RegionCatalogEntry(
-      regionId: id,
-      isoCode: 'UZ-XX',
-      soatoCode: '0000',
-      names: const LocalizedName(uz: 'x', ru: 'x', en: 'x'),
-      representativePoint: const Wgs84Coord(lon: 66.9, lat: 39.6),
-      bbox: const GeoBoundingBox(minLon: 66.0, minLat: 39.0, maxLon: 68.0, maxLat: 40.0),
-      architectureProfileId: 'p',
-      defaultReadiness: readiness,
-    );
+  regionId: id,
+  isoCode: 'UZ-XX',
+  soatoCode: '0000',
+  names: const LocalizedName(uz: 'x', ru: 'x', en: 'x'),
+  representativePoint: const Wgs84Coord(lon: 66.9, lat: 39.6),
+  bbox: const GeoBoundingBox(minLon: 66.0, minLat: 39.0, maxLon: 68.0, maxLat: 40.0),
+  architectureProfileId: 'p',
+  defaultReadiness: readiness,
+);
 
 void main() {
   late Directory root;
@@ -128,7 +128,18 @@ void main() {
 
   group('path safety', () {
     test('rejects traversal, absolute and drive paths', () {
-      for (final bad in ['../evil', 'a/../../evil', '/etc/passwd', r'C:\win', 'C:/win', 'a//b', './a', '', 'a/\u0000b', r'..\evil']) {
+      for (final bad in [
+        '../evil',
+        'a/../../evil',
+        '/etc/passwd',
+        r'C:\win',
+        'C:/win',
+        'a//b',
+        './a',
+        '',
+        'a/\u0000b',
+        r'..\evil',
+      ]) {
         expect(RegionPackageManager.isSafeRelativePath(bad), isFalse, reason: bad);
       }
     });
@@ -276,7 +287,9 @@ void main() {
     test('an update installs the new version', () async {
       final m = await openManager();
       await m.installFromZip(_buildZip());
-      final rec = await m.installFromZip(_buildZip(version: '1.1.0', files: {'chunks/chunk_0_0.json': '{"roads":[9]}'}));
+      final rec = await m.installFromZip(
+        _buildZip(version: '1.1.0', files: {'chunks/chunk_0_0.json': '{"roads":[9]}'}),
+      );
       expect(rec.version, '1.1.0');
       final dir = m.installedDirectory('uz_samarkand')!;
       expect(File('${dir.path}/chunks/chunk_0_0.json').readAsStringSync(), '{"roads":[9]}');
@@ -369,19 +382,31 @@ void main() {
   group('readiness', () {
     test('Tashkent is bundled and ready; other regions stay overview-only', () async {
       final m = RegionPackageManager();
-      expect(m.resolveReadiness(_entry('uz_tashkent_city', RegionReadinessStatus.installedDetailed)), RegionReadinessStatus.installedDetailed);
-      expect(m.resolveReadiness(_entry('uz_samarkand', RegionReadinessStatus.overviewOnly)), RegionReadinessStatus.overviewOnly);
+      expect(
+        m.resolveReadiness(_entry('uz_tashkent_city', RegionReadinessStatus.installedDetailed)),
+        RegionReadinessStatus.installedDetailed,
+      );
+      expect(
+        m.resolveReadiness(_entry('uz_samarkand', RegionReadinessStatus.overviewOnly)),
+        RegionReadinessStatus.overviewOnly,
+      );
     });
 
     test('a catalog default that claims detailed data without a package is not trusted', () {
       final m = RegionPackageManager();
-      expect(m.resolveReadiness(_entry('uz_bukhara', RegionReadinessStatus.installedDetailed)), RegionReadinessStatus.overviewOnly);
+      expect(
+        m.resolveReadiness(_entry('uz_bukhara', RegionReadinessStatus.installedDetailed)),
+        RegionReadinessStatus.overviewOnly,
+      );
     });
 
     test('an installed package makes the region detailed', () async {
       final m = await openManager();
       await m.installFromZip(_buildZip());
-      expect(m.resolveReadiness(_entry('uz_samarkand', RegionReadinessStatus.overviewOnly)), RegionReadinessStatus.installedDetailed);
+      expect(
+        m.resolveReadiness(_entry('uz_samarkand', RegionReadinessStatus.overviewOnly)),
+        RegionReadinessStatus.installedDetailed,
+      );
     });
   });
 
@@ -391,7 +416,10 @@ void main() {
       const b = PackageFileEntry(path: 'b.json', bytes: 2, sha256: 'bb');
       expect(RegionPackageManifest.computePackageDigest([a, b]), RegionPackageManifest.computePackageDigest([b, a]));
       const a2 = PackageFileEntry(path: 'a.json', bytes: 9, sha256: 'aa');
-      expect(RegionPackageManifest.computePackageDigest([a, b]), isNot(RegionPackageManifest.computePackageDigest([a2, b])));
+      expect(
+        RegionPackageManifest.computePackageDigest([a, b]),
+        isNot(RegionPackageManifest.computePackageDigest([a2, b])),
+      );
     });
 
     test('malformed manifests are rejected with a typed error', () {

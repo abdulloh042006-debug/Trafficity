@@ -10,12 +10,13 @@ class LocalizedName {
   final String ru;
   final String en;
   const LocalizedName({required this.uz, required this.ru, required this.en});
-  factory LocalizedName.fromJson(Map<String, dynamic> json) => LocalizedName(
-        uz: json['uz'] as String? ?? '',
-        ru: json['ru'] as String? ?? '',
-        en: json['en'] as String? ?? '',
-      );
-  String forLang(String lang) => lang == 'uz' ? uz : lang == 'ru' ? ru : en;
+  factory LocalizedName.fromJson(Map<String, dynamic> json) =>
+      LocalizedName(uz: json['uz'] as String? ?? '', ru: json['ru'] as String? ?? '', en: json['en'] as String? ?? '');
+  String forLang(String lang) => lang == 'uz'
+      ? uz
+      : lang == 'ru'
+      ? ru
+      : en;
 }
 
 class RegionCatalogEntry {
@@ -23,6 +24,7 @@ class RegionCatalogEntry {
   final String isoCode;
   final String soatoCode;
   final LocalizedName names;
+
   /// Administrative-center point as listed in the catalog. Approximate; NOT a computed geometric centroid.
   final Wgs84Coord representativePoint;
   final GeoBoundingBox bbox;

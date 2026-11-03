@@ -1,4 +1,3 @@
-
 import 'package:flame/game.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:trafficity/game/rail.dart';
@@ -49,7 +48,9 @@ void main() {
     return null;
   }
 
-  testWidgets('Toshkent: kanal ustiga temir yo\'l ko\'prigi, stansiyalar, poyezd, bekor qilish, saqlash', (tester) async {
+  testWidgets('Toshkent: kanal ustiga temir yo\'l ko\'prigi, stansiyalar, poyezd, bekor qilish, saqlash', (
+    tester,
+  ) async {
     SharedPreferences.setMockInitialValues({});
     await tester.runAsync(() async {
       final g = await make(Terrain.tashkent);
@@ -124,7 +125,11 @@ void main() {
       for (var y = 2200.0; y < 4200 && a == null; y += 40) {
         for (var x = 2200.0; x < 3000 && a == null; x += 20) {
           final p = Offset(x, y), q = Offset(x + 500, y);
-          if (g.terrain.isWaterAt(p) || g.terrain.isWaterAt(q) || g.terrain.isMountainAt(p) || g.terrain.isMountainAt(q)) continue;
+          if (g.terrain.isWaterAt(p) ||
+              g.terrain.isWaterAt(q) ||
+              g.terrain.isMountainAt(p) ||
+              g.terrain.isMountainAt(q))
+            continue;
           var mt = 0, water = 0;
           for (var s = 0.0; s <= 500; s += 6) {
             final c = Offset(x + s, y);
@@ -149,7 +154,9 @@ void main() {
     });
   });
 
-  testWidgets('temir yo\'l binoga tegmaydi va hudud tashqarisiga qurilmaydi; yer osti rejimida bino ostidan o\'tadi', (tester) async {
+  testWidgets('temir yo\'l binoga tegmaydi va hudud tashqarisiga qurilmaydi; yer osti rejimida bino ostidan o\'tadi', (
+    tester,
+  ) async {
     SharedPreferences.setMockInitialValues({});
     await tester.runAsync(() async {
       final g = await make(Terrain.tashkent);

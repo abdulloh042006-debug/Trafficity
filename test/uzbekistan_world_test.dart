@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:trafficity/world/geo_coordinate_system.dart';
 import 'package:trafficity/world/region_package_manager.dart';
 import 'package:trafficity/world/world_controller.dart';
 

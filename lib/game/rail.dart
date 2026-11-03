@@ -275,7 +275,7 @@ class RailSim {
   bool _assign(Train t) {
     final cands = [
       for (final st in stations)
-        if (st.active && st.id != t.lastId && st.nodeId != 0) st
+        if (st.active && st.id != t.lastId && st.nodeId != 0) st,
     ]..shuffle(_rnd);
     for (final st in cands) {
       final cur = t.hist.last;

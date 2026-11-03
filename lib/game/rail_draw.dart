@@ -75,7 +75,8 @@ class RailVis {
         run = 0;
       }
       run += len;
-      a.cost += len *
+      a.cost +=
+          len *
           (c == RailCls.bridge
               ? RailConst.costBridge
               : (c == RailCls.tunnel ? RailConst.costTunnel : RailConst.costGround));
@@ -181,7 +182,7 @@ Deck _bridgeDeck(RailRun r) {
       () {
         final v = min(1.0, min(c / ramp, (total - c) / ramp)).clamp(0.0, 1.0).toDouble();
         return v * v * (3 - 2 * v);
-      }()
+      }(),
   ];
   return Deck(r.pts, h, 7.5, false, false, false, false);
 }
@@ -189,8 +190,14 @@ Deck _bridgeDeck(RailRun r) {
 void drawRails(Canvas canvas, RailVis vis, double zoom) {
   if (vis.runs.isEmpty) return;
   final all = [for (final l in vis.runs.values) ...l];
-  final surface = [for (final r in all) if (r.cls != RailCls.tunnel && r.pts.length >= 2) r];
-  final bridges = [for (final r in surface) if (r.cls == RailCls.bridge || r.cls == RailCls.overRoad) r];
+  final surface = [
+    for (final r in all)
+      if (r.cls != RailCls.tunnel && r.pts.length >= 2) r,
+  ];
+  final bridges = [
+    for (final r in surface)
+      if (r.cls == RailCls.bridge || r.cls == RailCls.overRoad) r,
+  ];
   final detail = zoom >= 0.3;
 
   // 1) ko'priklar: soya, chekka, yuza
@@ -217,7 +224,10 @@ void drawRails(Canvas canvas, RailVis vis, double zoom) {
     ..style = PaintingStyle.stroke
     ..strokeCap = StrokeCap.round
     ..strokeJoin = StrokeJoin.round;
-  final ground = [for (final r in surface) if (r.cls == RailCls.ground) r];
+  final ground = [
+    for (final r in surface)
+      if (r.cls == RailCls.ground) r,
+  ];
   bed
     ..strokeWidth = 12
     ..color = _ballastEdge;
@@ -277,7 +287,10 @@ void drawRails(Canvas canvas, RailVis vis, double zoom) {
   }
 
   // 4) tunnellar: xira punktir va og'izlari
-  final tunnels = [for (final r in all) if (r.cls == RailCls.tunnel && r.pts.length >= 2) r];
+  final tunnels = [
+    for (final r in all)
+      if (r.cls == RailCls.tunnel && r.pts.length >= 2) r,
+  ];
   if (tunnels.isNotEmpty) {
     final dashes = <Offset>[];
     for (final r in tunnels) {
@@ -303,7 +316,10 @@ void drawRails(Canvas canvas, RailVis vis, double zoom) {
         canvas.translate(p.dx, p.dy);
         canvas.rotate(atan2(d.dy, d.dx));
         canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTWH(-3, -8, 7, 16), const Radius.circular(2)), outer);
-        canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTWH(-1, -5, 4, 10), const Radius.circular(1.5)), inner);
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(const Rect.fromLTWH(-1, -5, 4, 10), const Radius.circular(1.5)),
+          inner,
+        );
         canvas.restore();
       }
     }
@@ -327,11 +343,17 @@ void drawStations(Canvas canvas, RailSim sim) {
       ..strokeWidth = 0.9
       ..color = const Color(0xFF857C69);
     for (final side in const [-1.0, 1.0]) {
-      final r = RRect.fromRectAndRadius(Rect.fromCenter(center: Offset(0, side * 8.5), width: 84, height: 6), const Radius.circular(1.5));
+      final r = RRect.fromRectAndRadius(
+        Rect.fromCenter(center: Offset(0, side * 8.5), width: 84, height: 6),
+        const Radius.circular(1.5),
+      );
       canvas.drawRRect(r, plat);
       canvas.drawRRect(r, platEdge);
     }
-    final bld = RRect.fromRectAndRadius(Rect.fromCenter(center: const Offset(0, 21), width: 34, height: 14), const Radius.circular(2.5));
+    final bld = RRect.fromRectAndRadius(
+      Rect.fromCenter(center: const Offset(0, 21), width: 34, height: 14),
+      const Radius.circular(2.5),
+    );
     canvas.drawRRect(bld.shift(const Offset(1.5, 2)), Paint()..color = const Color(0x33000000));
     canvas.drawRRect(bld, Paint()..color = st.active ? const Color(0xFFB5563F) : const Color(0xFF8E8F94));
     canvas.drawRRect(bld.deflate(2.5), Paint()..color = st.active ? const Color(0xFFD9775C) : const Color(0xFFAAABB0));

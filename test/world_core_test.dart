@@ -41,7 +41,8 @@ void main() {
         for (final is3d in [false, true]) {
           final level = lod(z, is3d: is3d, pack: false);
           expect(
-            level == GeographicalDetailLevel.level1CountryOverview || level == GeographicalDetailLevel.level2RegionalView,
+            level == GeographicalDetailLevel.level1CountryOverview ||
+                level == GeographicalDetailLevel.level2RegionalView,
             isTrue,
             reason: 'zoom=$z 3d=$is3d gave $level',
           );
@@ -94,7 +95,15 @@ void main() {
     });
 
     test('legacy v2 Tashkent save: centre camera becomes the Tashkent origin', () {
-      final legacy = {'v': 2, 'seed': 1, 'budget': 10.0, 'biome': 4, 'ws': 6400.0, 'cam': [3200.0, 3200.0], 'zoom': 0.9};
+      final legacy = {
+        'v': 2,
+        'seed': 1,
+        'budget': 10.0,
+        'biome': 4,
+        'ws': 6400.0,
+        'cam': [3200.0, 3200.0],
+        'zoom': 0.9,
+      };
       final save = NationalSaveV3.fromLegacy(legacy);
       expect(save.regionId, 'uz_tashkent_city');
       expect(save.migratedFromVersion, 2);
@@ -104,7 +113,12 @@ void main() {
     });
 
     test('legacy v1 Tashkent save: a camera east and south of centre converts with the right signs', () {
-      final legacy = {'v': 1, 'biome': 4, 'cam': [3400.0, 3400.0], 'zoom': 1.0};
+      final legacy = {
+        'v': 1,
+        'biome': 4,
+        'cam': [3400.0, 3400.0],
+        'zoom': 1.0,
+      };
       final save = NationalSaveV3.fromLegacy(legacy);
       expect(save.migratedFromVersion, 1);
       expect(save.cameraPosition!.lon, greaterThan(NationalCoordinateSystem.legacyTashkentOrigin.lon));
@@ -112,20 +126,45 @@ void main() {
     });
 
     test('legacy procedural-biome save gets no invented geographic camera', () {
-      final save = NationalSaveV3.fromLegacy({'v': 2, 'biome': 1, 'ws': 3200.0, 'cam': [100.0, 200.0], 'zoom': 1.0});
+      final save = NationalSaveV3.fromLegacy({
+        'v': 2,
+        'biome': 1,
+        'ws': 3200.0,
+        'cam': [100.0, 200.0],
+        'zoom': 1.0,
+      });
       expect(save.cameraPosition, isNull);
       expect(save.regionId, 'uz_tashkent_city');
     });
 
     test('missing camera values are tolerated; non-finite camera values are ignored', () {
       expect(NationalSaveV3.fromLegacy({'v': 2, 'biome': 4}).cameraPosition, isNull);
-      expect(NationalSaveV3.fromLegacy({'v': 2, 'biome': 4, 'cam': [double.nan, 1.0]}).cameraPosition, isNull);
-      expect(NationalSaveV3.fromLegacy({'v': 2, 'biome': 4, 'cam': [1.0]}).cameraPosition, isNull);
+      expect(
+        NationalSaveV3.fromLegacy({
+          'v': 2,
+          'biome': 4,
+          'cam': [double.nan, 1.0],
+        }).cameraPosition,
+        isNull,
+      );
+      expect(
+        NationalSaveV3.fromLegacy({
+          'v': 2,
+          'biome': 4,
+          'cam': [1.0],
+        }).cameraPosition,
+        isNull,
+      );
       expect(NationalSaveV3.fromLegacy({'v': 2, 'biome': 4, 'cam': 'x'}).cameraPosition, isNull);
     });
 
     test('the legacy input map is not modified', () {
-      final legacy = {'v': 2, 'biome': 4, 'cam': [3200.0, 3200.0], 'zoom': 1.0};
+      final legacy = {
+        'v': 2,
+        'biome': 4,
+        'cam': [3200.0, 3200.0],
+        'zoom': 1.0,
+      };
       NationalSaveV3.fromLegacy(legacy);
       expect(legacy['v'], 2);
       expect(legacy['cam'], [3200.0, 3200.0]);
@@ -133,9 +172,26 @@ void main() {
 
     test('malformed input is rejected with a typed error', () {
       expect(() => NationalSaveV3.fromJson('nope'), throwsA(isA<SaveFormatException>()));
-      expect(() => NationalSaveV3.fromJson({'v': 3}), throwsA(isA<SaveFormatException>().having((e) => e.code, 'code', 'missing_field')));
-      expect(() => NationalSaveV3.fromJson({'v': 3, 'region': 'uz_x', 'camera': [1]}), throwsA(isA<SaveFormatException>()));
-      expect(() => NationalSaveV3.fromJson({'v': 3, 'region': 'uz_x', 'camera': [999.0, 0.0]}), throwsA(isA<SaveFormatException>()));
+      expect(
+        () => NationalSaveV3.fromJson({'v': 3}),
+        throwsA(isA<SaveFormatException>().having((e) => e.code, 'code', 'missing_field')),
+      );
+      expect(
+        () => NationalSaveV3.fromJson({
+          'v': 3,
+          'region': 'uz_x',
+          'camera': [1],
+        }),
+        throwsA(isA<SaveFormatException>()),
+      );
+      expect(
+        () => NationalSaveV3.fromJson({
+          'v': 3,
+          'region': 'uz_x',
+          'camera': [999.0, 0.0],
+        }),
+        throwsA(isA<SaveFormatException>()),
+      );
       expect(() => NationalSaveV3.fromLegacy(null), throwsA(isA<SaveFormatException>()));
       expect(() => NationalSaveV3.parseAny(<String, dynamic>{}), throwsA(isA<SaveFormatException>()));
     });
@@ -152,15 +208,33 @@ void main() {
     });
 
     test('parseAny dispatches v1, v2 and v3', () {
-      expect(NationalSaveV3.parseAny({'v': 1, 'biome': 4, 'cam': [3200.0, 3200.0]}).migratedFromVersion, 1);
-      expect(NationalSaveV3.parseAny({'v': 2, 'biome': 4, 'cam': [3200.0, 3200.0]}).migratedFromVersion, 2);
+      expect(
+        NationalSaveV3.parseAny({
+          'v': 1,
+          'biome': 4,
+          'cam': [3200.0, 3200.0],
+        }).migratedFromVersion,
+        1,
+      );
+      expect(
+        NationalSaveV3.parseAny({
+          'v': 2,
+          'biome': 4,
+          'cam': [3200.0, 3200.0],
+        }).migratedFromVersion,
+        2,
+      );
       expect(NationalSaveV3.parseAny({'v': 3, 'region': 'uz_bukhara'}).regionId, 'uz_bukhara');
     });
 
     test('migrator returns null (caller keeps the old save) when migration fails', () {
       expect(NationalSaveMigrator.tryMigrate({'v': 99}), isNull);
       expect(NationalSaveMigrator.tryMigrate('garbage'), isNull);
-      final ok = NationalSaveMigrator.tryMigrate({'v': 2, 'biome': 4, 'cam': [3200.0, 3200.0]});
+      final ok = NationalSaveMigrator.tryMigrate({
+        'v': 2,
+        'biome': 4,
+        'cam': [3200.0, 3200.0],
+      });
       expect(ok, isNotNull);
       expect(ok!['v'], 3);
     });

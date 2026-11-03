@@ -48,7 +48,10 @@ class RoadGraphLinker {
   /// Registers a portal. Throws [PortalException] for empty IDs, a duplicate portal ID, a
   /// self-link (source chunk == destination chunk) or an invalid position.
   void registerPortal(PortalNode portal) {
-    if (portal.portalId.isEmpty || portal.globalWayId.isEmpty || portal.sourceChunkId.isEmpty || portal.destinationChunkId.isEmpty) {
+    if (portal.portalId.isEmpty ||
+        portal.globalWayId.isEmpty ||
+        portal.sourceChunkId.isEmpty ||
+        portal.destinationChunkId.isEmpty) {
       throw const PortalException('Portal IDs and chunk IDs must not be empty');
     }
     if (portal.sourceChunkId == portal.destinationChunkId) {

@@ -6,3 +6,7 @@ build/
 *.pat
 __pycache__/
 *.pyc
+.flutter-plugins-dependencies
+android/local.properties
+android/app/src/main/java/
+pubspec.lock

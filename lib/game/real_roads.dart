@@ -32,7 +32,9 @@ class RealRoads {
       final pts = [for (var i = 0; i + 1 < f.length; i += 2) Offset(f[i], f[i + 1])];
       if (pts.length < 2) continue;
       final mid = pts[pts.length ~/ 2];
-      out.add(RealRoad(r[0] as int, r[1] as int, (r[2] as int) == 1, pts, max((mid.dx - 3200).abs(), (mid.dy - 3200).abs())));
+      out.add(
+        RealRoad(r[0] as int, r[1] as int, (r[2] as int) == 1, pts, max((mid.dx - 3200).abs(), (mid.dy - 3200).abs())),
+      );
     }
     return _cache = out;
   }

@@ -7,12 +7,32 @@ class L {
   // [uz, ru, en]
   static const List<List<String>> _t = [
     // --- temir yo'l (uzun jumlalar oldin, qisqa so'zlar keyin)
-    ["Barmoqni bosib sudrang: temir yo'l quriladi (suv ustida ko'prik, tog'da tunnel)", "Проведите пальцем: построится железная дорога (мост над водой, тоннель в горе)", "Drag your finger: a railway will be built (bridge over water, tunnel in mountains)"],
-    ["Temir yo'l ustiga bosing: stansiya quriladi (poyezd uchun kamida ikkita kerak)", "Нажмите на железную дорогу: построится станция (для поезда нужно минимум две)", "Tap the railway to build a station (a train needs at least two)"],
+    [
+      "Barmoqni bosib sudrang: temir yo'l quriladi (suv ustida ko'prik, tog'da tunnel)",
+      "Проведите пальцем: построится железная дорога (мост над водой, тоннель в горе)",
+      "Drag your finger: a railway will be built (bridge over water, tunnel in mountains)",
+    ],
+    [
+      "Temir yo'l ustiga bosing: stansiya quriladi (poyezd uchun kamida ikkita kerak)",
+      "Нажмите на железную дорогу: построится станция (для поезда нужно минимум две)",
+      "Tap the railway to build a station (a train needs at least two)",
+    ],
     ["Stansiyani temir yo'l ustiga qo'ying", "Ставьте станцию на железную дорогу", "Place the station on the railway"],
-    ["Stansiya faqat yer ustidagi, yo'ldan xoli joyga qo'yiladi", "Станция строится только на земле, вдали от дорог", "Stations go on ground-level track, away from roads"],
-    ["Stansiyalar orasi kamida 150 birlik bo'lsin", "Станции должны быть не ближе 150 единиц друг к другу", "Stations must be at least 150 units apart"],
-    ["Tunnel og'zi tog'dan tashqarida bo'lishi kerak", "Вход в тоннель должен быть вне горы", "Tunnel entrance must be outside the mountain"],
+    [
+      "Stansiya faqat yer ustidagi, yo'ldan xoli joyga qo'yiladi",
+      "Станция строится только на земле, вдали от дорог",
+      "Stations go on ground-level track, away from roads",
+    ],
+    [
+      "Stansiyalar orasi kamida 150 birlik bo'lsin",
+      "Станции должны быть не ближе 150 единиц друг к другу",
+      "Stations must be at least 150 units apart",
+    ],
+    [
+      "Tunnel og'zi tog'dan tashqarida bo'lishi kerak",
+      "Вход в тоннель должен быть вне горы",
+      "Tunnel entrance must be outside the mountain",
+    ],
     ["Ko'prik juda uzun", "Мост слишком длинный", "Bridge too long"],
     ["Tunnel juda uzun", "Тоннель слишком длинный", "Tunnel too long"],
     ["To'r faqat yo'llar uchun", "Сетка только для дорог", "Grid is for roads only"],
@@ -31,22 +51,58 @@ class L {
     ["Tunnel", "Тоннель", "Tunnel"],
     ["Toshkent ko'chalari yuklandi", "Улицы Ташкента загружены", "Tashkent streets loaded"],
     // --- jumlalar va yo'riqnomalar
-    ["Xaritani suring; 2 barmoq bilan kattalashtiring va buring", "Двигайте карту; двумя пальцами масштабируйте и вращайте", "Drag to pan; use two fingers to zoom and rotate"],
-    ["Barmoqni bosib sudrang: to'g'ri yo'l shu yerda quriladi", "Проведите пальцем: здесь будет прямая дорога", "Drag your finger: a straight road will be built here"],
+    [
+      "Xaritani suring; 2 barmoq bilan kattalashtiring va buring",
+      "Двигайте карту; двумя пальцами масштабируйте и вращайте",
+      "Drag to pan; use two fingers to zoom and rotate",
+    ],
+    [
+      "Barmoqni bosib sudrang: to'g'ri yo'l shu yerda quriladi",
+      "Проведите пальцем: здесь будет прямая дорога",
+      "Drag your finger: a straight road will be built here",
+    ],
     ["Yo'lni egish uchun kerakli joyga barmoqni bosing", "Нажмите, чтобы изогнуть дорогу", "Tap to bend the road"],
-    ["Boshidan oxirigacha sudrang, keyin eging", "Проведите от начала до конца, затем изогните", "Drag from start to end, then bend"],
-    ["Chorrahaga bosing: svetofor qo'yish, vaqtini o'zgartirish yoki olib tashlash", "Нажмите на перекрёсток: поставить светофор, изменить время или убрать", "Tap a junction: add a signal, change timing or remove"],
-    ["Chorrahaga bosing: shu joyda aylana chorraha quriladi", "Нажмите на перекрёсток: здесь построится кольцо", "Tap a junction: a roundabout will be built here"],
-    ["Bo'sh joyga bosing: bino qo'yiladi", "Нажмите на свободное место: появится здание", "Tap an empty spot to place a building"],
-    ["Mashina, yo'l yoki chorrahaga bosing: ma'lumot chiqadi", "Нажмите на машину, дорогу или перекрёсток: покажется информация", "Tap a vehicle, road or junction for info"],
-    ["Yo'lga tegib o'chiring (pul to'liq qaytadi)", "Коснитесь дороги, чтобы убрать (деньги вернутся полностью)", "Tap a road to erase (full refund)"],
+    [
+      "Boshidan oxirigacha sudrang, keyin eging",
+      "Проведите от начала до конца, затем изогните",
+      "Drag from start to end, then bend",
+    ],
+    [
+      "Chorrahaga bosing: svetofor qo'yish, vaqtini o'zgartirish yoki olib tashlash",
+      "Нажмите на перекрёсток: поставить светофор, изменить время или убрать",
+      "Tap a junction: add a signal, change timing or remove",
+    ],
+    [
+      "Chorrahaga bosing: shu joyda aylana chorraha quriladi",
+      "Нажмите на перекрёсток: здесь построится кольцо",
+      "Tap a junction: a roundabout will be built here",
+    ],
+    [
+      "Bo'sh joyga bosing: bino qo'yiladi",
+      "Нажмите на свободное место: появится здание",
+      "Tap an empty spot to place a building",
+    ],
+    [
+      "Mashina, yo'l yoki chorrahaga bosing: ma'lumot chiqadi",
+      "Нажмите на машину, дорогу или перекрёсток: покажется информация",
+      "Tap a vehicle, road or junction for info",
+    ],
+    [
+      "Yo'lga tegib o'chiring (pul to'liq qaytadi)",
+      "Коснитесь дороги, чтобы убрать (деньги вернутся полностью)",
+      "Tap a road to erase (full refund)",
+    ],
     // --- xatolar va xabarlar
     ["Mablag' yetarli emas", "Недостаточно средств", "Not enough budget"],
     ["Juda qisqa", "Слишком короткая", "Too short"],
     ["Burchak juda keskin", "Слишком острый угол", "Angle too sharp"],
     ["Suv ustiga yo'l qurib bo'lmaydi", "На воде строить нельзя", "Can't build on water"],
     ["Yo'l binoga tegmoqda", "Дорога задевает здание", "Road touches a building"],
-    ["Chorraha ustiga bosing (kamida 3 yo'l)", "Нажмите на перекрёсток (минимум 3 дороги)", "Tap a junction (at least 3 roads)"],
+    [
+      "Chorraha ustiga bosing (kamida 3 yo'l)",
+      "Нажмите на перекрёсток (минимум 3 дороги)",
+      "Tap a junction (at least 3 roads)",
+    ],
     ["Aylana chorraha qurildi", "Кольцо построено", "Roundabout built"],
     ["Svetofor qo'yildi: yashil", "Светофор поставлен: зелёный", "Signal placed: green"],
     ["Svetofor olib tashlandi", "Светофор убран", "Signal removed"],
@@ -54,7 +110,11 @@ class L {
     ["Bu yerga bino qurib bo'lmaydi", "Здесь строить нельзя", "Can't build here"],
     ["Joy band yoki yo'l juda yaqin", "Место занято или дорога слишком близко", "Spot taken or road too close"],
     ["Bu yerda ma'lumot yo'q", "Здесь нет информации", "No info here"],
-    ["Diqqat: yo'l uchi yaqin yo'lga ulanmadi. Uchini yo'lga yaqinlashtiring", "Внимание: конец дороги не соединён с соседней. Приблизьте его к дороге", "Warning: the road end is not joined to a nearby road. Move it closer"],
+    [
+      "Diqqat: yo'l uchi yaqin yo'lga ulanmadi. Uchini yo'lga yaqinlashtiring",
+      "Внимание: конец дороги не соединён с соседней. Приблизьте его к дороге",
+      "Warning: the road end is not joined to a nearby road. Move it closer",
+    ],
     ["Kamida 3 ta yo'l kerak", "Нужно минимум 3 дороги", "At least 3 roads needed"],
     ["Bir tomonlama yo'l bilan bo'lmaydi", "Нельзя с односторонней дорогой", "Not possible with a one-way road"],
     ["Yopiq halqa yo'l bilan bo'lmaydi", "Нельзя с замкнутой петлёй", "Not possible with a closed loop"],
@@ -77,16 +137,32 @@ class L {
     ["Saqlangan o'yin topilmadi", "Сохранение не найдено", "No saved game found"],
     ["Saqlandi", "Сохранено", "Saved"],
     ["Yuklandi", "Загружено", "Loaded"],
-    ["Zavod ifloslanishi va shovqin uylarni bezovta qilyapti", "Загрязнение от заводов и шум беспокоят жителей", "Factory pollution and noise are bothering residents"],
-    ["Zavod: ifloslanish manbai (250 birlik atrofida)", "Завод: источник загрязнения (радиус 250)", "Factory: pollution source (radius 250)"],
+    [
+      "Zavod ifloslanishi va shovqin uylarni bezovta qilyapti",
+      "Загрязнение от заводов и шум беспокоят жителей",
+      "Factory pollution and noise are bothering residents",
+    ],
+    [
+      "Zavod: ifloslanish manbai (250 birlik atrofida)",
+      "Завод: источник загрязнения (радиус 250)",
+      "Factory: pollution source (radius 250)",
+    ],
     ["ekologik yuk", "экологическая нагрузка", "environmental load"],
     ["yo'lga ulangan", "подключено к дороге", "road access"],
     ["Ekologiya", "Экология", "Ecology"],
     ["Ko'prik uchlari quruqlikda bo'lishi kerak", "Концы моста должны быть на суше", "Bridge ends must be on land"],
     ["Estakada", "Эстакада", "Overpass"],
     ["Yer usti", "Земля", "Ground"],
-    ["Burchakdan burchakka sudrang: ko'cha to'ri quriladi", "Проведите из угла в угол: построится сетка улиц", "Drag corner to corner: a street grid will be built"],
-    ["Juda ko'p yo'l (oraliqni kattalashtiring)", "Слишком много дорог (увеличьте шаг)", "Too many roads (increase spacing)"],
+    [
+      "Burchakdan burchakka sudrang: ko'cha to'ri quriladi",
+      "Проведите из угла в угол: построится сетка улиц",
+      "Drag corner to corner: a street grid will be built",
+    ],
+    [
+      "Juda ko'p yo'l (oraliqni kattalashtiring)",
+      "Слишком много дорог (увеличьте шаг)",
+      "Too many roads (increase spacing)",
+    ],
     ["Maydon juda kichik", "Слишком маленькая область", "Area too small"],
     ["To'r qurildi", "Сетка построена", "Grid built"],
     ["Yo'l qurib bo'lmaydi", "Построить нельзя", "Can't build"],
@@ -111,7 +187,11 @@ class L {
     ["Adaptiv svetofor: navbatga qarab", "Адаптивный светофор: по очереди машин", "Adaptive signal: follows the queue"],
     ["adaptiv", "адаптивный", "adaptive"],
     ["Magistral", "Скоростное шоссе", "Highway"],
-    ["Yo'l qurilishi va transport simulyatsiyasi", "Строительство дорог и симуляция транспорта", "Road building and traffic simulation"],
+    [
+      "Yo'l qurilishi va transport simulyatsiyasi",
+      "Строительство дорог и симуляция транспорта",
+      "Road building and traffic simulation",
+    ],
     ["Saqlangan o'yinlar", "Сохранения", "Saved games"],
     ["Davom etish", "Продолжить", "Continue"],
     ["Sozlamalar", "Настройки", "Settings"],
@@ -122,14 +202,42 @@ class L {
     ["Sandbox", "Песочница", "Sandbox"],
     ["Til", "Язык", "Language"],
     // --- o'rgatuvchi vazifalar
-    ["Kamerani suring, kattalashtiring yoki buring (2 barmoq)", "Двигайте, масштабируйте или вращайте карту (2 пальца)", "Pan, zoom or rotate the map (2 fingers)"],
-    ["«To'g'ri» asbobi bilan birinchi yo'lni chizing", "Проведите первую дорогу инструментом «Прямая»", "Draw your first road with the «Straight» tool"],
+    [
+      "Kamerani suring, kattalashtiring yoki buring (2 barmoq)",
+      "Двигайте, масштабируйте или вращайте карту (2 пальца)",
+      "Pan, zoom or rotate the map (2 fingers)",
+    ],
+    [
+      "«To'g'ri» asbobi bilan birinchi yo'lni chizing",
+      "Проведите первую дорогу инструментом «Прямая»",
+      "Draw your first road with the «Straight» tool",
+    ],
     ["Barcha binolarni yo'lga ulang", "Соедините все здания дорогами", "Connect all buildings with roads"],
-    ["Mashinalar yurishini kuzating (kamida 3 safar)", "Понаблюдайте за движением (минимум 3 поездки)", "Watch the traffic flow (at least 3 trips)"],
-    ["«Tirbandlik» tugmasi bilan yo'l yuklanishini ko'ring", "Нажмите «Пробки», чтобы увидеть загрузку дорог", "Press «Traffic» to see road load"],
-    ["«Svetofor» bilan chorrahaga svetofor qo'ying", "Поставьте светофор на перекрёстке («Светофор»)", "Place a signal at a junction with «Signal»"],
-    ["«Aylana» bilan aylana chorraha quring", "Постройте кольцо инструментом «Кольцо»", "Build a roundabout with «Roundabout»"],
-    ["Mamnuniyatni oshirib 2-darajaga chiqing", "Повысьте довольство и достигните 2-го уровня", "Raise satisfaction and reach level 2"],
+    [
+      "Mashinalar yurishini kuzating (kamida 3 safar)",
+      "Понаблюдайте за движением (минимум 3 поездки)",
+      "Watch the traffic flow (at least 3 trips)",
+    ],
+    [
+      "«Tirbandlik» tugmasi bilan yo'l yuklanishini ko'ring",
+      "Нажмите «Пробки», чтобы увидеть загрузку дорог",
+      "Press «Traffic» to see road load",
+    ],
+    [
+      "«Svetofor» bilan chorrahaga svetofor qo'ying",
+      "Поставьте светофор на перекрёстке («Светофор»)",
+      "Place a signal at a junction with «Signal»",
+    ],
+    [
+      "«Aylana» bilan aylana chorraha quring",
+      "Постройте кольцо инструментом «Кольцо»",
+      "Build a roundabout with «Roundabout»",
+    ],
+    [
+      "Mamnuniyatni oshirib 2-darajaga chiqing",
+      "Повысьте довольство и достигните 2-го уровня",
+      "Raise satisfaction and reach level 2",
+    ],
     // --- sarlavhalar, tugmalar, chiplar
     ["Sandbox: cheksiz mablag'", "Песочница: безлимитный бюджет", "Sandbox: unlimited budget"],
     ["Sandbox (cheksiz mablag')", "Песочница (безлимитный бюджет)", "Sandbox (unlimited budget)"],
@@ -208,16 +316,11 @@ class L {
   static List<(RegExp, String, String)>? _cache;
 
   static List<(RegExp, String, String)> get _rules => _cache ??= () {
-        final l = List<List<String>>.of(_t)..sort((a, b) => b[0].length.compareTo(a[0].length));
-        return [
-          for (final e in l)
-            (
-              RegExp("(?<![\\p{L}'’])${RegExp.escape(e[0])}(?![\\p{L}'’])", unicode: true),
-              e[1],
-              e[2],
-            )
-        ];
-      }();
+    final l = List<List<String>>.of(_t)..sort((a, b) => b[0].length.compareTo(a[0].length));
+    return [
+      for (final e in l) (RegExp("(?<![\\p{L}'’])${RegExp.escape(e[0])}(?![\\p{L}'’])", unicode: true), e[1], e[2]),
+    ];
+  }();
 
   /// O'zbekcha matnni tanlangan tilga o'giradi.
   static String t(String s) {

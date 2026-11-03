@@ -119,7 +119,10 @@ class RegionPackageManifest {
     final rawDigest = m['packageSha256'];
     final digest = Sha256Verifier.normalize(rawDigest is String ? rawDigest : null);
     if (digest == null) {
-      throw const RegionPackageException('invalid_manifest', 'Manifest packageSha256 must be 64 lowercase hex characters');
+      throw const RegionPackageException(
+        'invalid_manifest',
+        'Manifest packageSha256 must be 64 lowercase hex characters',
+      );
     }
     final rawFiles = m['files'];
     if (rawFiles is! List || rawFiles.isEmpty) {
@@ -178,11 +181,11 @@ class InstalledPackage {
   });
 
   Map<String, dynamic> toJson() => {
-        'regionId': regionId,
-        'packageId': packageId,
-        'version': version,
-        'packageSha256': packageSha256,
-      };
+    'regionId': regionId,
+    'packageId': packageId,
+    'version': version,
+    'packageSha256': packageSha256,
+  };
 
   static InstalledPackage? tryFromJson(String regionId, Object? json) {
     if (json is! Map<String, dynamic>) return null;
@@ -215,8 +218,8 @@ class RegionPackageManager {
   Future<void> Function(String stage)? debugFailureHook;
 
   RegionPackageManager({Set<String> bundledRegionIds = const {'uz_tashkent_city'}})
-      : _root = null,
-        _bundledRegionIds = bundledRegionIds;
+    : _root = null,
+      _bundledRegionIds = bundledRegionIds;
 
   RegionPackageManager._(this._root, this._bundledRegionIds);
 
@@ -364,7 +367,10 @@ class RegionPackageManager {
         throw RegionPackageException('unlisted_file', 'Archive contains a file not listed in the manifest: $name');
       }
     }
-    if (!Sha256Verifier.digestsMatch(RegionPackageManifest.computePackageDigest(manifest.files), manifest.packageSha256)) {
+    if (!Sha256Verifier.digestsMatch(
+      RegionPackageManifest.computePackageDigest(manifest.files),
+      manifest.packageSha256,
+    )) {
       throw const RegionPackageException('package_hash_mismatch', 'Package digest does not match the file list');
     }
     return (manifest: manifest, entries: entries);
@@ -384,10 +390,16 @@ class RegionPackageManager {
     if (existing != null) {
       final c = compareVersions(manifest.version, existing.version);
       if (c == 0) {
-        throw RegionPackageException('already_installed', 'Version ${manifest.version} of $regionId is already installed');
+        throw RegionPackageException(
+          'already_installed',
+          'Version ${manifest.version} of $regionId is already installed',
+        );
       }
       if (c < 0) {
-        throw RegionPackageException('downgrade_rejected', 'Refusing to downgrade $regionId from ${existing.version} to ${manifest.version}');
+        throw RegionPackageException(
+          'downgrade_rejected',
+          'Refusing to downgrade $regionId from ${existing.version} to ${manifest.version}',
+        );
       }
     }
 

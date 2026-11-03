@@ -90,9 +90,14 @@ void main() {
       ];
       for (final p in pts) {
         final w = NationalCoordinateSystem.legacyUnitsToWgs84(p[0], p[1]);
+        // Full double precision: the original 1e-5 requirement is kept for the exact API.
+        final exact = NationalCoordinateSystem.wgs84ToLegacyUnitsExact(w);
+        expect(exact.x, closeTo(p[0], 1e-5));
+        expect(exact.y, closeTo(p[1], 1e-5));
+        // Flame Vector2 is float32: its ulp at 6000 is ~4.9e-4, so 1e-3 is the physical limit there.
         final back = NationalCoordinateSystem.wgs84ToLegacyUnits(w);
-        expect(back.x, closeTo(p[0], 1e-5));
-        expect(back.y, closeTo(p[1], 1e-5));
+        expect(back.x, closeTo(p[0], 1e-3));
+        expect(back.y, closeTo(p[1], 1e-3));
       }
     });
 
@@ -160,10 +165,14 @@ void main() {
       expect(() => NationalCoordinateSystem.wgs84ToEnu(bad, origin), throwsA(isA<GeoCoordinateException>()));
       expect(() => NationalCoordinateSystem.wgs84ToEnu(origin, bad), throwsA(isA<GeoCoordinateException>()));
       expect(
-        () => NationalCoordinateSystem.enuToWgs84(const LocalEnuCoord(eastMeters: double.nan, northMeters: 0.0), origin),
+        () =>
+            NationalCoordinateSystem.enuToWgs84(const LocalEnuCoord(eastMeters: double.nan, northMeters: 0.0), origin),
         throwsA(isA<GeoCoordinateException>()),
       );
-      expect(() => NationalCoordinateSystem.legacyUnitsToWgs84(double.infinity, 0.0), throwsA(isA<GeoCoordinateException>()));
+      expect(
+        () => NationalCoordinateSystem.legacyUnitsToWgs84(double.infinity, 0.0),
+        throwsA(isA<GeoCoordinateException>()),
+      );
       expect(() => NationalCoordinateSystem().setFloatingOrigin(bad), throwsA(isA<GeoCoordinateException>()));
       expect(
         () => NationalCoordinateSystem.geodesicDistanceMeters(bad, origin),
@@ -194,10 +203,7 @@ void main() {
     });
 
     test('Tashkent to Samarkand is plausible (~270 km air distance)', () {
-      final d = NationalCoordinateSystem.geodesicDistanceMeters(
-        origin,
-        const Wgs84Coord(lon: 66.9597, lat: 39.6547),
-      );
+      final d = NationalCoordinateSystem.geodesicDistanceMeters(origin, const Wgs84Coord(lon: 66.9597, lat: 39.6547));
       expect(d, inInclusiveRange(260000.0, 280000.0));
     });
   });

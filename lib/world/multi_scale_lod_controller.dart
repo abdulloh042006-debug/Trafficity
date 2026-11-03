@@ -32,11 +32,14 @@ class MultiScaleLodController {
     required bool regionHasDetailedPack,
   }) {
     if (!cameraZoom.isFinite) {
-      return regionHasDetailedPack ? GeographicalDetailLevel.level3CityView2D : GeographicalDetailLevel.level2RegionalView;
+      return regionHasDetailedPack
+          ? GeographicalDetailLevel.level3CityView2D
+          : GeographicalDetailLevel.level2RegionalView;
     }
     if (cameraZoom < regionalZoomThreshold) return GeographicalDetailLevel.level1CountryOverview;
     if (!regionHasDetailedPack || cameraZoom < cityZoomThreshold) return GeographicalDetailLevel.level2RegionalView;
-    if (is3DPerspectiveActive && cameraZoom >= urban3dZoomThreshold) return GeographicalDetailLevel.level4DetailedUrban3D;
+    if (is3DPerspectiveActive && cameraZoom >= urban3dZoomThreshold)
+      return GeographicalDetailLevel.level4DetailedUrban3D;
     return GeographicalDetailLevel.level3CityView2D;
   }
 
@@ -55,5 +58,6 @@ class MultiScaleLodController {
 
   /// True when the active level shows playable, detailed content.
   bool get isDetailed =>
-      _activeLevel == GeographicalDetailLevel.level3CityView2D || _activeLevel == GeographicalDetailLevel.level4DetailedUrban3D;
+      _activeLevel == GeographicalDetailLevel.level3CityView2D ||
+      _activeLevel == GeographicalDetailLevel.level4DetailedUrban3D;
 }

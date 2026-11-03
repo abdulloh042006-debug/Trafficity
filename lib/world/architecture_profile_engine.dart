@@ -13,7 +13,10 @@ class ArchitectureProfileEngine {
   /// Profile identifiers used by `region_catalog.json` (`architectureProfileId`).
   static const Map<String, ArchitectureProfile> supportedProfiles = {
     'tashkent_modern_soviet': ArchitectureProfile(id: 'tashkent_modern_soviet', label: 'Tashkent modern / Soviet'),
-    'samarkand_timurid_heritage': ArchitectureProfile(id: 'samarkand_timurid_heritage', label: 'Samarkand Timurid heritage'),
+    'samarkand_timurid_heritage': ArchitectureProfile(
+      id: 'samarkand_timurid_heritage',
+      label: 'Samarkand Timurid heritage',
+    ),
     'bukhara_historic_oasis': ArchitectureProfile(id: 'bukhara_historic_oasis', label: 'Bukhara historic oasis'),
     'khiva_ichan_kala': ArchitectureProfile(id: 'khiva_ichan_kala', label: 'Khiva Ichan-Kala'),
     'fergana_valley_urban': ArchitectureProfile(id: 'fergana_valley_urban', label: 'Fergana Valley urban'),

@@ -69,11 +69,7 @@ class _UzbekistanHudButtonState extends State<UzbekistanHudButton> {
                   const SizedBox(width: 6),
                   Text(
                     'UZ: $title',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
                   ),
                 ],
               ),
