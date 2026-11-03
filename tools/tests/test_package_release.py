@@ -64,6 +64,7 @@ class ReleaseBase(unittest.TestCase):
         self.addCleanup(lambda: self.out.unlink(missing_ok=True))
 
     def run_release(self, env: FakeEnv, **kw):
+        kw.setdefault("android_sdk", lambda: True)  # tests run without a real Android SDK; see the SDK tests below
         return pr.run_release(self.root, runner=env.runner, which=env.which, out_zip=self.out, log=lambda _m: None, **kw)
 
 
@@ -141,6 +142,52 @@ class PipelineTests(ReleaseBase):
             self.assertEqual(r.steps[-1].name, "APK exists and is non-empty")
             self.assertFalse(self.out.exists(), kwargs)
             shutil.rmtree(self.root / "build", ignore_errors=True)
+
+    def test_missing_android_sdk_is_a_failure_in_strict_mode_and_the_build_is_not_attempted(self):
+        env = FakeEnv(self.root)
+        r = self.run_release(env, android_sdk=lambda: False)
+        self.assertEqual(r.status, "FAILED")
+        self.assertIn("Android SDK", r.steps[-1].detail)
+        self.assertEqual(r.steps[-1].name, "flutter build apk --debug")
+        self.assertFalse(any(c.startswith("flutter build apk") for c in env.commands))
+        self.assertFalse(self.out.exists())
+
+    def test_missing_android_sdk_is_blocked_with_allow_blocked_and_never_release_ready(self):
+        env = FakeEnv(self.root)
+        r = self.run_release(env, android_sdk=lambda: False, allow_blocked=True)
+        self.assertEqual(r.status, "BLOCKED")
+        self.assertEqual(r.exit_code, 3)
+        by_name = {s.name: s for s in r.steps}
+        self.assertEqual(by_name["flutter build apk --debug"].status, "BLOCKED")
+        self.assertEqual(by_name["APK exists and is non-empty"].status, "BLOCKED")
+        self.assertFalse(any(c.startswith("flutter build apk") for c in env.commands))
+        self.assertTrue(self.out.exists())
+
+    def test_android_sdk_detection_uses_existing_directories_only(self):
+        self.assertFalse(pr._android_sdk_available({}))
+        self.assertFalse(pr._android_sdk_available({"ANDROID_HOME": str(self.root / "nope")}))
+        self.assertTrue(pr._android_sdk_available({"ANDROID_SDK_ROOT": str(self.root)}))
+        self.assertTrue(pr._android_sdk_available({"ANDROID_HOME": str(self.root)}))
+
+    def test_scaffold_removes_the_generated_widget_test_but_keeps_an_existing_one(self):
+        class Env(FakeEnv):
+            def runner(inner, cmd, cwd):
+                if cmd[:2] == ["flutter", "create"]:
+                    (self.root / "test").mkdir(exist_ok=True)
+                    wt = self.root / "test" / "widget_test.dart"
+                    if not wt.exists():                  # `flutter create .` never overwrites existing files
+                        wt.write_text("// generated counter test")
+                return super().runner(cmd, cwd)
+
+        r = self.run_release(Env(self.root))
+        self.assertEqual(r.status, "READY")
+        self.assertFalse((self.root / "test" / "widget_test.dart").exists())
+        shutil.rmtree(self.root / "build", ignore_errors=True)
+        (self.root / "test").mkdir(exist_ok=True)
+        (self.root / "test" / "widget_test.dart").write_text("// the project's own test")
+        r = self.run_release(Env(self.root))
+        self.assertEqual(r.status, "READY")
+        self.assertEqual((self.root / "test" / "widget_test.dart").read_text(), "// the project's own test")
 
     def test_scaffold_is_skipped_when_android_project_exists(self):
         (self.root / "android/app").mkdir(parents=True)

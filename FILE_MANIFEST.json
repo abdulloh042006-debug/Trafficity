@@ -25,8 +25,8 @@
       "index": 3,
       "path": "package.json",
       "scope": "expansion",
-      "sizeBytes": 652,
-      "sha256": "0fe8f99ab1cca31b8fa486458bdba1f5ee3ea8b77551f6fc96ba2af4075e44ea",
+      "sizeBytes": 734,
+      "sha256": "8a0db08393b36065a81fc1b7c5c982f87e33c96e3e06c999505cb27037198a57",
       "description": "Node.js paket konfiguratsiyasi, CLI bin va npm test skripti"
     },
     {
@@ -97,80 +97,80 @@
       "index": 12,
       "path": "lib/world/geo_coordinate_system.dart",
       "scope": "expansion",
-      "sizeBytes": 12688,
-      "sha256": "d90c694ef9a1bb47d88e6d3dea1c823c5b490353086199cc477130d3b07bfff9",
+      "sizeBytes": 13257,
+      "sha256": "4dccfed0e60cae2c29f81ebbaf3ba95347b78553c59b138ea82efcb914703a28",
       "description": "WGS84 <-> Local ENU va Floating Origin koordinata tizimi"
     },
     {
       "index": 13,
       "path": "lib/world/admin_hierarchy.dart",
       "scope": "expansion",
-      "sizeBytes": 2416,
-      "sha256": "7d5526084f887cea30892d48bcffd1712b63fe9178d5c930b205868b3289f024",
+      "sizeBytes": 2414,
+      "sha256": "e44133ad6bd027ccce23aaa5423f994a3fbea5313b969a89ceb9775e4f746db1",
       "description": "14 hudud ma'muriy iyerarxiyasi va modellari"
     },
     {
       "index": 14,
       "path": "lib/world/region_package_manager.dart",
       "scope": "expansion",
-      "sizeBytes": 22511,
-      "sha256": "a2e34d1ea631800ea3a968ed6158e6b380991e7038ac375ca015ad0eaf616bcb",
+      "sizeBytes": 22593,
+      "sha256": "bc6aaaedfb379cc444fbcb0b5457a7f83c33c7820608141bfd693e5ff070fa55",
       "description": "SHA-256 paket tekshiruvchi va lokal paket menejeri"
     },
     {
       "index": 15,
       "path": "lib/world/multi_scale_lod_controller.dart",
       "scope": "expansion",
-      "sizeBytes": 2770,
-      "sha256": "097b8e9f0a9931d2c9aa763b02d64aff96803414aea5a72fd79006a039cb6fef",
+      "sizeBytes": 2802,
+      "sha256": "589ebd8f59d9f930c6b45a0fdae15376a687685a87d774e7b2a533b062454d2f",
       "description": "4-bosqichli (Country/Region/City2D/Urban3D) LOD kontrolleri"
     },
     {
       "index": 16,
       "path": "lib/world/road_graph_linker.dart",
       "scope": "expansion",
-      "sizeBytes": 3417,
-      "sha256": "1d86eaf1d9f2944a8070e9cf4c7b6b70548e11134d8997070f69c4abb774e0de",
+      "sizeBytes": 3441,
+      "sha256": "af634e723d4c57e7fc0f2ef3d71ddd38f4696736a35a56964c38513d9eb7488e",
       "description": "Hududlararo yo'l grafini ulash moduli"
     },
     {
       "index": 17,
       "path": "lib/world/architecture_profile_engine.dart",
       "scope": "expansion",
-      "sizeBytes": 1958,
-      "sha256": "046b8078dc712f5e269bc369d9f31bf98a69724ddb3f278bb122d81a3ce64e45",
+      "sizeBytes": 1977,
+      "sha256": "5422c49dc98502c977866e4fce6a2dc935f3ef1fda4df72eb3f85527c264bd0d",
       "description": "Hududiy arxitektura profillari va obidalar moduli"
     },
     {
       "index": 18,
       "path": "lib/world/national_save_manager.dart",
       "scope": "expansion",
-      "sizeBytes": 6010,
-      "sha256": "b40758d71ebd507e6cfea45dde351b3a458510c558d89461635e34579903ce61",
+      "sizeBytes": 5982,
+      "sha256": "65fa1b44148c1379e07e58897b37f64198828fd98d08d94a23f1fa6774f77d46",
       "description": "Milliy saqlash formati (v3) moduli"
     },
     {
       "index": 19,
       "path": "lib/world/world_controller.dart",
       "scope": "expansion",
-      "sizeBytes": 1566,
-      "sha256": "7b5a38ce09bb872e011931047b23cc8b8297a677975bf9b31020b81a386a6632",
+      "sizeBytes": 4777,
+      "sha256": "719b5fdd6664ca4410cd54543e52f7d54ed02c35709aa7ff2ea2aec240fd88d2",
       "description": "O'zbekiston dunyo kontrolleri (initializeFromAssets bilan)"
     },
     {
       "index": 20,
       "path": "lib/ui/region_selector_overlay.dart",
       "scope": "expansion",
-      "sizeBytes": 1105,
-      "sha256": "d5c00af87f42b8e77c043391e5417aeca6d44d41fed8e46f4288706e8d5a93e2",
+      "sizeBytes": 9318,
+      "sha256": "88eeb04e1efa317439c4f0a2ca5eed68b1819fc666bfc78fe3273366bb47ea72",
       "description": "14 ta hududni tanlash interfeysi (Overlay)"
     },
     {
       "index": 21,
       "path": ".gitignore",
       "scope": "base",
-      "sizeBytes": 69,
-      "sha256": "55f86e753f55ad790ad61642613118ef547b953056d3a694b4beea80e75707bf",
+      "sizeBytes": 164,
+      "sha256": "92ab20e558066aac25fb44cc2bcdfcf22a3fdafeca44ce80f2dea93f0c31df36",
       "description": "Git ignore qoidalari (Node, Flutter, ZIP va token himoyasi)"
     },
     {

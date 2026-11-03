@@ -190,6 +190,12 @@ def validate_zip(root: Path, out: Path) -> list[str]:
 
 # ----------------------------------------------------------------------------- pipeline
 
+def _android_sdk_available(env: dict[str, str] | None = None) -> bool:
+    """True when ANDROID_HOME or ANDROID_SDK_ROOT points at an existing directory (needed by `flutter build apk`)."""
+    env = os.environ if env is None else env
+    return any(env.get(k) and Path(env[k]).is_dir() for k in ("ANDROID_HOME", "ANDROID_SDK_ROOT"))
+
+
 def _android_present(root: Path) -> bool:
     return (root / "android" / "app" / "build.gradle").exists() or (root / "android" / "app" / "build.gradle.kts").exists()
 
@@ -198,6 +204,7 @@ def run_release(
     root: Path = REPO_ROOT,
     runner: Runner = subprocess_runner,
     which: Callable[[str], str | None] = shutil.which,
+    android_sdk: Callable[[], bool] | None = None,
     allow_blocked: bool = False,
     out_zip: Path | None = None,
     steps: list[Step] | None = None,
@@ -205,6 +212,7 @@ def run_release(
 ) -> ReleaseResult:
     root = Path(root)
     out_zip = Path(out_zip) if out_zip else root / ZIP_NAME
+    has_sdk = android_sdk if android_sdk is not None else _android_sdk_available
     result = ReleaseResult(status="READY")
     blocked = False
 
@@ -248,6 +256,17 @@ def run_release(
             continue
 
         command = " ".join(step.cmd or [])
+        if step.kind == "apk" and which(step.tool or "flutter") is not None and not has_sdk():
+            # `flutter build apk` cannot work without the Android SDK: say so instead of running it to a vague failure
+            detail = "Android SDK not found (set ANDROID_HOME or ANDROID_SDK_ROOT)"
+            if allow_blocked:
+                blocked = True
+                record(StepResult(step.name, "BLOCKED", command, None, detail))
+                continue
+            if result.zip_path:                      # nothing is delivered from a failed release
+                result.zip_path.unlink(missing_ok=True)
+                result.zip_path = None
+            return fail(step.name, detail + "; use --allow-blocked to continue without it", command)
         if step.tool and which(step.tool) is None:
             if allow_blocked:
                 blocked = True
@@ -256,8 +275,13 @@ def run_release(
             return fail(step.name, f"required tool not found: {step.tool} (use --allow-blocked to continue without it)", command)
 
         started = time.time()
+        widget_test = root / "test" / "widget_test.dart"
+        had_widget_test = widget_test.exists()
         rc = runner(step.cmd or [], root)
         elapsed = time.time() - started
+        if step.kind == "scaffold" and not had_widget_test:
+            # `flutter create .` adds the default counter test; it does not match this app and would break analyze/test
+            widget_test.unlink(missing_ok=True)
         if rc != 0:
             if step.kind == "apk" and result.zip_path:
                 result.zip_path.unlink(missing_ok=True)
