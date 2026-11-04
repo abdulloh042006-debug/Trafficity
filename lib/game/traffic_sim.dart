@@ -512,6 +512,7 @@ class TrafficSim {
       if (identical(w, v) || w.removed || w.pendingConn == null || !identical(w.track, w.pendingConn!.from)) continue;
       if (w.wait > 3 && w.wait > v.wait && c.conflicts(w.pendingConn!)) return false;
     }
+    _release(v); // qisqa polosadagi uzun mashina orqadagi chorrahani endi bo'shatadi
     v.holdConn = c;
     _holders.putIfAbsent(node, () => []).add(v);
     _waiters[node]?.remove(v);
@@ -559,7 +560,9 @@ class TrafficSim {
         final conn = graph.connector(tr, nextLane);
         // burilishdan oldin sekinlash
         v0 = min(v0, sqrt(conn.vmax * conn.vmax + 2 * v.bComf * max(0.0, endDist)));
-        if (v.holdConn == null) {
+        // Uzun mashina (yuk) o'zidan qisqa polosada orqa chorraha ruxsatini bo'shata olmaydi (orqasi polosaga 1 m kira
+        // olmaydi); shunda ham keyingi chorrahaga ruxsat so'rashi kerak, aks holda abadiy qotadi (Amir Temur yonidagi yuk).
+        if (_mayAsk(v, tr)) {
           final dreq = v.v * v.v / (2 * v.bComf) + 20;
           // kichik yo'l: stopline'da to'liq to'xtamaguncha ruxsat so'ralmaydi
           final ready = !_minorAt(tr, conn.nodeId) || (v.v < 0.6 && endDist < 8);
@@ -657,6 +660,13 @@ class TrafficSim {
     }
   }
 
+  /// Ruxsat so'rash mumkinmi: ruxsat yo'q, yoki faqat shu polosaga kirgan chorrahaning ruxsati bor va polosa
+  /// mashinadan qisqa (orqa bamper uni hech qachon 1 m ga tark eta olmaydi).
+  bool _mayAsk(Vehicle v, Lane lane) {
+    final h = v.holdConn;
+    return h == null || (h.to.id == lane.id && lane.length < v.length + 1.0);
+  }
+
   void _release(Vehicle v) {
     final hc = v.holdConn;
     if (hc == null) return;
@@ -677,7 +687,11 @@ class TrafficSim {
     }
     for (final e in _waiters.entries) {
       e.value.removeWhere(
-        (v) => v.removed || v.pendingConn == null || v.holdConn != null || v.pendingConn!.nodeId != e.key,
+        (v) =>
+            v.removed ||
+            v.pendingConn == null ||
+            (v.holdConn != null && !(v.track is Lane && _mayAsk(v, v.track as Lane))) ||
+            v.pendingConn!.nodeId != e.key,
       );
     }
   }

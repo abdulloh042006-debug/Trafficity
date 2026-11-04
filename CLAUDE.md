@@ -15,7 +15,7 @@ KoreyaViza EMAS. Repo: https://github.com/abdulloh042006-debug/Trafficity (publi
 - Yangi funksiya qo'shishdan oldin foydalanuvchi so'ragan narsa ekanini tekshir ("ortiqcha yangilik qo'shma" degan edi).
 
 ## Muhit va ishlash tartibi
-- Flutter bu muhitda oldindan YO'Q, lekin o'rnatsa bo'ladi (proxy orqali ishladi): scratchpad'da `git clone --depth 1 -b stable https://github.com/flutter/flutter.git`, so'ng `flutter pub get` (~3 daqiqa; PATH ga `flutter/bin`, `CI=true`). Shunda `flutter analyze` va `flutter test` ishlaydi (hozir 136 Flutter + 41 Node + 68 Python test). Renderni tekshirish: vaqtinchalik `test/zz_*_test.dart` da `testWidgets` + `tester.runAsync`, `RoadGame().render(canvas)` yoki `RepaintBoundary.toImage` -> PNG (shrift: `bin/cache/artifacts/material_fonts` dan `FontLoader`); keyin faylni o'chiring. Telefon sinovi o'rnini baribir bosmaydi.
+- Flutter bu muhitda oldindan YO'Q, lekin o'rnatsa bo'ladi (proxy orqali ishladi): scratchpad'da `git clone --depth 1 -b stable https://github.com/flutter/flutter.git`, so'ng `flutter pub get` (~3 daqiqa; PATH ga `flutter/bin`, `CI=true`). Shunda `flutter analyze` va `flutter test` ishlaydi (hozir 139 Flutter + 41 Node + 68 Python test). Renderni tekshirish: vaqtinchalik `test/zz_*_test.dart` da `testWidgets` + `tester.runAsync`, `RoadGame().render(canvas)` yoki `RepaintBoundary.toImage` -> PNG (shrift: `bin/cache/artifacts/material_fonts` dan `FontLoader`); keyin faylni o'chiring. Telefon sinovi o'rnini baribir bosmaydi.
 - Mantiqni Python'da modellashtirish mumkin (foydalanuvchi ruxsat bergan): geometriya/marshrut/rejalashtirish.
 - Loyiha nusxasi: `/mnt/user-data/outputs/roadflow_city/` (repo bilan bir xil). Push: vaqtinchalik klon, `cp -r`, `git checkout HEAD -- .github`
   (token `workflow` ruxsatisiz: workflow faylini o'zgartirib push qilib bo'lmaydi), commit, push, token URL'dan olib tashlanadi.
@@ -60,7 +60,7 @@ kuchaytirilgach 10 shaharda 100% bino ulandi). Dart kodining o'zi telefonda sina
 **O'yin 100% tugaganda "0 qilish": shu konstantani `false` qiling.**
 
 ## Ma'lum xavflar
-Chorrahada qotib qolish (gridlock) headless o'lchandi: ideal shaharda 125 mashina bilan ~8 daqiqada mashinalarning ~85% i to'xtab qoladi (asosiy sabab: chiqish polosasida joy yo'q, `_tryGrant` 'exit'; qisqa polosalar ko'p) — hal qilinmagan; polosa almashtirish va ustuvorlik mantiqi sinalmagan; tahrirda mashinalar yo'qolishi
+Yuk mashinasi muzlashi TUZATILDI (2026-11-04, `traffic_short_lane_test.dart`): o'zidan qisqa polosadagi uzun mashina orqadagi chorraha ruxsatini bo'shata olmay, keyingisini so'ramas edi (Amir Temur yonidagi 18 m polosa, yuk 22 m); endi `_mayAsk` bilan so'raydi va yangi ruxsatda eskisini topshiradi. Haqiqiy Toshkentda 600 s da yakunlangan safar 139 -> 181. Umumiy qotib qolish QOLDI: 600 s da 250 dan 241 mashina to'xtagan. Chorrahada qotib qolish (gridlock) headless o'lchandi: ideal shaharda 125 mashina bilan ~8 daqiqada mashinalarning ~85% i to'xtab qoladi (asosiy sabab: chiqish polosasida joy yo'q, `_tryGrant` 'exit'; qisqa polosalar ko'p) — hal qilinmagan; polosa almashtirish va ustuvorlik mantiqi sinalmagan; tahrirda mashinalar yo'qolishi
 ("Yo'qotilgan" chipi); 250+ mashinada ishlash o'lchanmagan; `connectRoad` kesishuvlari juda yaqin nuqtalarda.
 
 ## Keyingi qadamlar (ustuvorlik tartibida)
