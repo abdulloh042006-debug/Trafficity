@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'game/road_game.dart';
+import 'game3d/city3d_view.dart';
 import 'ui/region_selector_overlay.dart';
 import 'ui/uzbekistan_hud_button.dart';
 import 'world/world_controller.dart';
@@ -71,6 +72,15 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   bool _menu = true;
   bool _overview = false; // active region has no detailed package: show the overview card, pause the game
   bool _selectorOpen = false;
+  bool _view3d = false; // 3D ko'rinish (faqat Toshkent): o'yin ostida ishlashda davom etadi
+
+  void _open3d() {
+    if (game.biome != Terrain.tashkent) {
+      _toast("3D ko'rinish hozircha faqat Toshkent xaritasida");
+      return;
+    }
+    setState(() => _view3d = true);
+  }
 
   static const _langCodes = ['uz', 'ru', 'en'];
   String get _langCode => _langCodes[L.lang.clamp(0, 2)];
@@ -504,6 +514,27 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
     }
   }
 
+  /// 2D o'yin qatlami: teginishlar Flame o'yiniga uzatiladi.
+  Widget _gameLayer() {
+    return Listener(
+      behavior: HitTestBehavior.opaque,
+      onPointerDown: (e) {
+        game.lastGlobal = e.position;
+        game.pointerDown(e.pointer, e.localPosition);
+      },
+      onPointerMove: (e) {
+        game.lastGlobal = e.position;
+        game.pointerMove(e.pointer, e.localPosition);
+      },
+      onPointerUp: (e) => game.pointerUp(e.pointer),
+      onPointerCancel: (e) => game.pointerUp(e.pointer),
+      onPointerSignal: (e) {
+        if (e is PointerScrollEvent) game.wheel(e.localPosition, e.scrollDelta.dy);
+      },
+      child: GameWidget(game: game),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     game.dpr = MediaQuery.of(context).devicePixelRatio;
@@ -513,22 +544,10 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
           LayoutBuilder(
             builder: (context, c) {
               game.widgetSize = Size(c.maxWidth, c.maxHeight);
-              return Listener(
-                behavior: HitTestBehavior.opaque,
-                onPointerDown: (e) {
-                  game.lastGlobal = e.position;
-                  game.pointerDown(e.pointer, e.localPosition);
-                },
-                onPointerMove: (e) {
-                  game.lastGlobal = e.position;
-                  game.pointerMove(e.pointer, e.localPosition);
-                },
-                onPointerUp: (e) => game.pointerUp(e.pointer),
-                onPointerCancel: (e) => game.pointerUp(e.pointer),
-                onPointerSignal: (e) {
-                  if (e is PointerScrollEvent) game.wheel(e.localPosition, e.scrollDelta.dy);
-                },
-                child: GameWidget(game: game),
+              // 3D paytida 2D chizilmaydi va teginishlarni olmaydi, lekin o'yin sikli (simulyatsiya) davom etadi.
+              // SizedBox.expand: Offstage yashirin paytda o'lchamini 0 beradi, aks holda butun Stack 0x0 bo'lib qoladi.
+              return SizedBox.expand(
+                child: Offstage(offstage: _view3d, child: _gameLayer()),
               );
             },
           ),
@@ -571,6 +590,10 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
               ),
             ),
           ),
+          if (_view3d)
+            Positioned.fill(
+              child: City3DView(game: game, onClose: () => setState(() => _view3d = false)),
+            ),
           if (_overview)
             Positioned.fill(
               child: RegionOverviewCard(
@@ -799,6 +822,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
             }),
             _btn(Icons.open_with, "Kamera", () => game.setTool(Tool.pan), selected: game.tool == Tool.pan),
             if (game.rot.abs() > 0.01) _btn(Icons.explore, "Shimol", game.resetRotation),
+            _btn(Icons.view_in_ar, "3D", _open3d),
             if (game.canUndo) _btn(Icons.undo, "Ortga", game.undo),
             if (game.canRedo) _btn(Icons.redo, "Oldinga", game.redo),
             const SizedBox(width: 10),

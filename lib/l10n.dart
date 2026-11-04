@@ -21,6 +21,19 @@ class L {
     ["Toshkent shahriga qaytish", "Вернуться в город Ташкент", "Back to Tashkent City"],
     ["SOATO kodi tasdiqlanmagan", "Код СОАТО не подтверждён", "SOATO code unverified"],
     ["Arxitektura profili", "Архитектурный профиль", "Architecture profile"],
+    ["2D xarita", "2D карта", "2D map"],
+    [
+      "1 barmoq: aylantirish va qiyalik · 2 barmoq: yaqinlashtirish, surish, burish",
+      "1 палец: вращение и наклон · 2 пальца: масштаб, сдвиг, поворот",
+      "1 finger: orbit and tilt · 2 fingers: zoom, pan, turn",
+    ],
+    ["Balandliklar taxminiy", "Высоты приблизительные", "Heights are estimated"],
+    ["Binolar yuklanmadi", "Здания не загрузились", "Buildings did not load"],
+    [
+      "3D ko'rinish hozircha faqat Toshkent xaritasida",
+      "3D-вид пока только на карте Ташкента",
+      "3D view is only available on the Tashkent map for now",
+    ],
     [
       "Chegaralar umumlashtirilgan (Natural Earth), rasmiy chegara emas",
       "Границы обобщены (Natural Earth), не официальные",

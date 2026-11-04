@@ -2,10 +2,10 @@
   "schemaVersion": "3.0.0",
   "repository": "abdulloh042006-debug/Trafficity",
   "branch": "codex/uzbekistan-expansion",
-  "totalFileCount": 49,
-  "expansionFileCount": 46,
+  "totalFileCount": 55,
+  "expansionFileCount": 52,
   "baseFileCount": 3,
-  "fullRepoBundleFileCount": 49,
+  "fullRepoBundleFileCount": 55,
   "files": [
     {
       "index": 1,
@@ -17,8 +17,8 @@
       "index": 2,
       "path": "README.md",
       "scope": "expansion",
-      "sizeBytes": 7768,
-      "sha256": "43afbba0f07654e30cd4965296e71c5e43c2a7b2edb40fcfee4bc43aa2201849",
+      "sizeBytes": 8522,
+      "sha256": "816851d8fea877aa5112a548ea10bdadea241faf6978d869e5ea2c13ad5e8424",
       "description": "Loyiha hujjati, CLI va test buyruqlari, ma'lumotlar manbasi"
     },
     {
@@ -90,7 +90,7 @@
       "path": "test/packager_and_cli.test.mjs",
       "scope": "expansion",
       "sizeBytes": 23364,
-      "sha256": "2de118ceb8c3280ec43857edf238ae62d99ea36f1f77a50cd3c44fc5185289e8",
+      "sha256": "e7b0dc677c1b557c203713fedee42c0e4762116ecb739d8b2366cf3c0026d43c",
       "description": "Node.js avtomatlashtirilgan testlar to'plami"
     },
     {
@@ -177,8 +177,8 @@
       "index": 22,
       "path": "pubspec.yaml",
       "scope": "base",
-      "sizeBytes": 952,
-      "sha256": "f1e599aad978c8e5fdfbce5949ab0e22495c5c7dec80988a4933284261acbf85",
+      "sizeBytes": 992,
+      "sha256": "70f9573293019fc60b4cfe57cf4e7ab6c5a711332a9a9b8e56a88fcf2d5e3cba",
       "description": "Flutter/Flame loyiha konfiguratsiyasi va O'zbekiston assetlari"
     },
     {
@@ -193,8 +193,8 @@
       "index": 24,
       "path": "lib/main.dart",
       "scope": "expansion",
-      "sizeBytes": 33295,
-      "sha256": "e210675ad44a64e346fc23b62aca417a31202b8413b528b3ce5b14c4c37951e0",
+      "sizeBytes": 34105,
+      "sha256": "eb21ce6fda5901c4c9c12ce87dc0ced7e38f28436d578fcb983239f82943d40d",
       "description": "Real app-screen wiring for the Uzbekistan world controller and HUD"
     },
     {
@@ -218,7 +218,7 @@
       "path": "tools/packager_core.mjs",
       "scope": "expansion",
       "sizeBytes": 17513,
-      "sha256": "15c04aa4b036dcc7b39b901d41193c0219ae615f72f93b78848403d75124fcd5",
+      "sha256": "9ada43eb35a19ae78076d7faab39e55f84366ccbd22648ca5fd90fb838602b16",
       "description": "Shared validation, hashing, deterministic ZIP and GitHub push core"
     },
     {
@@ -226,7 +226,7 @@
       "path": "Trafficity-Uzbekistan-Complete-Packager.html",
       "scope": "expansion",
       "sizeBytes": 34405,
-      "sha256": "04071e8a1f150a81676025bb795606bf45fcc3d66e203dd082475aaf95240f11",
+      "sha256": "79ebbf03e57ececa67bf43ec30ebd924dc3ef6d85e5841cd45732a8432815256",
       "description": "Offline browser packager interface with embedded shared core"
     },
     {
@@ -396,6 +396,54 @@
       "sizeBytes": 19029,
       "sha256": "1b253576984672589ee26be92eab17db8ae676e201d75063f3a15e9c356538a4",
       "description": "79 ta mustaqil OSM tugun: Toshkent koordinata o'tkazmasini tekshirish (migratsiya skripti o'qiydi)"
+    },
+    {
+      "index": 50,
+      "path": "lib/game3d/camera3d.dart",
+      "scope": "expansion",
+      "sizeBytes": 3776,
+      "sha256": "3c8c6b1b3fd380c06572e01576d20607ff5047465faf98ed5a305be437950e26",
+      "description": "3D orbit kamera: perspektiva, proyeksiya, yerga nur"
+    },
+    {
+      "index": 51,
+      "path": "lib/game3d/city_buildings.dart",
+      "scope": "expansion",
+      "sizeBytes": 7667,
+      "sha256": "7930928cabe21086c8ba437a022a9fbaa7fdc192e51eb924c358e20f6663ba36",
+      "description": "Toshkent bino konturlari o'quvchisi (binar), panjara indeksi, tom uchburchaklari"
+    },
+    {
+      "index": 52,
+      "path": "lib/game3d/city3d_renderer.dart",
+      "scope": "expansion",
+      "sizeBytes": 28314,
+      "sha256": "aaf2bd6e222520f6020f02d6784e3d660ad6dc9969547d5334bfa84ae08bed98",
+      "description": "Dasturiy 3D renderer: yer teksturasi, yo'llar, binolar, mashinalar, soyalar"
+    },
+    {
+      "index": 53,
+      "path": "lib/game3d/city3d_view.dart",
+      "scope": "expansion",
+      "sizeBytes": 5463,
+      "sha256": "4d6717f2986b7772bdc3253aa45d947a2a8c30ae7d4d7de95a9fb3cc3f4422f3",
+      "description": "To'liq ekran 3D ko'rinish: imo-ishoralar, 2D ga qaytish, manba ko'rsatmasi"
+    },
+    {
+      "index": 54,
+      "path": "assets/map/tashkent_buildings.bin",
+      "scope": "expansion",
+      "sizeBytes": 844388,
+      "sha256": "477f79f184362fc03c2fc994fd14fa77e97b5675746874262e7bf8c83cb216c7",
+      "description": "31 908 bino konturi (Microsoft ML Building Footprints, ODbL), balandlik taxminiy"
+    },
+    {
+      "index": 55,
+      "path": "assets/map/tashkent_buildings_meta.json",
+      "scope": "expansion",
+      "sizeBytes": 1207,
+      "sha256": "460de2ca62a6a06e3c1a8b2319f61cd472cf2b2ad49c9d2ef6d489ad1b7a6847",
+      "description": "Bino ma'lumoti manbasi, litsenziyasi, SHA-256 va balandlik usuli"
     }
   ]
 }

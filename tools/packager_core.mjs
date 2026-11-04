@@ -11,7 +11,7 @@ export const REPOSITORY = "abdulloh042006-debug/Trafficity";
 export const TARGET_BRANCH = "codex/uzbekistan-expansion";
 export const FORBIDDEN_BRANCHES = ["main", "master"];
 export const MANIFEST_SELF_PATH = "FILE_MANIFEST.json";
-export const BUNDLE_MODES = { expansion: 46, full: 49 };
+export const BUNDLE_MODES = { expansion: 52, full: 55 };
 
 export class PackagerError extends Error {
   constructor(code, message) {
@@ -89,7 +89,7 @@ export function validateFileManifest(m) {
   return m;
 }
 
-/** Entries of a bundle, sorted by path. "expansion" = 46 files, "full" = 49 files. */
+/** Entries of a bundle, sorted by path. "expansion" = 52 files, "full" = 55 files. */
 export function selectBundle(manifest, mode) {
   if (!Object.prototype.hasOwnProperty.call(BUNDLE_MODES, mode)) {
     throw new PackagerError("bad_mode", `unknown bundle mode "${mode}" (use expansion or full)`);

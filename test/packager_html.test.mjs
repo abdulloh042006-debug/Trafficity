@@ -57,9 +57,9 @@ test("no external scripts, stylesheets or CDN: everything is inline and the CSP 
   for (const h of hosts) assert.ok(["api.github.com", "raw.githubusercontent.com", "github.com"].includes(h), `unexpected host ${h}`);
 });
 
-test("the two bundle modes are offered with the 46 / 49 file contract", () => {
-  assert.match(html, /value="expansion" checked> Expansion ZIP — <b>46<\/b> files/);
-  assert.match(html, /value="full"> Full ZIP — <b>49<\/b> files/);
+test("the two bundle modes are offered with the 52 / 55 file contract", () => {
+  assert.match(html, /value="expansion" checked> Expansion ZIP — <b>52<\/b> files/);
+  assert.match(html, /value="full"> Full ZIP — <b>55<\/b> files/);
 });
 
 test("the push target is locked: no branch control, no force, main/master rejected in code", () => {

@@ -1,0 +1,22 @@
+{
+ "buildingCount": 31908,
+ "bytes": 844388,
+ "coordinates": "same chain as the game map: WGS84 -> EPSG:3857 -> SVG units (map.wld) -> game units; x east, y south, 0.25-unit quantisation",
+ "file": "assets/map/tashkent_buildings.bin",
+ "filters": "area >= 15.0 m2, 3..255 vertices, fully inside the window",
+ "heights": "ESTIMATED from footprint area and elongation (source has no heights for Uzbekistan); median 3.2 m, max 38.400000000000006 m",
+ "pointCount": 195141,
+ "schema": "trafficity-tashkent-buildings/1",
+ "sha256": "477f79f184362fc03c2fc994fd14fa77e97b5675746874262e7bf8c83cb216c7",
+ "source": {
+  "attribution": "Building footprints © Microsoft (ODbL-1.0)",
+  "featuresRead": 789434,
+  "license": "ODbL-1.0",
+  "name": "Microsoft Global ML Building Footprints",
+  "quadkey": "121322232",
+  "retrieved": "2026-11-04",
+  "sha256": "af90f2a6dbcb84d3f2edeacf8a95e566b7f9375f387c421c39ca34a52140464a",
+  "url": "https://minedbuildings.z5.web.core.windows.net/global-buildings/2026-02-03/global-buildings.geojsonl/RegionName=Uzbekistan/quadkey=121322232/part-00189-4feead82-d499-422b-94cb-c036c212127a.c000.csv.gz"
+ },
+ "window": "game world 0..6400 units around Amir Temur xiyoboni (3200, 3200)"
+}

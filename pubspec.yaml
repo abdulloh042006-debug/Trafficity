@@ -28,6 +28,7 @@ flutter:
     - assets/map/tashkent.webp
     - assets/map/tashkent_water.png
     - assets/map/tashkent_roads.json
+    - assets/map/tashkent_buildings.bin
     - assets/world/uzbekistan/world_manifest.json
     - assets/world/uzbekistan/region_catalog.json
     - assets/world/uzbekistan/cities_index.json

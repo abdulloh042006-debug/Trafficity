@@ -10,6 +10,7 @@ system, transactional region packages, a Node CLI and a browser packager.
 |---|---|
 | Playable map | **Only Tashkent City** has a detailed dataset (2495 real OSM roads, converted to WGS84 chunks). |
 | Other 13 divisions | `OVERVIEW_ONLY`: the selector shows an overview card and pauses the game. **No** road map is ever shown under another region's name. |
+| 3D view (Tashkent) | **New.** "3D" button in the toolbar: software perspective renderer (`lib/game3d/`) of the running game — textured basemap ground, roads, rails, 31 908 real building footprints (Microsoft Global ML Building Footprints, ODbL; same projection chain as the map, 0.004 m vs. 79 OSM anchors), the game's buildings, cars/trucks, elevated decks, sun shadows, haze. 1 finger orbit/tilt, 2 fingers zoom/pan/turn; the simulation keeps running. **Heights are estimated** from footprint area/shape (the source has none). View only (building stays in 2D); no trees, traffic lights or trains in 3D yet. `tools/map/export_tashkent_obj.py` exports the same city as OBJ for Blender. Rendered headlessly and tested; **not yet tried on a phone**. |
 | 2D country map | **New.** The selector and the overview card draw a real 2D map of Uzbekistan: 14 outlines from Natural Earth admin-1 (public domain, `assets/world/uzbekistan/region_borders.json`, built by `tools/map/build_uzbekistan_borders.py`, generalised ~440 m). Pan/zoom, tap a region to select it, green dot = region with a detailed map, labels appear where they fit. Checks: all 14 ISO codes match the catalog, every catalog representative point lies inside its own outline, total area 449 023 km² vs. published 448 978 km². These are **cartographic outlines, not legal borders**; there are no roads or buildings outside Tashkent City, and no 3D renderer. |
 | Region borders | `administrative_boundaries.geojson` holds **approximate bounding-box envelopes** (never presented as borders). The map uses the separate Natural Earth outlines above (generalised, not legal borders). |
 | Codes | ISO 3166-2:UZ codes were checked against a secondary source (statoids.com, 2026-11-03). **SOATO codes are unverified.** |
@@ -60,7 +61,7 @@ python3 tools/package_release.py --allow-blocked # local run without Android SDK
 ```
 
 Reference result of this revision (see `TRAFFICITY_REPAIR_EXECUTION_PROMPT.md`, section 18 for evidence): analyzer
-clean, format check clean, 136 Flutter tests (20 of them are the original game tests), 41 Node tests, 68 Python tests.
+clean, format check clean, 151 Flutter tests (20 of them are the original game tests), 41 Node tests, 82 Python tests.
 
 ## Region data format
 

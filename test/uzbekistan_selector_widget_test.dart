@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:trafficity/game/road_game.dart';
+import 'package:trafficity/game3d/city3d_view.dart';
 import 'package:trafficity/l10n.dart';
 import 'package:trafficity/main.dart';
 import 'package:trafficity/ui/region_selector_overlay.dart';
@@ -246,6 +247,41 @@ void main() {
       expect(screen(tester).game.regionDetailed, isTrue);
       expect(screen(tester).game.loadedNational.regionId, tashkent);
       expect(screen(tester).game.menuOpen, isFalse);
+    });
+
+    testWidgets('the 3D button opens the 3D view over a running game and 2D brings the map back', (tester) async {
+      await bootGame(tester);
+      final button = find.text('3D');
+      await tester.ensureVisible(button);
+      await frames(tester, 2);
+      await tester.tap(button);
+      await settle(tester, 4);
+      expect(find.byType(City3DView), findsOneWidget);
+      final off = tester.widget<Offstage>(
+        find
+            .ancestor(
+              of: find.byType(GameWidget<RoadGame>, skipOffstage: false),
+              matching: find.byType(Offstage, skipOffstage: false),
+            )
+            .first,
+      );
+      expect(off.offstage, isTrue); // the 2D map is not painted, the game keeps running
+      expect(screen(tester).game.menuOpen, isFalse);
+      // the overlay covers the whole screen (regression: Offstage used to collapse the screen's Stack to 0x0)
+      expect(tester.getSize(find.byType(City3DView)), tester.getSize(find.byType(GameScreen)));
+      expect(find.byKey(City3DView.closeKey).hitTestable(), findsOneWidget);
+      await tester.tap(find.byKey(City3DView.closeKey));
+      await frames(tester);
+      expect(find.byType(City3DView), findsNothing);
+      final back = tester.widget<Offstage>(
+        find
+            .ancestor(
+              of: find.byType(GameWidget<RoadGame>, skipOffstage: false),
+              matching: find.byType(Offstage, skipOffstage: false),
+            )
+            .first,
+      );
+      expect(back.offstage, isFalse);
     });
 
     testWidgets('overview card can reopen the selector', (tester) async {
