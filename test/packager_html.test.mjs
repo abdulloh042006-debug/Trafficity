@@ -58,8 +58,8 @@ test("no external scripts, stylesheets or CDN: everything is inline and the CSP 
 });
 
 test("the two bundle modes are offered with the 42 / 45 file contract", () => {
-  assert.match(html, /value="expansion" checked> Expansion ZIP — <b>20<\/b> files/);
-  assert.match(html, /value="full"> Full ZIP — <b>23<\/b> files/);
+  assert.match(html, /value="expansion" checked> Expansion ZIP — <b>42<\/b> files/);
+  assert.match(html, /value="full"> Full ZIP — <b>45<\/b> files/);
 });
 
 test("the push target is locked: no branch control, no force, main/master rejected in code", () => {
