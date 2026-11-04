@@ -76,8 +76,7 @@ class TrafficSim {
         dead = !graph.lanes.containsKey(t.from.id) || !graph.lanes.containsKey(t.to.id);
       }
       final hc = v.holdConn;
-      if (hc != null &&
-          (!graph.lanes.containsKey(hc.from.id) || !graph.lanes.containsKey(hc.to.id))) {
+      if (hc != null && (!graph.lanes.containsKey(hc.from.id) || !graph.lanes.containsKey(hc.to.id))) {
         dead = true;
       }
       if (dead) {
@@ -140,7 +139,10 @@ class TrafficSim {
   void _refreshSignals() {
     signals.removeWhere((id, _) => (graph.net.nodes[id]?.roads.length ?? 0) < 3);
     for (final s in signals.values) {
-      s.rebuild([for (final l in graph.lanes.values) if (l.toNode == s.nodeId) l]);
+      s.rebuild([
+        for (final l in graph.lanes.values)
+          if (l.toNode == s.nodeId) l,
+      ]);
     }
   }
 
@@ -453,8 +455,7 @@ class TrafficSim {
 
   Vehicle? _rearmost(Track nt) {
     Vehicle? best;
-    final Iterable<Track> cands =
-        nt is Connector ? (graph.connectorsFrom[nt.from.id] ?? [nt]) : [nt];
+    final Iterable<Track> cands = nt is Connector ? (graph.connectorsFrom[nt.from.id] ?? [nt]) : [nt];
     for (final c in cands) {
       if (c.vehicles.isEmpty) continue;
       final f = c.vehicles.first;
@@ -676,7 +677,8 @@ class TrafficSim {
     }
     for (final e in _waiters.entries) {
       e.value.removeWhere(
-          (v) => v.removed || v.pendingConn == null || v.holdConn != null || v.pendingConn!.nodeId != e.key);
+        (v) => v.removed || v.pendingConn == null || v.holdConn != null || v.pendingConn!.nodeId != e.key,
+      );
     }
   }
 

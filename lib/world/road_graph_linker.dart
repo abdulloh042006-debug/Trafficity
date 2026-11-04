@@ -1,145 +1,85 @@
 import 'geo_coordinate_system.dart';
 
-enum RoadFunctionalClass {
-  nationalHighway,
-  regionalHighway,
-  intercityConnector,
-  urbanPrimary,
-  urbanSecondary,
-  localMahalla,
+/// Raised when a portal is rejected (duplicate ID, self-link, invalid position, empty IDs).
+class PortalException implements Exception {
+  final String message;
+  const PortalException(this.message);
+  @override
+  String toString() => 'PortalException: $message';
 }
 
-class StitchPortalNode {
+/// A point where a real road crosses a chunk boundary.
+///
+/// Portals must come from real road geometry that is shared by two chunks; the linker never
+/// creates connections on its own.
+class PortalNode {
   final String portalId;
   final String globalWayId;
-  final String roadDesignation;
-  final Wgs84Coord wgs84Position;
-  final String fromRegionId;
-  final String fromChunkId;
-  final String toRegionId;
-  final String toChunkId;
-  final int laneCount;
-  final double headingDegrees;
-  final String structureType;
+  final Wgs84Coord position;
+  final String sourceChunkId;
+  final String destinationChunkId;
 
-  const StitchPortalNode({
+  const PortalNode({
     required this.portalId,
     required this.globalWayId,
-    required this.roadDesignation,
-    required this.wgs84Position,
-    required this.fromRegionId,
-    required this.fromChunkId,
-    required this.toRegionId,
-    required this.toChunkId,
-    required this.laneCount,
-    required this.headingDegrees,
-    this.structureType = 'SURFACE',
-  });
-
-  factory StitchPortalNode.fromJson(Map<String, dynamic> json) {
-    return StitchPortalNode(
-      portalId: json['portalId'] as String,
-      globalWayId: json['globalWayId'] as String,
-      roadDesignation: json['roadDesignation'] as String? ?? 'M39',
-      wgs84Position: Wgs84Coord.fromJson(json['wgs84Position']),
-      fromRegionId: json['fromRegionId'] as String,
-      fromChunkId: json['fromChunkId'] as String,
-      toRegionId: json['toRegionId'] as String,
-      toChunkId: json['toChunkId'] as String,
-      laneCount: (json['laneCount'] as num?)?.toInt() ?? 4,
-      headingDegrees: (json['headingDegrees'] as num?)?.toDouble() ?? 0.0,
-      structureType: json['structureType'] as String? ?? 'SURFACE',
-    );
-  }
-}
-
-class CrossRegionSegment {
-  final String segmentId;
-  final String globalWayId;
-  final String regionId;
-  final String chunkId;
-  String startNodeId;
-  String endNodeId;
-  final List<Wgs84Coord> geometry;
-  final int lanes;
-
-  CrossRegionSegment({
-    required this.segmentId,
-    required this.globalWayId,
-    required this.regionId,
-    required this.chunkId,
-    required this.startNodeId,
-    required this.endNodeId,
-    required this.geometry,
-    this.lanes = 2,
+    required this.position,
+    required this.sourceChunkId,
+    required this.destinationChunkId,
   });
 }
 
+/// Tracks which chunks are loaded and which boundary portals are currently active.
+///
+/// A portal is **active** when exactly one of its two chunks is loaded: vehicles reaching it must
+/// continue into a chunk that is not in memory yet. Portals with both chunks loaded are internal
+/// links, and portals with neither chunk loaded are irrelevant.
 class RoadGraphLinker {
-  final Map<String, StitchPortalNode> _portals = {};
-  final Map<String, CrossRegionSegment> _segments = {};
   final Set<String> _loadedChunks = {};
+  final Map<String, PortalNode> _portals = {};
 
-  void registerPortals(Iterable<StitchPortalNode> portals) {
-    for (final p in portals) {
-      _portals[p.portalId] = p;
+  void onChunkLoaded(String chunkId) => _loadedChunks.add(chunkId);
+  void onChunkUnloaded(String chunkId) => _loadedChunks.remove(chunkId);
+  bool isChunkLoaded(String chunkId) => _loadedChunks.contains(chunkId);
+  Set<String> get loadedChunks => Set.unmodifiable(_loadedChunks);
+
+  int get portalCount => _portals.length;
+  PortalNode? portalById(String portalId) => _portals[portalId];
+
+  /// Registers a portal. Throws [PortalException] for empty IDs, a duplicate portal ID, a
+  /// self-link (source chunk == destination chunk) or an invalid position.
+  void registerPortal(PortalNode portal) {
+    if (portal.portalId.isEmpty ||
+        portal.globalWayId.isEmpty ||
+        portal.sourceChunkId.isEmpty ||
+        portal.destinationChunkId.isEmpty) {
+      throw const PortalException('Portal IDs and chunk IDs must not be empty');
     }
-  }
-
-  void onChunkLoaded(String chunkId, List<CrossRegionSegment> segments) {
-    _loadedChunks.add(chunkId);
-    for (final seg in segments) {
-      if (!_segments.containsKey(seg.segmentId)) {
-        _segments[seg.segmentId] = seg;
-      }
+    if (portal.sourceChunkId == portal.destinationChunkId) {
+      throw PortalException('Portal ${portal.portalId} links chunk ${portal.sourceChunkId} to itself');
     }
-    _relinkSharedPortals();
-  }
-
-  void onChunkUnloaded(String chunkId) {
-    _loadedChunks.remove(chunkId);
-    _segments.removeWhere((_, seg) => seg.chunkId == chunkId);
-  }
-
-  void _relinkSharedPortals() {
-    for (final portal in _portals.values) {
-      final bool bothLoaded = _loadedChunks.contains(portal.fromChunkId) &&
-          _loadedChunks.contains(portal.toChunkId);
-      if (!bothLoaded) continue;
-
-      for (final seg in _segments.values) {
-        if (seg.globalWayId == portal.globalWayId) {
-          if (seg.chunkId == portal.fromChunkId &&
-              NationalCoordinateSystem.geodesicDistanceMeters(
-                    seg.geometry.last,
-                    portal.wgs84Position,
-                  ) <
-                  5.0) {
-            seg.endNodeId = portal.portalId;
-          } else if (seg.chunkId == portal.toChunkId &&
-              NationalCoordinateSystem.geodesicDistanceMeters(
-                    seg.geometry.first,
-                    portal.wgs84Position,
-                  ) <
-                  5.0) {
-            seg.startNodeId = portal.portalId;
-          }
-        }
-      }
+    if (!portal.position.isValid) {
+      throw PortalException('Portal ${portal.portalId} has an invalid position');
     }
-  }
-
-  List<StitchPortalNode> getActiveBoundaryReservoirs() {
-    final List<StitchPortalNode> result = [];
-    for (final portal in _portals.values) {
-      final bool fromLoaded = _loadedChunks.contains(portal.fromChunkId);
-      final bool toLoaded = _loadedChunks.contains(portal.toChunkId);
-      if (fromLoaded != toLoaded) {
-        result.add(portal);
-      }
+    if (_portals.containsKey(portal.portalId)) {
+      throw PortalException('Duplicate portal id: ${portal.portalId}');
     }
-    return result;
+    _portals[portal.portalId] = portal;
   }
 
-  int get activeSegmentCount => _segments.length;
+  /// Portals with exactly one loaded neighbour chunk, ordered by portal ID for determinism.
+  List<PortalNode> activeBoundaryPortals() {
+    final active = [
+      for (final p in _portals.values)
+        if (_loadedChunks.contains(p.sourceChunkId) != _loadedChunks.contains(p.destinationChunkId)) p,
+    ]..sort((a, b) => a.portalId.compareTo(b.portalId));
+    return List.unmodifiable(active);
+  }
+
+  /// The chunk a vehicle must load next when it reaches [portal], or null if the portal is not active.
+  String? chunkToLoadFor(PortalNode portal) {
+    final srcLoaded = _loadedChunks.contains(portal.sourceChunkId);
+    final dstLoaded = _loadedChunks.contains(portal.destinationChunkId);
+    if (srcLoaded == dstLoaded) return null;
+    return srcLoaded ? portal.destinationChunkId : portal.sourceChunkId;
+  }
 }

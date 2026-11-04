@@ -1,8 +1,8 @@
 import 'package:flame/game.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:roadflow_city/game/real_roads.dart';
-import 'package:roadflow_city/game/road_game.dart';
-import 'package:roadflow_city/game/terrain.dart';
+import 'package:trafficity/game/real_roads.dart';
+import 'package:trafficity/game/road_game.dart';
+import 'package:trafficity/game/terrain.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

@@ -1,174 +1,143 @@
 import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
+
 import 'admin_hierarchy.dart';
-import 'architecture_profile_engine.dart';
 import 'geo_coordinate_system.dart';
 import 'multi_scale_lod_controller.dart';
 import 'region_package_manager.dart';
-import 'road_graph_linker.dart';
 
+enum WorldLoadState { idle, loading, ready, error }
+
+/// Owns the 14-region Uzbekistan catalog, the active region, its readiness and the level of detail.
+///
+/// Create it once per screen (it is a [ChangeNotifier]); [initializeFromAssets] is idempotent and safe to await
+/// from several places. Notifications after [dispose] are ignored, so late async completions cannot throw.
 class UzbekistanWorldController extends ChangeNotifier {
-  final NationalCoordinateSystem coordinateSystem;
-  final RegionPackageManager packageManager;
-  final MultiScaleLodController lodController;
-  final RoadGraphLinker roadLinker;
-  final ArchitectureProfileEngine architectureEngine;
+  final NationalCoordinateSystem coordinateSystem = NationalCoordinateSystem();
+  final RegionPackageManager packageManager = RegionPackageManager();
+  final MultiScaleLodController lodController = MultiScaleLodController();
+
+  static const String catalogAsset = 'assets/world/uzbekistan/region_catalog.json';
 
   List<RegionCatalogEntry> _regions = [];
-  List<CityIndexEntry> _cities = [];
-  List<RegionBoundaryPolygon> _boundaries = [];
   RegionCatalogEntry? _activeRegion;
-  CityIndexEntry? _activeCity;
-  bool _isInitialized = false;
+  WorldLoadState _loadState = WorldLoadState.idle;
+  String? _loadError;
+  Future<void>? _initFuture;
+  bool _disposed = false;
 
-  UzbekistanWorldController({
-    NationalCoordinateSystem? coordinateSystem,
-    RegionPackageManager? packageManager,
-    MultiScaleLodController? lodController,
-    RoadGraphLinker? roadLinker,
-    ArchitectureProfileEngine? architectureEngine,
-  })  : coordinateSystem = coordinateSystem ?? NationalCoordinateSystem(),
-        packageManager = packageManager ?? RegionPackageManager(),
-        lodController = lodController ?? MultiScaleLodController(),
-        roadLinker = roadLinker ?? RoadGraphLinker(),
-        architectureEngine =
-            architectureEngine ?? ArchitectureProfileEngine();
+  // last camera input, so the level of detail can be re-evaluated when the region changes
+  double _cameraZoom = 0.6;
+  bool _is3D = false;
 
-  bool get isInitialized => _isInitialized;
   List<RegionCatalogEntry> get regions => List.unmodifiable(_regions);
-  List<CityIndexEntry> get cities => List.unmodifiable(_cities);
-  List<RegionBoundaryPolygon> get boundaries => List.unmodifiable(_boundaries);
   RegionCatalogEntry? get activeRegion => _activeRegion;
-  CityIndexEntry? get activeCity => _activeCity;
+  WorldLoadState get loadState => _loadState;
+  String? get loadError => _loadError;
+  bool get isReady => _loadState == WorldLoadState.ready;
+  GeographicalDetailLevel get lodLevel => lodController.activeLevel;
 
-  Future<void> initializeFromAssets() async {
-    if (_isInitialized) return;
+  /// Loads the catalog from the bundled asset once. A failure is recorded in [loadState]/[loadError];
+  /// call [retry] to try again.
+  Future<void> initializeFromAssets() => _initFuture ??= _initialize();
 
-    final String catalogRaw = await rootBundle
-        .loadString('assets/world/uzbekistan/region_catalog.json');
-    final String citiesRaw = await rootBundle
-        .loadString('assets/world/uzbekistan/cities_index.json');
-    final String boundariesRaw = await rootBundle.loadString(
-        'assets/world/uzbekistan/administrative_boundaries.geojson');
-
-    loadFromRawJson(
-      catalogJson: catalogRaw,
-      citiesJson: citiesRaw,
-      boundariesGeoJson: boundariesRaw,
-    );
+  Future<void> retry() {
+    if (_loadState == WorldLoadState.loading) return _initFuture ?? Future<void>.value();
+    _initFuture = null;
+    return initializeFromAssets();
   }
 
-  void loadFromRawJson({
-    required String catalogJson,
-    required String citiesJson,
-    required String boundariesGeoJson,
-  }) {
-    final Map<String, dynamic> catMap =
-        jsonDecode(catalogJson) as Map<String, dynamic>;
-    final List<dynamic> regList = catMap['regions'] as List<dynamic>;
-    _regions = regList
-        .map((r) => RegionCatalogEntry.fromJson(r as Map<String, dynamic>))
+  Future<void> _initialize() async {
+    _loadState = WorldLoadState.loading;
+    _loadError = null;
+    _notify();
+    try {
+      loadFromCatalogJson(await rootBundle.loadString(catalogAsset));
+    } catch (e) {
+      _loadState = WorldLoadState.error;
+      _loadError = e.toString();
+      _notify();
+    }
+  }
+
+  void loadFromCatalogJson(String catalogJson) {
+    final map = jsonDecode(catalogJson) as Map<String, dynamic>;
+    final regions = (map['regions'] as List)
+        .map((e) => RegionCatalogEntry.fromJson(e as Map<String, dynamic>))
         .toList();
-
-    final Map<String, dynamic> citMap =
-        jsonDecode(citiesJson) as Map<String, dynamic>;
-    final List<dynamic> citList = citMap['cities'] as List<dynamic>;
-    _cities = citList
-        .map((c) => CityIndexEntry.fromJson(c as Map<String, dynamic>))
-        .toList();
-
-    _boundaries = _parseBoundariesGeoJson(boundariesGeoJson);
-
-    _activeRegion = _regions.firstWhere(
-      (r) => r.regionId == 'uz_tashkent_city',
-      orElse: () => _regions.first,
-    );
-    _activeCity = _cities.firstWhere(
-      (c) => c.cityId == 'city_tashkent',
-      orElse: () => _cities.first,
-    );
-
-    coordinateSystem.setFloatingOrigin(_activeCity!.location);
-    _isInitialized = true;
-    notifyListeners();
+    if (regions.isEmpty) throw const FormatException('Region catalog contains no regions');
+    _regions = regions;
+    packageManager.registerKnownRegions(regions.map((r) => r.regionId));
+    final defaultId = map['defaultRegionId'] as String?;
+    _activeRegion = regions.firstWhere((r) => r.regionId == defaultId, orElse: () => regions.first);
+    coordinateSystem.setFloatingOrigin(_activeRegion!.representativePoint);
+    _loadState = WorldLoadState.ready;
+    _loadError = null;
+    _reevaluateLod();
+    _notify();
   }
 
-  List<RegionBoundaryPolygon> _parseBoundariesGeoJson(String rawGeoJson) {
-    final Map<String, dynamic> geo =
-        jsonDecode(rawGeoJson) as Map<String, dynamic>;
-    final List<dynamic> features =
-        geo['features'] as List<dynamic>? ?? const [];
-    final List<RegionBoundaryPolygon> parsed = [];
+  /// Readiness of [entry] as the package manager sees it (a catalog default never overstates it).
+  RegionReadinessStatus readinessOf(RegionCatalogEntry entry) => packageManager.resolveReadiness(entry);
 
-    for (final f in features) {
-      final map = f as Map<String, dynamic>;
-      final props = map['properties'] as Map<String, dynamic>? ?? const {};
-      final geom = map['geometry'] as Map<String, dynamic>? ?? const {};
-      final String type = geom['type'] as String? ?? '';
-      final List<List<Wgs84Coord>> rings = [];
-
-      if (type == 'Polygon') {
-        final coords = geom['coordinates'] as List<dynamic>;
-        for (final ring in coords) {
-          rings.add((ring as List<dynamic>)
-              .map((pt) => Wgs84Coord(
-                    lon: ((pt as List)[0] as num).toDouble(),
-                    lat: (pt[1] as num).toDouble(),
-                  ))
-              .toList());
-        }
-      }
-
-      parsed.add(
-        RegionBoundaryPolygon(
-          regionId: props['regionId'] as String? ?? '',
-          isoCode: props['isoCode'] as String? ?? '',
-          names: LocalizedName(
-            uz: props['name_uz'] as String? ?? '',
-            ru: props['name_ru'] as String? ?? '',
-            en: props['name_en'] as String? ?? '',
-          ),
-          rings: rings,
-        ),
-      );
-    }
-    return parsed;
+  bool get isActiveDetailed {
+    final a = _activeRegion;
+    return a != null && readinessOf(a) == RegionReadinessStatus.installedDetailed;
   }
 
-  void selectRegion(String regionId, {String? cityId}) {
-    final targetRegion = _regions.firstWhere(
-      (r) => r.regionId == regionId,
-      orElse: () => _activeRegion ?? _regions.first,
-    );
-    _activeRegion = targetRegion;
-
-    final String targetCityId = cityId ?? targetRegion.primaryCityId;
-    final matchingCities = _cities.where((c) => c.cityId == targetCityId);
-    if (matchingCities.isNotEmpty) {
-      _activeCity = matchingCities.first;
-      coordinateSystem.setFloatingOrigin(_activeCity!.location);
-    } else {
-      coordinateSystem.setFloatingOrigin(targetRegion.centroid);
+  /// Makes [regionId] the active region and moves the geographic floating origin to its representative point.
+  /// Returns false (and changes nothing) for an unknown id.
+  bool selectRegion(String regionId) {
+    RegionCatalogEntry? found;
+    for (final r in _regions) {
+      if (r.regionId == regionId) found = r;
     }
-
-    final bool hasDetailed = packageManager.resolveReadiness(targetRegion) ==
-        RegionReadinessStatus.installedDetailed;
-    lodController.evaluateFromCamera(
-      cameraZoom: hasDetailed ? 1.0 : 0.20,
-      is3DPerspectiveActive: false,
-      regionHasDetailedPack: hasDetailed,
-    );
-    notifyListeners();
+    if (found == null) return false;
+    _activeRegion = found;
+    coordinateSystem.setFloatingOrigin(found.representativePoint);
+    _reevaluateLod();
+    _notify();
+    return true;
   }
 
-  RegionCatalogEntry? findRegionAtCoordinate(double lon, double lat) {
-    for (final poly in _boundaries) {
-      if (poly.containsPoint(lon, lat)) {
-        final match = _regions.where((r) => r.regionId == poly.regionId);
-        if (match.isNotEmpty) return match.first;
-      }
+  /// Re-selects the region a loaded save belongs to, but only when that region really has a detailed package.
+  /// Returns true when the active region now is [regionId]. A tampered save naming an overview-only or unknown
+  /// region changes nothing, so a loaded game is never covered by an overview card.
+  bool restoreDetailedRegion(String regionId) {
+    for (final r in _regions) {
+      if (r.regionId != regionId) continue;
+      if (readinessOf(r) != RegionReadinessStatus.installedDetailed) return false;
+      if (_activeRegion?.regionId == regionId) return true;
+      return selectRegion(regionId);
     }
-    return null;
+    return false;
+  }
+
+  /// Feeds the game camera to the level-of-detail controller; listeners are told only when the level changes.
+  GeographicalDetailLevel updateCamera({required double zoom, bool is3D = false}) {
+    _cameraZoom = zoom;
+    _is3D = is3D;
+    final before = lodController.activeLevel;
+    final after = _reevaluateLod();
+    if (after != before) _notify();
+    return after;
+  }
+
+  GeographicalDetailLevel _reevaluateLod() => lodController.evaluateFromCamera(
+    cameraZoom: _cameraZoom,
+    is3DPerspectiveActive: _is3D,
+    regionHasDetailedPack: isActiveDetailed,
+  );
+
+  void _notify() {
+    if (!_disposed) notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
   }
 }

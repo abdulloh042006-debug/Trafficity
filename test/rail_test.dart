@@ -1,7 +1,7 @@
 import 'dart:math';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:roadflow_city/game/rail.dart';
-import 'package:roadflow_city/game/road_network.dart';
+import 'package:trafficity/game/rail.dart';
+import 'package:trafficity/game/road_network.dart';
 
 List<Offset> line(double x0, double y0, double x1, double y1) =>
     RoadNetwork.sample(Offset(x0, y0), Offset(x1, y1), null);
