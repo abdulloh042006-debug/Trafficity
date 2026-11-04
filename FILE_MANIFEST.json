@@ -17,8 +17,8 @@
       "index": 2,
       "path": "README.md",
       "scope": "expansion",
-      "sizeBytes": 6295,
-      "sha256": "2120a8fae9653cdc51b394c49b92b3e0d838d8d3b718a655a2e6851f5eb2a7be",
+      "sizeBytes": 6861,
+      "sha256": "a669c3607be9c2147413b5a6fa9d693f2d934c6b391632d0d7396c129177b629",
       "description": "Loyiha hujjati, CLI va test buyruqlari, ma'lumotlar manbasi"
     },
     {
@@ -145,24 +145,24 @@
       "index": 18,
       "path": "lib/world/national_save_manager.dart",
       "scope": "expansion",
-      "sizeBytes": 5982,
-      "sha256": "65fa1b44148c1379e07e58897b37f64198828fd98d08d94a23f1fa6774f77d46",
+      "sizeBytes": 6709,
+      "sha256": "9f888a841c489df3f48bf1f74260d663676163a58d786bfcdfcdc5e8a8d2d400",
       "description": "Milliy saqlash formati (v3) moduli"
     },
     {
       "index": 19,
       "path": "lib/world/world_controller.dart",
       "scope": "expansion",
-      "sizeBytes": 4777,
-      "sha256": "719b5fdd6664ca4410cd54543e52f7d54ed02c35709aa7ff2ea2aec240fd88d2",
+      "sizeBytes": 5418,
+      "sha256": "0b2994c95ab8e66561dc8c78cc71be55a5e3502c1392ad6749ec57aa1441a540",
       "description": "O'zbekiston dunyo kontrolleri (initializeFromAssets bilan)"
     },
     {
       "index": 20,
       "path": "lib/ui/region_selector_overlay.dart",
       "scope": "expansion",
-      "sizeBytes": 9318,
-      "sha256": "88eeb04e1efa317439c4f0a2ca5eed68b1819fc666bfc78fe3273366bb47ea72",
+      "sizeBytes": 9810,
+      "sha256": "915cb2ee11c7dccd2d94c4605bbdf3d221fb2977676aecd14ad907a4e11ccea8",
       "description": "14 ta hududni tanlash interfeysi (Overlay)"
     },
     {

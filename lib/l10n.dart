@@ -20,6 +20,8 @@ class L {
     ["O'zbekiston viloyatlari", "Регионы Узбекистана", "Regions of Uzbekistan"],
     ["Toshkent shahriga qaytish", "Вернуться в город Ташкент", "Back to Tashkent City"],
     ["SOATO kodi tasdiqlanmagan", "Код СОАТО не подтверждён", "SOATO code unverified"],
+    ["Arxitektura profili", "Архитектурный профиль", "Architecture profile"],
+    ["vizuallar hali yo'q", "визуала пока нет", "no visuals yet"],
     ["Faqat umumiy ko'rinish", "Только общий обзор", "Overview only"],
     ["Ko'rinish darajasi", "Уровень детализации", "Detail level"],
     ["1/4 · Butun mamlakat", "1/4 · Вся страна", "1/4 · Whole country"],

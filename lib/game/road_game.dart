@@ -8,6 +8,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../world/national_save_manager.dart';
+
 import 'building.dart';
 import 'deck.dart';
 import 'lane_graph.dart';
@@ -104,9 +106,17 @@ class RoadGame extends FlameGame {
   String activeRegionId = 'uz_tashkent_city';
   bool regionDetailed = true;
 
+  /// Region whose detailed map the game state belongs to: the last selected region that had a detailed package.
+  /// This (not [activeRegionId]) is what `save()` records, so an overview-only selection never relabels a Tashkent game.
+  String gameRegionId = 'uz_tashkent_city';
+
+  /// National envelope read by the last successful `load()`; null for saves written before it existed or when it is invalid.
+  NationalSaveV3? loadedNational;
+
   void setRegion(String? regionId, {required bool detailed}) {
     activeRegionId = regionId ?? activeRegionId;
     regionDetailed = detailed;
+    if (detailed && regionId != null) gameRegionId = regionId;
   }
 
   /// Dunyo o'lchami, markazi va o'yinchi qo'ygan hudud (xarita shahar o'sishi bilan kengayadi).
@@ -854,6 +864,15 @@ class RoadGame extends FlameGame {
       if (old != null) await sp.setString('${key}_prev', old);
       final data = jsonEncode({
         'v': 2,
+        // Additive: older builds ignore this key; `load()` accepts saves without it.
+        'nat': NationalSaveV3.fromGameState(
+          regionId: gameRegionId,
+          biome: biome,
+          worldSize: worldSize,
+          camX: cam.dx,
+          camY: cam.dy,
+          zoom: zoom,
+        ).toJson(),
         'ts': DateTime.now().toIso8601String(),
         'seed': seed,
         'budget': budget,
@@ -1017,6 +1036,8 @@ class RoadGame extends FlameGame {
         cam = Offset(c[0], c[1]);
         zoom = z.clamp(minZoom, maxZoom).toDouble();
         _onNetworkChanged();
+        loadedNational = _readNational(m['nat']);
+        if (loadedNational != null) gameRegionId = loadedNational!.regionId;
         _notify();
         return true;
       } catch (_) {
@@ -1024,6 +1045,16 @@ class RoadGame extends FlameGame {
       }
     }
     return false;
+  }
+
+  /// A missing or invalid `nat` never blocks loading the game itself.
+  static NationalSaveV3? _readNational(Object? raw) {
+    if (raw == null) return null;
+    try {
+      return NationalSaveV3.fromJson(raw);
+    } catch (_) {
+      return null;
+    }
   }
 
   // ---------------------------------------------------------------- kamera

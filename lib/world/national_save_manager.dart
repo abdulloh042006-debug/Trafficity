@@ -120,6 +120,27 @@ class NationalSaveV3 {
     );
   }
 
+  /// Envelope for a game state that is being written right now (the game's own `save()` stores it under `nat`).
+  ///
+  /// Same camera rule as [fromLegacy]: only a real-Tashkent world (biome 4, 6400 units) has a geographic camera.
+  factory NationalSaveV3.fromGameState({
+    required String regionId,
+    required int biome,
+    required double worldSize,
+    required double camX,
+    required double camY,
+    required double zoom,
+  }) {
+    final legacy = NationalSaveV3.fromLegacy({
+      'v': 2,
+      'biome': biome,
+      'ws': worldSize,
+      'cam': [camX, camY],
+      'zoom': zoom,
+    });
+    return NationalSaveV3(regionId: regionId, cameraPosition: legacy.cameraPosition, cameraZoom: legacy.cameraZoom);
+  }
+
   /// Reads any supported save (v3, or legacy v1/v2) and returns it as v3.
   static NationalSaveV3 parseAny(Object? json) {
     if (json is! Map<String, dynamic>) {

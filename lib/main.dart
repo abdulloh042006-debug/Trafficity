@@ -228,6 +228,8 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                           : () async {
                               Navigator.pop(ctx);
                               final ok = await game.load(slot: i);
+                              final nat = game.loadedNational;
+                              if (ok && nat != null) world.restoreDetailedRegion(nat.regionId);
                               _toast(ok ? "Yuklandi" : "Saqlangan o'yin topilmadi");
                               if (ok) _closeMenu();
                             },

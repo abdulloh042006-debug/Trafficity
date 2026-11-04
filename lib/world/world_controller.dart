@@ -102,6 +102,19 @@ class UzbekistanWorldController extends ChangeNotifier {
     return true;
   }
 
+  /// Re-selects the region a loaded save belongs to, but only when that region really has a detailed package.
+  /// Returns true when the active region now is [regionId]. A tampered save naming an overview-only or unknown
+  /// region changes nothing, so a loaded game is never covered by an overview card.
+  bool restoreDetailedRegion(String regionId) {
+    for (final r in _regions) {
+      if (r.regionId != regionId) continue;
+      if (readinessOf(r) != RegionReadinessStatus.installedDetailed) return false;
+      if (_activeRegion?.regionId == regionId) return true;
+      return selectRegion(regionId);
+    }
+    return false;
+  }
+
   /// Feeds the game camera to the level-of-detail controller; listeners are told only when the level changes.
   GeographicalDetailLevel updateCamera({required double zoom, bool is3D = false}) {
     _cameraZoom = zoom;

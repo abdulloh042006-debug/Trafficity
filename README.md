@@ -14,7 +14,9 @@ system, transactional region packages, a Node CLI and a browser packager.
 | Codes | ISO 3166-2:UZ codes were checked against a secondary source (statoids.com, 2026-11-03). **SOATO codes are unverified.** |
 | Tashkent coordinate conversion | Status `verified_approximate`: origin (Amir Temur xiyoboni, 41.311081 N 69.279737 E), axes and 1 m/unit scale were compared with 79 independent OpenStreetMap node positions (`tools/map/tashkent_osm_anchors.json`, OSM API, 2026-11-04). 21 anchors within 10 km: median 17.7 m, max 23.1 m (tolerance 30 m); the error grows about 0.2% with distance (70 m at ~22 km). Only 2 anchors lie inside the road extent (3.3 m and 10.4 m). **Not survey-grade**: the anchors are OSM place nodes, not control points. |
 | Region package manager | Install / update / remove / recover is implemented and tested (SHA-256, Zip-Slip protection, atomic promote). There is **no in-app downloader or server**: no region besides Tashkent can be installed from the UI. |
-| `national_save_manager`, `road_graph_linker`, `architecture_profile_engine` | Implemented and unit-tested modules, **not yet wired into the game's own save, road or building code**. Architecture profiles are metadata only (`visualsImplemented: false`). |
+| `national_save_manager` | **Wired (additive).** `RoadGame.save()` writes a `nat` envelope (country, region, WGS84 camera only for the real Tashkent world, zoom) next to the unchanged v2 game save; `load()` reads it, ignores a missing/invalid one, and the save menu re-selects the stored region only if it has a detailed package. The region saved is the one the game state belongs to, never an overview-only selection. |
+| `architecture_profile_engine` | **Wired as metadata only.** The overview card shows the region's profile with "no visuals yet" (`visualsImplemented: false`); there are no profile-specific building visuals. |
+| `road_graph_linker` | **Not wired, on purpose.** It links road portals between two *detailed* regions; only Tashkent City has a detailed package, so no consumer exists. Unit-tested only. |
 | Level of detail | `MultiScaleLodController` selects a level from zoom/3D/package state and the selector displays it. There is no chunk streaming and no 3D renderer. |
 
 ## Layout
@@ -57,7 +59,7 @@ python3 tools/package_release.py --allow-blocked # local run without Android SDK
 ```
 
 Reference result of this revision (see `TRAFFICITY_REPAIR_EXECUTION_PROMPT.md`, section 18 for evidence): analyzer
-clean, format check clean, 112 Flutter tests (20 of them are the original game tests), 41 Node tests, 49 Python tests.
+clean, format check clean, 119 Flutter tests (20 of them are the original game tests), 41 Node tests, 55 Python tests.
 
 ## Region data format
 

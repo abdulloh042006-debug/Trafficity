@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../l10n.dart';
 import '../world/admin_hierarchy.dart';
+import '../world/architecture_profile_engine.dart';
 import '../world/multi_scale_lod_controller.dart';
 import '../world/world_controller.dart';
 
@@ -148,6 +149,13 @@ class UzbekistanRegionSelectorOverlay extends StatelessWidget {
 
 /// Opaque full-screen card shown while the active region has no detailed package. It replaces the game view,
 /// so the Tashkent road map is never visible under another region's name.
+/// Profile label plus an honest note: no profile-specific visuals exist yet (`visualsImplemented` is false).
+String _profileText(String profileId) {
+  final p = ArchitectureProfileEngine.supportedProfiles[profileId];
+  if (p == null) return profileId;
+  return p.visualsImplemented ? p.label : '${p.label} (${L.t("vizuallar hali yo'q")})';
+}
+
 class RegionOverviewCard extends StatelessWidget {
   static const Key cardKey = Key('region-overview-card');
   static const Key backKey = Key('region-overview-back');
@@ -204,7 +212,8 @@ class RegionOverviewCard extends StatelessWidget {
                   const SizedBox(height: 14),
                   Text(
                     '${p.lat.toStringAsFixed(3)}°N, ${p.lon.toStringAsFixed(3)}°E · ${L.t("Ko'rinish darajasi")}: ${L.t(_levelText(worldController.lodLevel))}\n'
-                    '${L.t("SOATO kodi tasdiqlanmagan")}: ${r.soatoCode}',
+                    '${L.t("SOATO kodi tasdiqlanmagan")}: ${r.soatoCode}\n'
+                    '${L.t("Arxitektura profili")}: ${_profileText(r.architectureProfileId)}',
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 12 * scale, color: const Color(0xFF55585E)),
                   ),
