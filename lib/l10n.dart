@@ -306,6 +306,12 @@ class L {
     ["Mashina:", "Машин:", "Vehicles:"],
     ["Mashinalar", "Машины", "Vehicles"],
     ["Mashina", "Машина", "Vehicle"],
+    [
+      "Avariya! Yo'l 30 soniya to'sildi",
+      "Авария! Дорога перекрыта на 30 секунд",
+      "Accident! The road is blocked for 30 seconds",
+    ],
+    ["Avariya", "Аварии", "Accidents"],
     ["Yetib bordi", "Доехали", "Arrived"],
     ["O'rtacha", "Среднее", "Average"],
     ["Yo'qotilgan", "Потеряно", "Lost"],

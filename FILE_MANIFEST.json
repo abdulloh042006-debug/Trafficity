@@ -17,8 +17,8 @@
       "index": 2,
       "path": "README.md",
       "scope": "expansion",
-      "sizeBytes": 8522,
-      "sha256": "816851d8fea877aa5112a548ea10bdadea241faf6978d869e5ea2c13ad5e8424",
+      "sizeBytes": 8665,
+      "sha256": "e61fd134806ba7652b320b95cb8872fae5d5707f7e448bd0e038a2e727d75ac9",
       "description": "Loyiha hujjati, CLI va test buyruqlari, ma'lumotlar manbasi"
     },
     {
@@ -193,16 +193,16 @@
       "index": 24,
       "path": "lib/main.dart",
       "scope": "expansion",
-      "sizeBytes": 34105,
-      "sha256": "eb21ce6fda5901c4c9c12ce87dc0ced7e38f28436d578fcb983239f82943d40d",
+      "sizeBytes": 34214,
+      "sha256": "547ed90b9829b2f3c708a156e191b0ae4fa7dfaf39648f3b6149f2a1a3e4405a",
       "description": "Real app-screen wiring for the Uzbekistan world controller and HUD"
     },
     {
       "index": 25,
       "path": "lib/game/road_game.dart",
       "scope": "expansion",
-      "sizeBytes": 85341,
-      "sha256": "8aa2f39fa205209c03a3e5d07c3d9219adade9a2dcda851a7bd8cc97c3781930",
+      "sizeBytes": 86677,
+      "sha256": "3ef1a280fdf83de8bc8a5a90d599ecf2c7c3a3a7ba0ba925bf1b3b1c0be49e82",
       "description": "Game integration for region-aware state and national save envelope"
     },
     {
@@ -417,8 +417,8 @@
       "index": 52,
       "path": "lib/game3d/city3d_renderer.dart",
       "scope": "expansion",
-      "sizeBytes": 28314,
-      "sha256": "aaf2bd6e222520f6020f02d6784e3d660ad6dc9969547d5334bfa84ae08bed98",
+      "sizeBytes": 33122,
+      "sha256": "7d01f3e268f42136c572150f0eb91861701f3cd262a3067951ae16fc8c00e2c3",
       "description": "Dasturiy 3D renderer: yer teksturasi, yo'llar, binolar, mashinalar, soyalar"
     },
     {

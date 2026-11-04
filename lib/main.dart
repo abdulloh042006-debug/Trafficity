@@ -727,6 +727,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                   _stat("Mashina: ${sim.vehicles.length}"),
                   _stat("Yetib bordi: ${sim.completed}"),
                   _stat("O'rtacha: ${sim.avgTrip.round()} s"),
+                  if (sim.accidents > 0) _stat("Avariya: ${sim.accidents}", color: const Color(0xFFC0392B)),
                 ],
               ),
             Wrap(

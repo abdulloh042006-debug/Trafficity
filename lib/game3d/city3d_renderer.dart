@@ -5,6 +5,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/painting.dart';
 
 import '../game/building.dart';
+import '../game/lane_graph.dart';
 import '../game/road_game.dart';
 import '../game/road_network.dart';
 import '../game/traffic_model.dart';
@@ -15,11 +16,13 @@ import 'city_buildings.dart';
 class City3DStats {
   int groundTris = 0, flatTris = 0, shadowTris = 0, itemTris = 0;
   int cityBuildings = 0, gameBuildings = 0, vehicles = 0, decks = 0, hiddenCityBuildings = 0;
+  int signalPoles = 0, markingTris = 0, accidentMarkers = 0;
   double paintMs = 0;
 
   void reset() {
     groundTris = flatTris = shadowTris = itemTris = 0;
     cityBuildings = gameBuildings = vehicles = decks = hiddenCityBuildings = 0;
+    signalPoles = markingTris = accidentMarkers = 0;
   }
 }
 
@@ -183,6 +186,7 @@ class City3DRenderer {
     final iv = _items.build();
     if (iv != null) canvas.drawVertices(iv, BlendMode.dst, Paint());
     stats.itemTris = _items.triangles;
+    _paintAccidents(canvas);
     _paintHaze(canvas, size, r);
     stats.paintMs = sw.elapsedMicroseconds / 1000;
   }
@@ -202,6 +206,31 @@ class City3DRenderer {
           haze,
         ]),
     );
+  }
+
+  /// Orange warning triangles above active accidents (constant screen size, as in 2D).
+  void _paintAccidents(Canvas canvas) {
+    final fill = Paint()..color = const Color(0xFFE67E22);
+    final edge = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2
+      ..color = const Color(0xFFFFFFFF);
+    final mark = Paint()..color = const Color(0xFFFFFFFF);
+    for (final a in game.sim.accidentLog) {
+      if (!cam.project(a.pos.dx, a.pos.dy, 9, _tmp)) continue;
+      final c = Offset(_tmp[0], _tmp[1]);
+      const s = 14.0;
+      final tri = Path()
+        ..moveTo(c.dx, c.dy - s)
+        ..lineTo(c.dx + s * 0.95, c.dy + s * 0.7)
+        ..lineTo(c.dx - s * 0.95, c.dy + s * 0.7)
+        ..close();
+      canvas.drawPath(tri, fill);
+      canvas.drawPath(tri, edge);
+      canvas.drawRect(Rect.fromCenter(center: c + const Offset(0, -1), width: 2.4, height: 9), mark);
+      canvas.drawCircle(c + const Offset(0, 6), 1.5, mark);
+      stats.accidentMarkers++;
+    }
   }
 
   void _paintHaze(Canvas canvas, Size size, double r) {
@@ -361,6 +390,69 @@ class City3DRenderer {
     return dx * dx + dy * dy <= r * r;
   }
 
+  /// Dashes of [pts] ([on] drawn, [off] skipped) as thin ribbons.
+  void _dashes(List<Offset> pts, double on, double off, double half, int color) {
+    var drawing = true, left = on;
+    for (var i = 1; i < pts.length; i++) {
+      final a = pts[i - 1], b = pts[i];
+      final len = (b - a).distance;
+      if (len < 1e-9) continue;
+      var pos = 0.0;
+      while (pos < len - 1e-9) {
+        final step = math.min(len - pos, left);
+        if (drawing) {
+          final p0 = Offset.lerp(a, b, pos / len)!, p1 = Offset.lerp(a, b, (pos + step) / len)!;
+          _line(p0, p1, half, color);
+        }
+        pos += step;
+        left -= step;
+        if (left <= 1e-9) {
+          drawing = !drawing;
+          left = drawing ? on : off;
+        }
+      }
+    }
+  }
+
+  void _line(Offset a, Offset c, double half, int color) {
+    final dx = c.dx - a.dx, dy = c.dy - a.dy;
+    final len = math.sqrt(dx * dx + dy * dy);
+    if (len < 1e-6) return;
+    final nx = -dy / len * half, ny = dx / len * half;
+    const z = roadZ + 0.04;
+    _setP(0, a.dx + nx, a.dy + ny, z, color);
+    _setP(1, c.dx + nx, c.dy + ny, z, color);
+    _setP(2, c.dx - nx, c.dy - ny, z, color);
+    _setP(3, a.dx - nx, a.dy - ny, z, color);
+    stats.markingTris += _poly(_flat, 4);
+  }
+
+  /// Road markings as in the 2D view: two-way roads have a yellow centre line (dashed on ordinary roads, solid on
+  /// big roads and highways), lanes of one direction are separated by white dashes.
+  void _buildMarkings(double r) {
+    if (cam.distance > 1400) return; // invisible from far away anyway
+    final mr = math.min(r, 750.0);
+    final yellow = const Color(0xFFD9B85A).toARGB32(), white = const Color(0xFFF4F4F4).toARGB32();
+    for (final road in game.net.roads.values) {
+      if (road.layer != 0 || road.pts.length < 2) continue;
+      if (!_near(road.pts.first, mr) && !_near(road.pts.last, mr) && !_near(road.pts[road.pts.length ~/ 2], mr))
+        continue;
+      if (!road.oneWay) {
+        if (road.type == 0) {
+          _dashes(road.pts, 6, 8, 0.35, yellow);
+        } else {
+          for (var i = 0; i + 1 < road.pts.length; i++) {
+            _line(road.pts[i], road.pts[i + 1], 0.35, yellow);
+          }
+        }
+      }
+      if (road.type == 0) continue;
+      for (final off in road.type == 2 ? const [-14.0, -7.0, 7.0, 14.0] : const [-7.0, 7.0]) {
+        _dashes(LaneGraph.offsetPath(road.pts, off), 5, 7, 0.28, white);
+      }
+    }
+  }
+
   void _buildFlat(double r) {
     _flat.clear();
     final rc = rail.toARGB32(), ac = asphalt.toARGB32();
@@ -379,6 +471,7 @@ class City3DRenderer {
         _ribbon(_flat, road.pts[i], road.pts[i + 1], half, roadZ, ac);
       }
     }
+    _buildMarkings(r);
   }
 
   // ------------------------------------------------------------------ items
@@ -425,11 +518,23 @@ class City3DRenderer {
     for (var i = 0; i < vs.length; i++) {
       final v = vs[i];
       if (v.removed) continue;
-      final p = v.track.pointAt(math.max(0.0, v.s - v.length / 2));
-      if (!_near(p, r)) continue;
-      out.add(_Item(_Kind.vehicle, i, cam.depthOf(p.dx, p.dy, 1.5)));
+      _vehiclePose(v);
+      if (!_near(Offset(_vcx, _vcy), r)) continue;
+      out.add(_Item(_Kind.vehicle, i, cam.depthOf(_vcx, _vcy, 1.5)));
       stats.vehicles++;
     }
+    _poles.clear();
+    game.sim.signals.forEach((node, sg) {
+      for (final l in game.graph.incoming[node] ?? const <Lane>[]) {
+        final end = l.pointAt(l.length), d = l.dirAt(l.length);
+        // on the kerb side of the lane (right of the driving direction), just before the stop line
+        final x = end.dx - d.dx * 1.5 - d.dy * 5.2, y = end.dy - d.dy * 1.5 + d.dx * 5.2;
+        if (!_near(Offset(x, y), r)) continue;
+        _poles.add(_Pole(x, y, d.dx, d.dy, sg.stateOfLane(l.id)));
+        out.add(_Item(_Kind.signal, _poles.length - 1, cam.depthOf(x, y, 3)));
+        stats.signalPoles++;
+      }
+    });
     for (final road in game.net.roads.values) {
       if (road.layer != 1) continue;
       for (var i = 0; i + 1 < road.pts.length; i++) {
@@ -442,6 +547,8 @@ class City3DRenderer {
     out.sort((a, b) => b.depth.compareTo(a.depth)); // far first
     return out;
   }
+
+  final List<_Pole> _poles = [];
 
   /// A real building that sits under a game road or a game building is hidden (the game objects win).
   bool _hiddenUnderGame(CityBuildings city, int i) {
@@ -535,24 +642,8 @@ class City3DRenderer {
         return 4;
       case _Kind.vehicle:
         final v = game.sim.vehicles[it.index];
-        final front = v.track.pointAt(v.s), back = v.track.pointAt(math.max(0.0, v.s - v.length));
-        var dx = front.dx - back.dx, dy = front.dy - back.dy;
-        final len = math.sqrt(dx * dx + dy * dy);
-        final angle = len < 1e-3 ? 0.0 : math.atan2(dy, dx);
-        final c = v.track.pointAt(math.max(0.0, v.s - v.length / 2));
-        // the 2D sprite is drawn along the lane; rectangle half sizes: length along, width across
-        final ca = math.cos(angle), sa = math.sin(angle);
-        final hl = v.length / 2, hw = v.width / 2;
-        dx = ca;
-        dy = sa;
-        _fx[0] = c.dx + dx * hl - dy * hw;
-        _fy[0] = c.dy + dy * hl + dx * hw;
-        _fx[1] = c.dx - dx * hl - dy * hw;
-        _fy[1] = c.dy - dy * hl + dx * hw;
-        _fx[2] = c.dx - dx * hl + dy * hw;
-        _fy[2] = c.dy - dy * hl - dx * hw;
-        _fx[3] = c.dx + dx * hl + dy * hw;
-        _fy[3] = c.dy + dy * hl - dx * hw;
+        _vehiclePose(v);
+        _box(_vcx, _vcy, _vca, _vsa, v.length / 2, v.width / 2);
         _h = v.type == VType.truck ? 4.6 : 2.7; // overall height (shadow)
         _z0 = _layerOf(v.track) == 1 ? deckZ : roadZ;
         _wall = _tint(v.color, 0.82);
@@ -579,7 +670,35 @@ class City3DRenderer {
         _roof = asphalt.toARGB32();
         _wall = const Color(0xFF575B61).toARGB32();
         return 4;
+      case _Kind.signal:
+        final p = _poles[it.index];
+        _box(p.x, p.y, p.dx, p.dy, 0.35, 0.35);
+        _h = 6.0;
+        _z0 = 0;
+        _roof = _wall = const Color(0xFF3A3D42).toARGB32();
+        return 4;
     }
+  }
+
+  // centre and heading of the vehicle being emitted (rear follows the real path, as in the simulation)
+  double _vcx = 0, _vcy = 0, _vca = 1, _vsa = 0;
+
+  void _vehiclePose(Vehicle v) {
+    final f = v.track.pointAt(v.s), r = game.sim.rearOf(v);
+    var dx = f.dx - r.dx, dy = f.dy - r.dy;
+    final len = math.sqrt(dx * dx + dy * dy);
+    if (len < 1e-3) {
+      final d = v.track.dirAt(v.s);
+      dx = d.dx;
+      dy = d.dy;
+    } else {
+      dx /= len;
+      dy /= len;
+    }
+    _vca = dx;
+    _vsa = dy;
+    _vcx = (f.dx + r.dx) / 2 - dy * v.lat; // lat: lane-change offset, same sign as the 2D view
+    _vcy = (f.dy + r.dy) / 2 + dx * v.lat;
   }
 
   int _layerOf(Track t) {
@@ -641,20 +760,29 @@ class City3DRenderer {
       _emitVehicle(game.sim.vehicles[it.index], fogT);
       return;
     }
+    if (it.kind == _Kind.signal) {
+      final p = _poles[it.index];
+      _box(p.x, p.y, p.dx, p.dy, 0.22, 0.22);
+      _emitPrism(4, 0, 4.4, const Color(0xFF3A3D42).toARGB32(), const Color(0xFF3A3D42).toARGB32(), null, fogT);
+      _box(p.x, p.y, p.dx, p.dy, 0.5, 0.5);
+      final lamp = p.state == 0
+          ? const Color(0xFF2ECC71)
+          : (p.state == 1 ? const Color(0xFFF1C40F) : const Color(0xFFE74C3C));
+      _emitPrism(4, 4.4, 6.0, lamp.toARGB32(), _tint(lamp, 0.8), null, fogT * 0.5);
+      return;
+    }
     final n = _footprint(it);
     _emitPrism(n, _z0, _z0 + _h, _wall, _roof, _roofTris, fogT);
   }
 
   /// Car: low body + glass cabin; truck: cab at the front + taller cargo box.
   void _emitVehicle(Vehicle v, double fogT) {
-    final front = v.track.pointAt(v.s), back = v.track.pointAt(math.max(0.0, v.s - v.length));
-    final dx = front.dx - back.dx, dy = front.dy - back.dy;
-    final len = math.sqrt(dx * dx + dy * dy);
-    final ca = len < 1e-3 ? 1.0 : dx / len, sa = len < 1e-3 ? 0.0 : dy / len;
-    final c = v.track.pointAt(math.max(0.0, v.s - v.length / 2));
+    _vehiclePose(v);
+    final ca = _vca, sa = _vsa, c = Offset(_vcx, _vcy);
     final z0 = _layerOf(v.track) == 1 ? deckZ : roadZ;
     final l = v.length, w = v.width;
-    final body = v.color, glass = const Color(0xFF34404B).toARGB32();
+    final body = v.crashed ? Color(_tint(v.color, 0.55)) : v.color; // a wreck looks dark
+    final glass = const Color(0xFF34404B).toARGB32();
     if (v.type == VType.truck) {
       _box(c.dx + ca * l * 0.39, c.dy + sa * l * 0.39, ca, sa, l * 0.11, w * 0.47);
       _emitPrism(4, z0, z0 + 3.2, _tint(const Color(0xFF8B3A2E), 0.85), const Color(0xFFB5523F).toARGB32(), null, fogT);
@@ -752,7 +880,13 @@ class City3DRenderer {
   }
 }
 
-enum _Kind { city, building, vehicle, deck }
+enum _Kind { city, building, vehicle, deck, signal }
+
+class _Pole {
+  _Pole(this.x, this.y, this.dx, this.dy, this.state);
+  final double x, y, dx, dy;
+  final int state; // 0 green, 1 yellow, 2 red (Signal.stateOfLane)
+}
 
 class _Item {
   _Item(this.kind, this.index, this.depth);

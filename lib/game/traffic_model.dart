@@ -69,6 +69,7 @@ class Lane extends Track {
   /// Chorraha oldida kesilmagan to'liq polosa chizig'i va boshidan/oxiridan kesilgan uzunliklar.
   List<Offset> full = const [];
   double trimA = 0, trimB = 0, fullLen = 0;
+  double stopBack = 0; // o'tkir chorrahada to'xtash chizig'i polosa oxiridan shuncha oldinroq (m)
 
   final int laneIdx; // 0 markazga eng yaqin (ichki, tez), keyingilari o'ngga (tashqi)
   final int laneCount; // shu yo'nalishdagi polosalar soni
@@ -161,4 +162,23 @@ class Vehicle {
   double lcCool = 0; // polosa almashtirish uchun kutish vaqti
   bool needsReroute = false;
   bool removed = false;
+
+  bool crashed = false; // avariyada: joyida turadi va yo'lni to'sadi, keyin olib ketiladi
+  double crashT = 0; // olib ketilguncha qolgan vaqt (s)
+  double riskCool = 0; // keyingi avariya ehtimolini hisoblashgacha kutish (s)
+  double crossWait = 0; // boshqa polosadagi mashina tufayli to'xtab turgan vaqt (s)
+  double crossPass = 0; // halqa bo'lib qolmaslik uchun boshqa polosadagilarni e'tiborsiz qoldirish vaqti (s)
+
+  // har qadamda hisoblanadigan holat (TrafficSim._indexPoses): old bamper, yo'nalish, markaz, qatlam
+  double fx = 0, fy = 0, ux = 1, uy = 0, cx = 0, cy = 0;
+  int layer = 0;
+}
+
+/// Avariya: joyi, vaqti va qachon tozalanishi.
+class Accident {
+  Accident(this.pos, this.at, this.until, this.a, this.b);
+  final Offset pos;
+  final double at;
+  final double until;
+  final int a, b;
 }

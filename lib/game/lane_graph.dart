@@ -83,7 +83,43 @@ class LaneGraph {
 
   /// Chorraha oldidagi to'xtash chizig'i tugun markazidan qancha orqada (chorraha o'lchamiga qarab).
   /// Tupikda (bitta yo'l) kesilmaydi.
-  double _setback(int nodeId) {
+  static const double maxSetback = 40;
+  static const double maxStopBack = 25;
+
+  /// Polosa chorraha markazidan qancha masofada to'xtaydi ([roadId] yo'li uchun).
+  /// Avval: barcha yo'llar uchun eng keng yarim kenglik + 3. O'tkir burchakda (Y-chorraha, bir tomonlama juftlar)
+  /// bu yetmas edi: ikki yo'lda to'xtash chizig'ida turgan mashinalar bir-biriga kirib qolardi. Yo'llar A va B
+  /// (yarim kengliklari wA, wB, orasidagi burchak θ) ichki chetlari A bo'ylab (wB + wA·cos θ) / sin θ masofada
+  /// ajraladi; setback shundan kichik bo'lmaydi (eng ko'pi [maxSetback]).
+  double _setback(int nodeId, int roadId) {
+    final n = net.nodes[nodeId];
+    if (n == null || n.roads.length < 2) return 0;
+    var need = 7.0;
+    for (final rid in n.roads) {
+      final r = net.roads[rid];
+      if (r != null) need = max(need, 7.0 * (r.type + 1));
+    }
+    final self = net.roads[roadId];
+    final ua = self == null ? null : _dirFrom(self, nodeId);
+    if (self != null && ua != null) {
+      final wA = 7.0 * (self.type + 1);
+      for (final rid in n.roads) {
+        if (rid == roadId) continue;
+        final o = net.roads[rid];
+        final ub = o == null ? null : _dirFrom(o, nodeId);
+        if (o == null || ub == null) continue;
+        final cosT = (ua.dx * ub.dx + ua.dy * ub.dy).clamp(-1.0, 1.0);
+        if (cosT <= 0) continue; // 90° yoki kattaroq: yarim kenglik yetadi
+        final sinT = sqrt(1 - cosT * cosT);
+        final wB = 7.0 * (o.type + 1);
+        need = max(need, sinT < 0.05 ? maxSetback : (wB + wA * cosT) / sinT);
+      }
+    }
+    return min(need, maxSetback) + 3;
+  }
+
+  /// Burchakni hisobga olmagan oddiy setback (eng keng yarim kenglik + 3).
+  double _plainSetback(int nodeId) {
     final n = net.nodes[nodeId];
     if (n == null || n.roads.length < 2) return 0;
     var half = 7.0;
@@ -92,6 +128,23 @@ class LaneGraph {
       if (r != null) half = max(half, 7.0 * (r.type + 1));
     }
     return half + 3;
+  }
+
+  /// Yo'lning [nodeId] tugundan chiquvchi yo'nalishi (tugundan ~12 m nariroqdagi nuqtaga qarab).
+  static Offset? _dirFrom(Road r, int nodeId) {
+    final pts = r.a == nodeId ? r.pts : (r.b == nodeId ? r.pts.reversed.toList() : null);
+    if (pts == null || pts.length < 2) return null;
+    final o = pts.first;
+    var q = pts[1];
+    var acc = 0.0;
+    for (var i = 1; i < pts.length; i++) {
+      acc += (pts[i] - pts[i - 1]).distance;
+      q = pts[i];
+      if (acc >= 12) break;
+    }
+    final d = q - o;
+    final len = d.distance;
+    return len < 1e-6 ? null : d / len;
   }
 
   /// Polosa chizig'idagi keskin burchaklarni (yo'l uchi boshqa yo'lga ulanganda qolgan qiyshiqlik, siniq
@@ -159,8 +212,14 @@ class LaneGraph {
   /// Polosa uchlarini chorraha oldida kesadi (qisqa yo'lda uzunlikning 25% idan oshmaydi).
   /// Geometriya o'zgargan bo'lsa true; polosadagi mashinalar o'z joyida qoladi.
   bool _applyTrim(Lane l) {
+    // Geometriya oddiy setback bilan (chorraha va burilish yo'llari o'zgarmaydi). O'tkir chorrahada esa mashina
+    // shuncha ertaroq to'xtaydi ([Lane.stopBack]): ikki yo'lda to'xtab turganlar bir-biriga kirmaydi. A/B (3 seed,
+    // 200 s): geometriyani uzaytirish ustma-ust tushishni 57 % kamaytirgan, lekin safarlarni 29 % kamaytirgan edi.
     final cap = 0.25 * l.fullLen;
-    final sa = min(_setback(l.fromNode), cap), sb = min(_setback(l.toNode), cap);
+    final sa = min(_plainSetback(l.fromNode), cap), sb = min(_plainSetback(l.toNode), cap);
+    final extra = max(0.0, _setback(l.toNode, l.roadId) - _plainSetback(l.toNode));
+    final len = max(0.0, l.fullLen - sa - sb);
+    l.stopBack = min(min(maxStopBack, extra), 0.3 * len);
     if ((l.trimA - sa).abs() < 0.01 && (l.trimB - sb).abs() < 0.01 && l.pts.isNotEmpty) return false;
     final shift = sa - l.trimA;
     l.setPts(trimPath(l.full, sa, sb));

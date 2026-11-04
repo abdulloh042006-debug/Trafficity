@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:trafficity/game/road_game.dart';
+import 'package:trafficity/game/traffic_model.dart';
 import 'package:trafficity/game3d/camera3d.dart';
 import 'package:trafficity/game3d/city3d_renderer.dart';
 import 'package:trafficity/game3d/city3d_view.dart';
@@ -179,6 +180,20 @@ void main() {
       expect(s.gameBuildings, greaterThan(0));
       expect(s.vehicles, greaterThan(0));
       expect(s.hiddenCityBuildings, greaterThan(0)); // footprints under game roads / buildings are left out
+      expect(s.signalPoles, greaterThan(0)); // the ready-made city has signalised junctions
+      expect(s.markingTris, greaterThan(0)); // centre lines / lane separators
+      expect(s.accidentMarkers, 0);
+      // an active accident gets a marker
+      final v = game.sim.vehicles.first;
+      game.sim.accidentLog.add(Accident(v.track.pointAt(v.s), game.sim.time, game.sim.time + 30, v.id, v.id));
+      r.cam
+        ..targetX = v.track.pointAt(v.s).dx
+        ..targetY = v.track.pointAt(v.s).dy;
+      final recA = ui.PictureRecorder();
+      r.paint(Canvas(recA), size);
+      recA.endRecording().dispose();
+      expect(r.stats.accidentMarkers, 1);
+      game.sim.accidentLog.clear();
       // every camera pose renders, including looking from below a roof and from straight above
       for (final pose in const [(0.22, 80.0, 0.0), (1.45, 2600.0, 2.0), (0.5, 60.0, -3.0)]) {
         r.cam

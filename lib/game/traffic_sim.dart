@@ -42,6 +42,21 @@ class TrafficSim {
   int maxVehicles = 250;
   double demandScale = 1.0;
 
+  /// Avariyalar: keskin tormoz kerak bo'lgan xavfli holatda [accidentChance] ehtimol bilan yuz beradi; avariyadagi
+  /// mashinalar [accidentClearTime] soniya yo'lni to'sadi, keyin olib ketiladi ([towed]).
+  bool accidentsEnabled = true;
+  double accidentChance = 0.06;
+  static const double accidentClearTime = 30;
+  int accidents = 0;
+  int towed = 0;
+  final List<Accident> accidentLog = []; // faol (hali tozalanmagan) avariyalar
+
+  /// Boshqa polosa/yo'ldagi mashinaga qarab tormozlash (ustma-ust tushmaslik uchun).
+  bool crossAvoidance = true;
+
+  final Map<int, List<Vehicle>> _grid = {};
+  static const double _cell = 24;
+
   final Map<int, Signal> signals = {};
   double _sanT = 0;
   double _statAcc = 0;
@@ -241,10 +256,13 @@ class TrafficSim {
     }
     _spawn(dt);
     for (final v in vehicles) {
-      if (v.needsReroute && v.track is Lane && v.holdConn == null) _reroute(v);
+      if (v.needsReroute && !v.crashed && v.track is Lane && v.holdConn == null) _reroute(v);
     }
     vehicles.removeWhere((v) => v.removed);
+    _clearCrashes(dt);
+    vehicles.removeWhere((v) => v.removed);
     _laneChanges(dt);
+    _indexPoses();
     for (final v in vehicles) {
       _computeAccel(v, dt);
     }
@@ -389,7 +407,7 @@ class TrafficSim {
       v.lat *= decay;
       v.lcCool -= dt;
       final tr = v.track;
-      if (tr is! Lane || tr.laneCount < 2 || v.lcCool > 0 || v.removed) continue;
+      if (tr is! Lane || tr.laneCount < 2 || v.lcCool > 0 || v.removed || v.crashed) continue;
       if (v.holdConn != null || v.needsReroute) continue;
       if (v.s < 25 || tr.length - v.s < 70) continue;
       if (v.routeIdx >= v.route.length - 1 && v.destS - v.s < 80) continue;
@@ -522,6 +540,11 @@ class TrafficSim {
   }
 
   void _computeAccel(Vehicle v, double dt) {
+    if (v.crashed) {
+      v.a = 0;
+      v.v = 0;
+      return;
+    }
     final tr = v.track;
     final route = v.route;
     var v0 = tr is Lane ? tr.speedLimit : (tr as Connector).vmax;
@@ -564,17 +587,18 @@ class TrafficSim {
         // olmaydi); shunda ham keyingi chorrahaga ruxsat so'rashi kerak, aks holda abadiy qotadi (Amir Temur yonidagi yuk).
         if (_mayAsk(v, tr)) {
           final dreq = v.v * v.v / (2 * v.bComf) + 20;
+          final stopDist = endDist - tr.stopBack; // o'tkir chorrahada to'xtash chizig'i oldinroq
           // kichik yo'l: stopline'da to'liq to'xtamaguncha ruxsat so'ralmaydi
-          final ready = !_minorAt(tr, conn.nodeId) || (v.v < 0.6 && endDist < 8);
-          if (endDist <= dreq && !(ready && _tryGrant(v, conn))) {
-            if (v.v < 1.0 && endDist < 15) v.wait += dt;
+          final ready = !_minorAt(tr, conn.nodeId) || (v.v < 0.6 && stopDist < 8);
+          if (stopDist <= dreq && !(ready && _tryGrant(v, conn))) {
+            if (v.v < 1.0 && stopDist < 15) v.wait += dt;
             if (v.wait > 25) {
               v.wait = 8; // uzoq qotib qolsa, tirbandlikni hisobga olib yangi marshrut qidiradi
               v.needsReroute = true;
             }
             v.pendingConn = conn;
             _waiters.putIfAbsent(conn.nodeId, () => {}).add(v);
-            final sg = endDist - 1.0;
+            final sg = stopDist - 1.0;
             if (sg < gap) {
               gap = sg;
               vl = 0;
@@ -588,6 +612,13 @@ class TrafficSim {
           vl = 0;
         }
       }
+    }
+
+    // boshqa polosa/yo'ldagi mashina old yo'lakda bo'lsa (o'tkir chorraha, ustma-ust yo'llar, avariya) - unga qarab tormoz
+    final cross = crossAvoidance ? _crossLeader(v, dt) : null;
+    if (cross != null && cross.$1 < gap) {
+      gap = cross.$1;
+      vl = cross.$2;
     }
 
     v0 = max(v0, 4.0);
@@ -604,7 +635,7 @@ class TrafficSim {
   // ---------------------------------------------------------------- harakat
 
   void _advance(Vehicle v, double dt) {
-    if (v.removed) return;
+    if (v.removed || v.crashed) return;
     v.v = max(0.0, v.v + v.a * dt);
     v.s += v.v * dt;
 
@@ -665,6 +696,182 @@ class TrafficSim {
   bool _mayAsk(Vehicle v, Lane lane) {
     final h = v.holdConn;
     return h == null || (h.to.id == lane.id && lane.length < v.length + 1.0);
+  }
+
+  // ------------------------------------------------------------- holat, to'qnashuvdan saqlanish, avariya
+
+  /// Orqa bamper: haqiqiy yo'l bo'ylab orqaga (oldingi chorraha yoki polosaga o'tishi mumkin).
+  Offset rearOf(Vehicle v) {
+    var back = v.length;
+    Track t = v.track;
+    var s = v.s;
+    var ri = v.routeIdx;
+    for (var k = 0; k < 4; k++) {
+      if (s >= back) return t.pointAt(s - back);
+      back -= s;
+      Track? prev;
+      if (t is Connector) {
+        prev = t.from;
+      } else if (ri > 0 && ri < v.route.length) {
+        prev = graph.connectors['${v.route[ri - 1].id}_${(t as Lane).id}'];
+        ri -= 1;
+      }
+      if (prev == null) return t.pointAt(0) - t.dirAt(0) * back; // marshrut boshi: to'g'ri chiziq bo'ylab
+      t = prev;
+      s = prev.length;
+    }
+    return t.pointAt(max(0.0, s - back));
+  }
+
+  int _layerOf(Track t) => graph.net.roads[t is Lane ? t.roadId : (t as Connector).from.roadId]?.layer ?? 0;
+
+  /// Har qadam boshida: mashinalarning holati va fazoviy indeks (boshqa polosalardagilarni tez topish uchun).
+  void _indexPoses() {
+    _grid.clear();
+    for (final v in vehicles) {
+      if (v.removed) continue;
+      final f = v.track.pointAt(v.s), r = rearOf(v);
+      var dx = f.dx - r.dx, dy = f.dy - r.dy;
+      final len = sqrt(dx * dx + dy * dy);
+      if (len < 1e-6) {
+        final d = v.track.dirAt(v.s);
+        dx = d.dx;
+        dy = d.dy;
+      } else {
+        dx /= len;
+        dy /= len;
+      }
+      v
+        ..fx = f.dx
+        ..fy = f.dy
+        ..ux = dx
+        ..uy = dy
+        ..cx = (f.dx + r.dx) / 2 - dy * v.lat
+        ..cy = (f.dy + r.dy) / 2 + dx * v.lat
+        ..layer = _layerOf(v.track);
+      final ext = v.length / 2 + 1;
+      final x0 = ((v.cx - ext) / _cell).floor(), x1 = ((v.cx + ext) / _cell).floor();
+      final y0 = ((v.cy - ext) / _cell).floor(), y1 = ((v.cy + ext) / _cell).floor();
+      for (var gy = y0; gy <= y1; gy++) {
+        for (var gx = x0; gx <= x1; gx++) {
+          _grid.putIfAbsent(gy * 100000 + gx, () => []).add(v);
+        }
+      }
+    }
+  }
+
+  /// Old yo'lakda (o'z marshrutidan boshqa yo'lda) turgan mashina: (bamperdan masofa, uning yo'nalish bo'yicha tezligi).
+  /// O'zaro ko'rishsa kichik id li o'tadi; 8 s kutgan mashina halqa bo'lmasligi uchun 3 s e'tiborsiz o'tadi.
+  (double, double)? _crossLeader(Vehicle v, double dt) {
+    final passing = v.crossPass > 0;
+    if (passing) v.crossPass -= dt;
+    if (v.riskCool > 0) v.riskCool -= dt;
+    // halqani buzish paytida ham avariyadagi mashina e'tiborsiz qolmaydi
+    final hit = _probe(v, wrecksOnly: passing);
+    if (hit == null) {
+      v.crossWait = 0;
+      return null;
+    }
+    final o = hit.$3;
+    if (!o.crashed && _probe(o, only: v) != null && o.id > v.id) {
+      v.crossWait = 0;
+      return null; // ikkalasi ham bir-birini ko'radi: kichik id li ustun
+    }
+    if (v.v < 0.5 && !o.crashed) {
+      v.crossWait += dt;
+      if (v.crossWait > 8) {
+        v.crossWait = 0;
+        v.crossPass = 3;
+      }
+    }
+    final gap = hit.$1, vl = hit.$2;
+    if (accidentsEnabled && v.riskCool <= 0 && !o.crashed) {
+      final closing = v.v - vl;
+      final need = closing <= 0 ? 0.0 : closing * closing / (2 * max(gap - 0.5, 0.3));
+      if (need > 1.6 * v.bComf) {
+        v.riskCool = 8;
+        if (rnd.nextDouble() < accidentChance) _crash(v, o);
+      }
+    }
+    return (gap, vl);
+  }
+
+  /// [v] ning old yo'lagidagi eng yaqin begona mashina: (masofa, tezlik proyeksiyasi, mashina). [only] berilsa faqat u.
+  (double, double, Vehicle)? _probe(Vehicle v, {Vehicle? only, bool wrecksOnly = false}) {
+    final reach = min(42.0, 5 + v.v * 1.3), half = v.width * 0.45;
+    final ax = v.fx, ay = v.fy, ux = v.ux, uy = v.uy, nx = -uy, ny = ux;
+    final bx = ax + ux * reach, by = ay + uy * reach;
+    final x0 = ((min(ax, bx) - half) / _cell).floor(), x1 = ((max(ax, bx) + half) / _cell).floor();
+    final y0 = ((min(ay, by) - half) / _cell).floor(), y1 = ((max(ay, by) + half) / _cell).floor();
+    final tr = v.track;
+    Track? next1, next2;
+    if (tr is Lane && v.routeIdx + 1 < v.route.length) {
+      next1 = graph.connectors['${tr.id}_${v.route[v.routeIdx + 1].id}'];
+      next2 = v.route[v.routeIdx + 1];
+    } else if (tr is Connector) {
+      next1 = tr.to;
+    }
+    (double, double, Vehicle)? best;
+    final seen = <Vehicle>{};
+    for (var gy = y0; gy <= y1; gy++) {
+      for (var gx = x0; gx <= x1; gx++) {
+        for (final o in _grid[gy * 100000 + gx] ?? const <Vehicle>[]) {
+          if (identical(o, v) || o.removed || !seen.add(o)) continue;
+          if (only != null && !identical(o, only)) continue;
+          if (wrecksOnly && !o.crashed) continue;
+          if (o.layer != v.layer) continue;
+          final ot = o.track;
+          if (identical(ot, tr) || identical(ot, next1) || identical(ot, next2)) continue; // IDM o'zi ko'radi
+          if (tr is Lane && ot is Lane && ot.roadId == tr.roadId) continue; // qo'shni polosa: polosa almashtirish
+          // faqat bir yo'nalishdagi (qo'shilish, ustma-ust koridor) yoki avariyadagi mashina; kesishuvlarni chorraha
+          // ruxsati boshqaradi (A/B: kesishuvlarni ham kutish o'tkazuvchanlikni 2 barobar kamaytirdi)
+          if (!o.crashed && o.ux * ux + o.uy * uy < 0.6) continue;
+          var tmin = double.infinity, tmax = -double.infinity, wmin = double.infinity, wmax = -double.infinity;
+          final hl = o.length / 2, hw = o.width / 2;
+          for (final sl in const [-1.0, 1.0]) {
+            for (final sw in const [-1.0, 1.0]) {
+              final px = o.cx + o.ux * hl * sl - o.uy * hw * sw - ax;
+              final py = o.cy + o.uy * hl * sl + o.ux * hw * sw - ay;
+              final t = px * ux + py * uy, w = px * nx + py * ny;
+              tmin = min(tmin, t);
+              tmax = max(tmax, t);
+              wmin = min(wmin, w);
+              wmax = max(wmax, w);
+            }
+          }
+          if (tmax <= 0.2 || tmin >= reach || wmax < -half || wmin > half) continue;
+          final gap = max(0.0, tmin);
+          if (best == null || gap < best.$1) best = (gap, max(0.0, o.v * (o.ux * ux + o.uy * uy)), o);
+        }
+      }
+    }
+    return best;
+  }
+
+  void _crash(Vehicle a, Vehicle b) {
+    for (final v in [a, b]) {
+      v
+        ..crashed = true
+        ..crashT = accidentClearTime
+        ..v = 0
+        ..a = 0;
+      _clearWait(v);
+    }
+    accidents++;
+    accidentLog.add(Accident(Offset((a.fx + b.cx) / 2, (a.fy + b.cy) / 2), time, time + accidentClearTime, a.id, b.id));
+  }
+
+  /// Avariyadagi mashinalar vaqti tugagach olib ketiladi.
+  void _clearCrashes(double dt) {
+    for (final v in vehicles) {
+      if (!v.crashed || v.removed) continue;
+      v.crashT -= dt;
+      if (v.crashT <= 0) {
+        _remove(v);
+        towed++;
+      }
+    }
+    accidentLog.removeWhere((a) => a.until <= time);
   }
 
   void _release(Vehicle v) {

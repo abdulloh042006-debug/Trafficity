@@ -91,12 +91,13 @@ class RoadGame extends FlameGame {
 
   // shahar darajasi va mamnuniyat
   static const int maxLevel = 12;
-  static const double levelNeedSeconds = 20;
+  static const double levelNeedSeconds = 14; // 20 edi: uylar tezroq ko'payishi uchun (egasi so'ragan)
   int level = 1;
   double satisfaction = 50;
   double levelTimer = 0;
   String satNote = "";
   int _tripsAtLevel = 0;
+  int _accidentsSeen = 0; // shu xaritada xabar berilgan avariyalar
   double _econTimer = 0;
   int _nextBuildingId = 1;
   Offset cityCenter = const Offset(3200, 3200);
@@ -304,6 +305,7 @@ class RoadGame extends FlameGame {
     roundabouts.clear();
     graph = LaneGraph(net);
     sim = TrafficSim(graph, buildings, s);
+    _accidentsSeen = 0;
     sim.demandScale = const [0.7, 1.0, 1.4][difficulty];
     budget = sandbox ? 1e9 : _startBudgetFor;
     demand = 1.0;
@@ -524,7 +526,7 @@ class RoadGame extends FlameGame {
       satNote = "Tarmoq yaxshi ishlayapti";
     }
 
-    final ok = satisfaction >= satTarget && noAccess == 0 && (sim.completed - _tripsAtLevel) >= 6;
+    final ok = satisfaction >= satTarget && noAccess == 0 && (sim.completed - _tripsAtLevel) >= 4;
     levelTimer = ok ? levelTimer + 1 : max(0.0, levelTimer - 1);
     if (levelTimer >= levelNeedSeconds && level < maxLevel && !sandbox) _levelUp();
   }
@@ -564,7 +566,7 @@ class RoadGame extends FlameGame {
     final grew = _growTerritory();
     _placeBatch(
       Random(seed * 31 + level),
-      3 + level ~/ 2,
+      4 + level ~/ 2, // har darajada bitta uy ko'proq
       level.isEven ? 1 : 0,
       level % 3 == 0 ? 1 : 0,
       min(420 + 60.0 * level, terrHalf - 150),
@@ -2019,6 +2021,10 @@ class RoadGame extends FlameGame {
         n++;
       }
       simMs = sw.elapsedMicroseconds / 1000.0;
+      if (sim.accidents > _accidentsSeen) {
+        _accidentsSeen = sim.accidents;
+        flashMsg("Avariya! Yo'l 30 soniya to'sildi");
+      }
       if (_acc > _simStep) _acc = 0; // qurilma ulgurmasa, tezlikni pasaytiramiz
     }
     if (speed > 0) {
@@ -2061,6 +2067,7 @@ class RoadGame extends FlameGame {
     drawStations(canvas, rail);
     _drawElevated(canvas); // estakada yer usti mashinalari va binolar ustidan o'tadi
     _drawVehicles(canvas, 1);
+    _drawAccidents(canvas);
     drawTrains(canvas, rail, railVis, zoom);
     _drawSelected(canvas);
     _drawPreview(canvas);
@@ -2518,6 +2525,30 @@ class RoadGame extends FlameGame {
         glass,
       );
       canvas.restore();
+    }
+  }
+
+  /// Avariya joyi: to'q sariq ogohlantirish uchburchagi (uzoqdan ham ko'rinadigan o'lcham).
+  void _drawAccidents(Canvas canvas) {
+    if (sim.accidentLog.isEmpty) return;
+    final s = max(9.0, 11 / zoom);
+    final fill = Paint()..color = const Color(0xFFE67E22);
+    final edge = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = s * 0.14
+      ..color = const Color(0xFFFFFFFF);
+    final mark = Paint()..color = const Color(0xFFFFFFFF);
+    for (final a in sim.accidentLog) {
+      final c = a.pos - Offset(0, s * 1.2);
+      final tri = Path()
+        ..moveTo(c.dx, c.dy - s)
+        ..lineTo(c.dx + s * 0.95, c.dy + s * 0.7)
+        ..lineTo(c.dx - s * 0.95, c.dy + s * 0.7)
+        ..close();
+      canvas.drawPath(tri, fill);
+      canvas.drawPath(tri, edge);
+      canvas.drawRect(Rect.fromCenter(center: c + Offset(0, -s * 0.08), width: s * 0.16, height: s * 0.62), mark);
+      canvas.drawCircle(c + Offset(0, s * 0.42), s * 0.1, mark);
     }
   }
 
