@@ -34,3 +34,4 @@ flutter:
     - assets/world/uzbekistan/regions/tashkent_city/
     - assets/world/uzbekistan/regions/tashkent_city/chunks/
     - assets/world/uzbekistan/administrative_boundaries.geojson
+    - assets/world/uzbekistan/region_borders.json

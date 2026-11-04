@@ -7,6 +7,7 @@ Bu hujjat kod bilan tasdiqlanadigan narsalarnigina yozadi. Inglizcha to'liq vers
 | Narsa | Holat |
 |---|---|
 | Batafsil (o'ynaladigan) xarita | **Faqat Toshkent shahri**: 2495 ta haqiqiy OSM yo'li, 16 ta WGS84 chunk. |
+| 2D xarita | **Yangi.** Tanlagich va «faqat umumiy ko'rinish» kartasi O'zbekistonning haqiqiy 2D xaritasini chizadi: 14 hudud konturi Natural Earth admin-1 dan (ochiq ma'lumot, `assets/world/uzbekistan/region_borders.json`, `tools/map/build_uzbekistan_borders.py`, ~440 m umumlashtirilgan). Surish/zoom, hududni bosib tanlash, yashil nuqta = batafsil xarita bor, yorliqlar sig'gan joyda ko'rinadi. Tekshiruvlar: 14 ISO kodi katalogga mos, har bir vakil nuqta o'z konturi ichida, umumiy maydon 449 023 km² (rasmiy 448 978 km²). Bu **kartografik kontur, huquqiy chegara EMAS**; Toshkent shahridan tashqarida yo'l/bino yo'q, 3D renderer yo'q. |
 | Qolgan 13 hudud | `OVERVIEW_ONLY`. Tanlansa o'yin to'xtaydi va «faqat umumiy ko'rinish» kartasi chiqadi. Toshkent xaritasi hech qachon boshqa hudud nomi ostida ko'rsatilmaydi. |
 | Hudud chegaralari | GeoJSON'dagi to'rtburchaklar — **taxminiy bounding-box konvertlar**, ma'muriy chegara EMAS. |
 | ISO 3166-2:UZ kodlari | Ikkilamchi manba (statoids.com) bilan 2026-11-03 da tekshirilgan. **SOATO kodlari tasdiqlanmagan.** |

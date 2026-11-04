@@ -10,7 +10,8 @@ system, transactional region packages, a Node CLI and a browser packager.
 |---|---|
 | Playable map | **Only Tashkent City** has a detailed dataset (2495 real OSM roads, converted to WGS84 chunks). |
 | Other 13 divisions | `OVERVIEW_ONLY`: the selector shows an overview card and pauses the game. **No** road map is ever shown under another region's name. |
-| Region borders | The GeoJSON shapes are **approximate bounding-box envelopes**, not administrative borders. They are never presented as borders. |
+| 2D country map | **New.** The selector and the overview card draw a real 2D map of Uzbekistan: 14 outlines from Natural Earth admin-1 (public domain, `assets/world/uzbekistan/region_borders.json`, built by `tools/map/build_uzbekistan_borders.py`, generalised ~440 m). Pan/zoom, tap a region to select it, green dot = region with a detailed map, labels appear where they fit. Checks: all 14 ISO codes match the catalog, every catalog representative point lies inside its own outline, total area 449 023 km² vs. published 448 978 km². These are **cartographic outlines, not legal borders**; there are no roads or buildings outside Tashkent City, and no 3D renderer. |
+| Region borders | `administrative_boundaries.geojson` holds **approximate bounding-box envelopes** (never presented as borders). The map uses the separate Natural Earth outlines above (generalised, not legal borders). |
 | Codes | ISO 3166-2:UZ codes were checked against a secondary source (statoids.com, 2026-11-03). **SOATO codes are unverified.** |
 | Tashkent coordinate conversion | Status `verified_approximate`: origin (Amir Temur xiyoboni, 41.311081 N 69.279737 E), axes and 1 m/unit scale were compared with 79 independent OpenStreetMap node positions (`tools/map/tashkent_osm_anchors.json`, OSM API, 2026-11-04). 21 anchors within 10 km: median 17.7 m, max 23.1 m (tolerance 30 m); the error grows about 0.2% with distance (70 m at ~22 km). Only 2 anchors lie inside the road extent (3.3 m and 10.4 m). **Not survey-grade**: the anchors are OSM place nodes, not control points. |
 | Region package manager | Install / update / remove / recover is implemented and tested (SHA-256, Zip-Slip protection, atomic promote). There is **no in-app downloader or server**: no region besides Tashkent can be installed from the UI. |
@@ -59,7 +60,7 @@ python3 tools/package_release.py --allow-blocked # local run without Android SDK
 ```
 
 Reference result of this revision (see `TRAFFICITY_REPAIR_EXECUTION_PROMPT.md`, section 18 for evidence): analyzer
-clean, format check clean, 120 Flutter tests (20 of them are the original game tests), 41 Node tests, 55 Python tests.
+clean, format check clean, 136 Flutter tests (20 of them are the original game tests), 41 Node tests, 68 Python tests.
 
 ## Region data format
 

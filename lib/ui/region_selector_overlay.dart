@@ -5,6 +5,7 @@ import '../world/admin_hierarchy.dart';
 import '../world/architecture_profile_engine.dart';
 import '../world/multi_scale_lod_controller.dart';
 import '../world/world_controller.dart';
+import 'uzbekistan_map_view.dart';
 
 String _levelText(GeographicalDetailLevel level) {
   switch (level) {
@@ -18,6 +19,25 @@ String _levelText(GeographicalDetailLevel level) {
       return "4/4 · Shahar (3D)";
   }
 }
+
+final _mapLabelSuffixes = RegExp(r' (viloyati|Respublikasi|Region|область)$|^(Republic of|Республика) ');
+
+/// Short label for the map ("Samarqand" instead of "Samarqand viloyati"); never empty, cities keep their full name.
+String _mapLabel(String name) {
+  final short = name.replaceAll(_mapLabelSuffixes, '').trim();
+  return short.isEmpty ? name : short;
+}
+
+/// Map-view descriptions of the catalog regions (anchor = representative point, marker = detailed package).
+List<MapRegionInfo> _mapRegions(UzbekistanWorldController c, String languageCode) => [
+  for (final r in c.regions)
+    MapRegionInfo(
+      id: r.regionId,
+      name: _mapLabel(r.names.forLang(languageCode)),
+      anchor: Offset(r.representativePoint.lon, r.representativePoint.lat),
+      detailed: c.readinessOf(r) == RegionReadinessStatus.installedDetailed,
+    ),
+];
 
 /// List of the 14 first-level divisions with their real readiness. Selecting a region reports it through
 /// [onRegionConfirmed]; the caller decides what the game shows (a region without a detailed package is
@@ -82,6 +102,30 @@ class UzbekistanRegionSelectorOverlay extends StatelessWidget {
                 ),
               ),
               const Divider(height: 1),
+              if (worldController.isReady && worldController.borders != null) ...[
+                SizedBox(
+                  height: 230,
+                  child: UzbekistanMapView(
+                    borders: worldController.borders!,
+                    regions: _mapRegions(worldController, languageCode),
+                    activeRegionId: worldController.activeRegion?.regionId,
+                    onRegionTap: (id) {
+                      for (final r in worldController.regions) {
+                        if (r.regionId == id) onRegionConfirmed(r);
+                      }
+                    },
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 4, 18, 6),
+                  child: Text(
+                    '${L.t("Xaritani bosib hududni tanlang; yashil nuqta = batafsil xarita")}\n'
+                    '${L.t("Chegaralar umumlashtirilgan (Natural Earth), rasmiy chegara emas")}',
+                    style: TextStyle(fontSize: 10.5 * scale, color: const Color(0xFF6A7480)),
+                  ),
+                ),
+                const Divider(height: 1),
+              ],
               Flexible(child: _body(context)),
             ],
           ),
@@ -160,6 +204,7 @@ class RegionOverviewCard extends StatelessWidget {
   static const Key cardKey = Key('region-overview-card');
   static const Key backKey = Key('region-overview-back');
   static const Key regionsKey = Key('region-overview-regions');
+  static const Key miniMapKey = Key('region-overview-minimap');
 
   final UzbekistanWorldController worldController;
   final String languageCode;
@@ -196,7 +241,21 @@ class RegionOverviewCard extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Icon(Icons.map_outlined, size: 54 * scale, color: const Color(0xFF6A7480)),
+                  if (worldController.borders != null)
+                    SizedBox(
+                      key: miniMapKey,
+                      height: 180,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: UzbekistanMapView(
+                          borders: worldController.borders!,
+                          regions: _mapRegions(worldController, languageCode),
+                          activeRegionId: r.regionId,
+                        ),
+                      ),
+                    )
+                  else
+                    Icon(Icons.map_outlined, size: 54 * scale, color: const Color(0xFF6A7480)),
                   const SizedBox(height: 10),
                   Text(
                     r.names.forLang(languageCode),

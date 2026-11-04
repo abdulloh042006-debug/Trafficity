@@ -6,6 +6,7 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'admin_hierarchy.dart';
 import 'geo_coordinate_system.dart';
 import 'multi_scale_lod_controller.dart';
+import 'region_borders.dart';
 import 'region_package_manager.dart';
 
 enum WorldLoadState { idle, loading, ready, error }
@@ -20,8 +21,11 @@ class UzbekistanWorldController extends ChangeNotifier {
   final MultiScaleLodController lodController = MultiScaleLodController();
 
   static const String catalogAsset = 'assets/world/uzbekistan/region_catalog.json';
+  static const String bordersAsset = 'assets/world/uzbekistan/region_borders.json';
 
   List<RegionCatalogEntry> _regions = [];
+  RegionBorders? _borders;
+  String? _bordersError;
   RegionCatalogEntry? _activeRegion;
   WorldLoadState _loadState = WorldLoadState.idle;
   String? _loadError;
@@ -33,6 +37,11 @@ class UzbekistanWorldController extends ChangeNotifier {
   bool _is3D = false;
 
   List<RegionCatalogEntry> get regions => List.unmodifiable(_regions);
+
+  /// Generalised outlines for the 2D map; null until loaded or when loading failed (see [bordersError]).
+  /// The catalog and the region list work without them.
+  RegionBorders? get borders => _borders;
+  String? get bordersError => _bordersError;
   RegionCatalogEntry? get activeRegion => _activeRegion;
   WorldLoadState get loadState => _loadState;
   String? get loadError => _loadError;
@@ -55,11 +64,23 @@ class UzbekistanWorldController extends ChangeNotifier {
     _notify();
     try {
       loadFromCatalogJson(await rootBundle.loadString(catalogAsset));
+      try {
+        loadBordersJson(await rootBundle.loadString(bordersAsset));
+      } catch (e) {
+        _bordersError = e.toString(); // not fatal: the list of regions still works
+      }
     } catch (e) {
       _loadState = WorldLoadState.error;
       _loadError = e.toString();
       _notify();
     }
+  }
+
+  /// Parses the outline document; throws [FormatException] (and keeps the previous outlines) when it is invalid.
+  void loadBordersJson(String json) {
+    _borders = RegionBorders.fromJson(json);
+    _bordersError = null;
+    _notify();
   }
 
   void loadFromCatalogJson(String catalogJson) {

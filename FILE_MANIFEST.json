@@ -17,8 +17,8 @@
       "index": 2,
       "path": "README.md",
       "scope": "expansion",
-      "sizeBytes": 6861,
-      "sha256": "a0b28f433c977c55ec0ada151892670de8deb9c70d110521975179f3cc041217",
+      "sizeBytes": 7603,
+      "sha256": "946751fdd4ba6930ca189bf650cbf21b9e5c462288d2aa6e7ed84a5d8db0a70a",
       "description": "Loyiha hujjati, CLI va test buyruqlari, ma'lumotlar manbasi"
     },
     {
@@ -153,16 +153,16 @@
       "index": 19,
       "path": "lib/world/world_controller.dart",
       "scope": "expansion",
-      "sizeBytes": 5418,
-      "sha256": "0b2994c95ab8e66561dc8c78cc71be55a5e3502c1392ad6749ec57aa1441a540",
+      "sizeBytes": 6270,
+      "sha256": "bb798e360a869347a71e8f1a32b8ffec6b07dbd463f278bf199681a36d706344",
       "description": "O'zbekiston dunyo kontrolleri (initializeFromAssets bilan)"
     },
     {
       "index": 20,
       "path": "lib/ui/region_selector_overlay.dart",
       "scope": "expansion",
-      "sizeBytes": 9810,
-      "sha256": "915cb2ee11c7dccd2d94c4605bbdf3d221fb2977676aecd14ad907a4e11ccea8",
+      "sizeBytes": 12538,
+      "sha256": "68467c86a88771b176c60530bbc5cda8a7cee71327e86ba835aaa2452b67d94b",
       "description": "14 ta hududni tanlash interfeysi (Overlay)"
     },
     {
@@ -177,8 +177,8 @@
       "index": 22,
       "path": "pubspec.yaml",
       "scope": "base",
-      "sizeBytes": 902,
-      "sha256": "651f65e27a6fd24e6ba0f520f402008a55fbab46a893f6b9c4c207b2061e4fae",
+      "sizeBytes": 952,
+      "sha256": "f1e599aad978c8e5fdfbce5949ab0e22495c5c7dec80988a4933284261acbf85",
       "description": "Flutter/Flame loyiha konfiguratsiyasi va O'zbekiston assetlari"
     },
     {

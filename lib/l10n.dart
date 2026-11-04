@@ -21,6 +21,16 @@ class L {
     ["Toshkent shahriga qaytish", "Вернуться в город Ташкент", "Back to Tashkent City"],
     ["SOATO kodi tasdiqlanmagan", "Код СОАТО не подтверждён", "SOATO code unverified"],
     ["Arxitektura profili", "Архитектурный профиль", "Architecture profile"],
+    [
+      "Chegaralar umumlashtirilgan (Natural Earth), rasmiy chegara emas",
+      "Границы обобщены (Natural Earth), не официальные",
+      "Outlines are generalised (Natural Earth), not official borders",
+    ],
+    [
+      "Xaritani bosib hududni tanlang; yashil nuqta = batafsil xarita",
+      "Нажмите на область; зелёная точка = подробная карта",
+      "Tap a region; green dot = detailed map",
+    ],
     ["vizuallar hali yo'q", "визуала пока нет", "no visuals yet"],
     ["Faqat umumiy ko'rinish", "Только общий обзор", "Overview only"],
     ["Ko'rinish darajasi", "Уровень детализации", "Detail level"],
