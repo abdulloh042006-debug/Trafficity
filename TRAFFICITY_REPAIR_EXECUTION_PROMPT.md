@@ -454,15 +454,24 @@ Last updated at the end of the rev. 3 execution. A push, commit title, mock, or 
 - ~~Wiring `national_save_manager` and `architecture_profile_engine` into the game~~ → COMPLETED as **P7b**.
 - [ ] `road_graph_linker` has no consumer by design (needs a second detailed region); it stays unwired until one exists.
 
+**What is left (as of the last push):**
+
+1. CI for the final code commit `c7f9f2e` (P7b): run [41799584199](https://github.com/abdulloh042006-debug/Trafficity/actions/runs/41799584199) was still `in_progress` when work stopped — **CI-PASS is not claimed for `c7f9f2e`** until its conclusion is read. The previous commit `7fced4b` (P5b) has run [41799158077](https://github.com/abdulloh042006-debug/Trafficity/actions/runs/41799158077) = **success**.
+2. Nothing was run on a phone/emulator: the save `nat` key, the region restore after loading and the overview-card profile line are tested headlessly only (`test/national_wiring_test.dart`).
+3. Local APK build stays BLOCKED (no Android SDK here); CI builds it.
+4. No in-app region downloader or server; 13 regions stay `OVERVIEW_ONLY`; region borders are bounding-box envelopes; SOATO codes unverified; no profile-specific building visuals (`visualsImplemented: false`).
+5. `road_graph_linker` unwired (see above).
+6. Owner decisions below (20/23 file list, `main` vs this lineage, token revocation, README role, Android id).
+
 ### BLOCKED
 
 - **Local `flutter build apk --debug`** — BLOCKED (local): `No Android SDK found. Try setting the ANDROID_HOME environment variable.` Unblocks with an Android SDK; the same build is **CI-PASS** in GitHub Actions (see P10). The APK was not installed or run on a device.
-- **Coordinate verification against independent anchors** — no cited survey points are available offline. An export georeference (`map.wld`, EPSG:3857) exists but its pixel-origin convention differs by about 3 m between the `.wld` and the SVG metadata, so it was not used to claim "verified".
+- ~~Coordinate verification against independent anchors~~ — **unblocked and done as P5b** using 79 OpenStreetMap node positions from the OSM API (`api.openstreetmap.org`; Overpass was unreachable). The `map.wld` georeference was not used (its pixel origin differs by ~3 m from the SVG metadata). Remaining limit: result is `verified_approximate`, **not survey-grade** (anchors are OSM place nodes, only 2 lie inside the road extent).
 
 ### OWNER DECISIONS NEEDED
 
 1. **20/23 file list.** The lists do not contain `lib/ui/uzbekistan_hud_button.dart`, the `main.dart`/`road_game.dart` integration, `Trafficity-Uzbekistan-Complete-Packager.html`, `tools/sync_packager_html.mjs`, `tools/package_release.py`, the workflows or the new tests, so the 20/23 ZIPs cannot reproduce the selector integration by themselves. Extending the lists changes the counts everywhere (manifest, CLI, Node tests, HTML, README).
-2. **Branches.** The work is on `ccr-7e104e07-0xa8wr` (fast-forward descendant of `codex/uzbekistan-expansion`); decide when to fast-forward the codex branch. `main` already contains a different Uzbekistan implementation (`1ae8545`, `ee406fc`) — choose which one wins before merging anything into `main`.
+2. **Branches.** The work is on `ccr-7e104e07-0xa8wr`; `codex/uzbekistan-expansion` is kept fast-forwarded to it (no force-push). `main` already contains a different Uzbekistan implementation (`1ae8545`, `ee406fc`) — choose which one wins before merging anything into `main`.
 3. **Token.** Revoke the previously exposed token and use a fresh fine-grained one limited to this repository.
 4. **README.** On this lineage `README.md` is the packager README; the game's stage log moved to `docs/GAME_STAGES.md`.
 5. **Android id.** Builds now use `uz.abdulloh.trafficity` (pubspec name) instead of `uz.abdulloh.roadflow_city`; both can be installed side by side.
