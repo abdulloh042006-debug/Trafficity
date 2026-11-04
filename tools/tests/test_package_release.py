@@ -297,7 +297,7 @@ class RealRepositoryTests(unittest.TestCase):
         manifest = json.loads((REPO / "FILE_MANIFEST.json").read_text(encoding="utf-8"))
         with zipfile.ZipFile(out) as zf:
             names = set(zf.namelist())
-        self.assertEqual(len(manifest["files"]), 23)
+        self.assertEqual(len(manifest["files"]), 45)
         for f in manifest["files"]:
             self.assertIn(f"Trafficity/{f['path']}", names)
         _, digest2, _ = pr.build_zip(REPO, out)
