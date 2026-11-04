@@ -59,7 +59,7 @@ python3 tools/package_release.py --allow-blocked # local run without Android SDK
 ```
 
 Reference result of this revision (see `TRAFFICITY_REPAIR_EXECUTION_PROMPT.md`, section 18 for evidence): analyzer
-clean, format check clean, 119 Flutter tests (20 of them are the original game tests), 41 Node tests, 55 Python tests.
+clean, format check clean, 120 Flutter tests (20 of them are the original game tests), 41 Node tests, 55 Python tests.
 
 ## Region data format
 

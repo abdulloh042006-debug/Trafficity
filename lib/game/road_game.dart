@@ -1036,8 +1036,9 @@ class RoadGame extends FlameGame {
         cam = Offset(c[0], c[1]);
         zoom = z.clamp(minZoom, maxZoom).toDouble();
         _onNetworkChanged();
+        // Only recorded, never adopted here: the screen re-selects a region that really has a detailed package
+        // (UzbekistanWorldController.restoreDetailedRegion), and setRegion() then updates [gameRegionId].
         loadedNational = _readNational(m['nat']);
-        if (loadedNational != null) gameRegionId = loadedNational!.regionId;
         _notify();
         return true;
       } catch (_) {

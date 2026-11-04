@@ -105,6 +105,16 @@ void main() {
         expect(await a.load(slot: 1), isTrue);
         expect(a.loadedNational, isNull);
 
+        // A well-formed envelope naming another region is data, not an instruction: the game keeps its own region.
+        await sp.setString(
+          'save1',
+          jsonEncode(Map<String, dynamic>.of(m)..['nat'] = {'v': 3, 'region': 'uz_samarkand', 'zoom': 1.0}),
+        );
+        final t = await makeGame();
+        expect(await t.load(slot: 1), isTrue);
+        expect(t.loadedNational!.regionId, 'uz_samarkand');
+        expect(t.gameRegionId, tashkent);
+
         for (final broken in <Object?>[
           'garbage',
           {'v': 9, 'region': tashkent},

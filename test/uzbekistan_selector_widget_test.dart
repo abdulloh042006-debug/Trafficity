@@ -1,7 +1,9 @@
+import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:trafficity/game/road_game.dart';
 import 'package:trafficity/l10n.dart';
 import 'package:trafficity/main.dart';
 import 'package:trafficity/ui/region_selector_overlay.dart';
@@ -205,6 +207,45 @@ void main() {
           expect(screen(tester).game.menuOpen, isFalse);
         }
       }
+    });
+
+    testWidgets('loading a save from the menu leaves the overview card and returns to the saved region', (
+      tester,
+    ) async {
+      SharedPreferences.setMockInitialValues({});
+      late String raw;
+      await tester.runAsync(() async {
+        final g = RoadGame();
+        g.onGameResize(Vector2(900, 600));
+        await g.newMap(7, biome: 0, sandbox: true, ideal: false, realRoads: false);
+        await g.save(slot: 1);
+        raw = (await SharedPreferences.getInstance()).getString('save1')!;
+      });
+      SharedPreferences.setMockInitialValues({'lang': 0, 'save1': raw});
+      mockPlatform();
+      L.lang = 0;
+      tester.view.physicalSize = const Size(1080, 2160);
+      tester.view.devicePixelRatio = 2.5;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(const RoadFlowApp());
+      await settle(tester, 12);
+
+      final world = screen(tester).world as UzbekistanWorldController;
+      expect(world.selectRegion('uz_samarkand'), isTrue); // the player was looking at an overview-only region
+      await frames(tester);
+      expect(find.byKey(RegionOverviewCard.cardKey), findsOneWidget);
+
+      await tester.tap(find.text("Saqlangan o'yinlar"));
+      await settle(tester, 3);
+      await tester.tap(find.byTooltip('Yuklash').at(1)); // slot 1
+      await settle(tester, 12);
+
+      expect(world.activeRegion!.regionId, tashkent);
+      expect(find.byKey(RegionOverviewCard.cardKey), findsNothing);
+      expect(screen(tester).game.regionDetailed, isTrue);
+      expect(screen(tester).game.loadedNational.regionId, tashkent);
+      expect(screen(tester).game.menuOpen, isFalse);
     });
 
     testWidgets('overview card can reopen the selector', (tester) async {
