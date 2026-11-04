@@ -71,7 +71,7 @@ Python migration compute it identically (cross-checked by tests). The migration 
 
 ## Bundles and the browser packager
 
-`FILE_MANIFEST.json` lists 23 files: **Expansion = 20**, **Full = 20 + 3 base**. `Trafficity-Uzbekistan-Complete-Packager.html`
+`FILE_MANIFEST.json` lists 45 files: **Expansion = 42**, **Full = 42 + 3 base**. The expansion bundle now includes the real app wiring (`main.dart`, `road_game.dart`, HUD button), all 16 Tashkent road chunks, and the offline packager runtime/UI. `Trafficity-Uzbekistan-Complete-Packager.html`
 validates them (size and SHA-256), builds a deterministic ZIP and can push the verified files with the GitHub Git
 Database API. The push target is locked to `codex/uzbekistan-expansion`, is never forced, rejects `main`/`master`,
 and the token is used once and cleared. The HTML embeds `tools/packager_core.mjs`; run `node tools/sync_packager_html.mjs`

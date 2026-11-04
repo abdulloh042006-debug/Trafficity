@@ -64,12 +64,12 @@ test("CLI validates regions and package manifest checksum", async () => {
   assert.equal(await runCli(["validate-package", PKG], quiet), 0);
 });
 
-test("FILE_MANIFEST.json inventories exactly 23 files (20 expansion + 3 base)", () => {
+test("FILE_MANIFEST.json inventories exactly 45 files (42 expansion + 3 base)", () => {
   const manifest = JSON.parse(fs.readFileSync("FILE_MANIFEST.json", "utf8"));
-  assert.equal(manifest.totalFileCount, 23);
-  assert.equal(manifest.expansionFileCount, 20);
+  assert.equal(manifest.totalFileCount, 45);
+  assert.equal(manifest.expansionFileCount, 42);
   assert.equal(manifest.baseFileCount, 3);
-  assert.equal(manifest.files.length, 23);
+  assert.equal(manifest.files.length, 45);
 });
 
 /* ---------------------------------------------------------------- SHA-256 and paths */
@@ -106,12 +106,12 @@ test("the real FILE_MANIFEST.json is structurally valid and its files match thei
   }
 });
 
-test("bundle modes: exactly 20 expansion files, exactly 23 full files, sorted, no extras", () => {
+test("bundle modes: exactly 42 expansion files, exactly 45 full files, sorted, no extras", () => {
   const m = validateFileManifest(realManifest());
   const exp = selectBundle(m, "expansion");
   const full = selectBundle(m, "full");
-  assert.equal(exp.length, 20);
-  assert.equal(full.length, 23);
+  assert.equal(exp.length, 42);
+  assert.equal(full.length, 45);
   assert.ok(exp.every((e) => e.scope === "expansion"));
   assert.equal(full.filter((e) => e.scope === "base").length, 3);
   assert.deepEqual(exp.map((e) => e.path), [...exp.map((e) => e.path)].sort());
@@ -208,7 +208,7 @@ test("ZIP: unsafe or duplicate paths cannot be written, corrupted or truncated a
   assert.throws(() => readZip(zip.slice(0, 20)), PackagerError);
 });
 
-test("both bundle modes produce a validated ZIP with exactly 20 / 23 entries from the real repository", async () => {
+test("both bundle modes produce a validated ZIP with exactly 42 / 45 entries from the real repository", async () => {
   const m = validateFileManifest(realManifest());
   const read = async (rel) => new Uint8Array(fs.readFileSync(path.join(REPO_ROOT, rel)));
   for (const [mode, count] of Object.entries(BUNDLE_MODES)) {
@@ -340,7 +340,7 @@ test("build-zip writes a ZIP that Python's zipfile validates", async () => {
   assert.equal(await runCli(["build-zip", "--mode", "full", "--out", out], quiet), 0);
   const r = spawnSync("python3", ["-c", "import zipfile,sys; z=zipfile.ZipFile(sys.argv[1]); assert z.testzip() is None; print(len(z.namelist()))", out], { encoding: "utf8" });
   assert.equal(r.status, 0, r.stderr);
-  assert.equal(r.stdout.trim(), "23");
+  assert.equal(r.stdout.trim(), "45");
 });
 
 /* ---------------------------------------------------------------- GitHub Direct Push (MOCK-ONLY: proves request construction) */

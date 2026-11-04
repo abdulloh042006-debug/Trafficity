@@ -57,7 +57,7 @@ test("no external scripts, stylesheets or CDN: everything is inline and the CSP 
   for (const h of hosts) assert.ok(["api.github.com", "raw.githubusercontent.com", "github.com"].includes(h), `unexpected host ${h}`);
 });
 
-test("the two bundle modes are offered with the 20 / 23 file contract", () => {
+test("the two bundle modes are offered with the 42 / 45 file contract", () => {
   assert.match(html, /value="expansion" checked> Expansion ZIP — <b>20<\/b> files/);
   assert.match(html, /value="full"> Full ZIP — <b>23<\/b> files/);
 });

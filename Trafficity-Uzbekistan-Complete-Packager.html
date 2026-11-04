@@ -74,8 +74,8 @@
     </div>
     <fieldset class="row" style="border:0;padding:0;margin:8px 0 0">
       <legend class="muted">Bundle</legend>
-      <label><input type="radio" name="mode" value="expansion" checked> Expansion ZIP — <b>20</b> files</label>
-      <label><input type="radio" name="mode" value="full"> Full ZIP — <b>23</b> files</label>
+      <label><input type="radio" name="mode" value="expansion" checked> Expansion ZIP — <b>42</b> files</label>
+      <label><input type="radio" name="mode" value="full"> Full ZIP — <b>45</b> files</label>
     </fieldset>
     <button id="btn-validate" type="button">Load manifest and validate</button>
     <p>Status: <span id="status" role="status" aria-live="polite">idle</span></p>
@@ -135,7 +135,7 @@ const REPOSITORY = "abdulloh042006-debug/Trafficity";
 const TARGET_BRANCH = "codex/uzbekistan-expansion";
 const FORBIDDEN_BRANCHES = ["main", "master"];
 const MANIFEST_SELF_PATH = "FILE_MANIFEST.json";
-const BUNDLE_MODES = { expansion: 20, full: 23 };
+const BUNDLE_MODES = { expansion: 42, full: 45 };
 
 class PackagerError extends Error {
   constructor(code, message) {
@@ -213,7 +213,7 @@ function validateFileManifest(m) {
   return m;
 }
 
-/** Entries of a bundle, sorted by path. "expansion" = 20 files, "full" = 23 files. */
+/** Entries of a bundle, sorted by path. "expansion" = 42 files, "full" = 45 files. */
 function selectBundle(manifest, mode) {
   if (!Object.prototype.hasOwnProperty.call(BUNDLE_MODES, mode)) {
     throw new PackagerError("bad_mode", `unknown bundle mode "${mode}" (use expansion or full)`);
