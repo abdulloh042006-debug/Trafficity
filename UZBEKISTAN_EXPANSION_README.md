@@ -10,7 +10,7 @@ Bu hujjat kod bilan tasdiqlanadigan narsalarnigina yozadi. Inglizcha to'liq vers
 | Qolgan 13 hudud | `OVERVIEW_ONLY`. Tanlansa o'yin to'xtaydi va «faqat umumiy ko'rinish» kartasi chiqadi. Toshkent xaritasi hech qachon boshqa hudud nomi ostida ko'rsatilmaydi. |
 | Hudud chegaralari | GeoJSON'dagi to'rtburchaklar — **taxminiy bounding-box konvertlar**, ma'muriy chegara EMAS. |
 | ISO 3166-2:UZ kodlari | Ikkilamchi manba (statoids.com) bilan 2026-11-03 da tekshirilgan. **SOATO kodlari tasdiqlanmagan.** |
-| Toshkent koordinata o'tkazmasi | `unverified`: boshlang'ich nuqta (Amir Temur xiyoboni) va 1 birlik = 1 m masshtabi shu reponing o'z xarita qurilishidan; mustaqil o'lchangan nuqtalar bilan solishtirilmagan. |
+| Toshkent koordinata o'tkazmasi | `verified_approximate`: boshlang'ich nuqta, o'qlar va 1 birlik = 1 m masshtabi 79 ta mustaqil OpenStreetMap tugun koordinatasi bilan solishtirilgan (`tools/map/tashkent_osm_anchors.json`, OSM API, 2026-11-04). 10 km ichidagi 21 nuqta: o'rtacha 17,7 m, eng katta 23,1 m (chegara 30 m); masofa bilan ~0,2% o'sadi (~22 km da 70 m). Yo'llar hududida faqat 2 nuqta bor (3,3 m va 10,4 m). **Geodezik aniqlikda EMAS**: tayanch nuqtalar OSM joy nomlari, nazorat punktlari emas. |
 | Paket menejeri | O'rnatish/yangilash/o'chirish/tiklash va SHA-256, Zip-Slip himoyasi, atomik almashtirish tayyor va testlangan. **Ilova ichida yuklab olish yoki server yo'q**, shuning uchun UI orqali Toshkentdan boshqa hududni o'rnatib bo'lmaydi. |
 
 ## 2. Modullar (nima qiladi, nima qilmaydi)

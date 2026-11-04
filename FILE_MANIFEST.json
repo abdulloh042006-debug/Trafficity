@@ -17,8 +17,8 @@
       "index": 2,
       "path": "README.md",
       "scope": "expansion",
-      "sizeBytes": 5980,
-      "sha256": "10bf88ecd82db5552f438144c7a6a4c61e9dbb74c12fc86ac65201189f19e146",
+      "sizeBytes": 6295,
+      "sha256": "2120a8fae9653cdc51b394c49b92b3e0d838d8d3b718a655a2e6851f5eb2a7be",
       "description": "Loyiha hujjati, CLI va test buyruqlari, ma'lumotlar manbasi"
     },
     {
@@ -73,8 +73,8 @@
       "index": 9,
       "path": "tools/map/migrate_tashkent_legacy.py",
       "scope": "expansion",
-      "sizeBytes": 18402,
-      "sha256": "aae263c7b2669b34b63d3745db65b3f5220c6ef0cd3dc9ea8d2f4cdc01faa7a6",
+      "sizeBytes": 22617,
+      "sha256": "93225f7bcfd2f0e55dd724c170c07102cd912df5eab99e2a39c08af69bbf2425",
       "description": "Tuzatilgan Toshkent yo'llari migratsiya skripti (list va dict formatlarini qo'llab-quvvatlaydi)"
     },
     {
@@ -97,8 +97,8 @@
       "index": 12,
       "path": "lib/world/geo_coordinate_system.dart",
       "scope": "expansion",
-      "sizeBytes": 13257,
-      "sha256": "4dccfed0e60cae2c29f81ebbaf3ba95347b78553c59b138ea82efcb914703a28",
+      "sizeBytes": 13416,
+      "sha256": "139bfdd9fee0d8d715f77743d316ab0215c11f4c7174ce6cf274b69a0e906f7f",
       "description": "WGS84 <-> Local ENU va Floating Origin koordinata tizimi"
     },
     {
@@ -185,8 +185,8 @@
       "index": 23,
       "path": "assets/world/uzbekistan/regions/tashkent_city/manifest.json",
       "scope": "base",
-      "sizeBytes": 3899,
-      "sha256": "a5775c31ade31c1d768f696cf72f294633fbe9088d702d327671cc797207581a",
+      "sizeBytes": 4540,
+      "sha256": "0d51643c388a9255a202b4bac637281f69842f1c1b1c3a50130483e9d34ce5d5",
       "description": "Toshkent shahri (UZ-TK) paket manifesti va SHA-256 xeshi"
     }
   ]

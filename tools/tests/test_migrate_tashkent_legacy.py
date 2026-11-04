@@ -40,6 +40,83 @@ class Fixture(unittest.TestCase):
         return {str(p.relative_to(d)): sha(p.read_bytes()) for p in sorted(d.rglob("*")) if p.is_file()}
 
 
+class VerificationTests(Fixture):
+    ANCHORS = REPO / "tools" / "map" / "tashkent_osm_anchors.json"
+
+    def write_anchors(self, mutate=None, name="anchors.json"):
+        doc = json.loads(self.ANCHORS.read_text(encoding="utf-8"))
+        if mutate:
+            mutate(doc)
+        path = self.tmp / name
+        path.write_text(json.dumps(doc), encoding="utf-8")
+        return path
+
+    def test_committed_anchors_are_independent_osm_nodes(self):
+        doc = json.loads(self.ANCHORS.read_text(encoding="utf-8"))
+        ids = [a["osmNodeId"] for a in doc["anchors"]]
+        self.assertGreaterEqual(len(ids), 70)
+        self.assertEqual(len(ids), len(set(ids)))
+        self.assertIn("2026-11-04", doc["source"]["fetchedOn"])
+        self.assertIn("api.openstreetmap.org", doc["source"]["osmCoordinates"])
+        for a in doc["anchors"]:
+            self.assertTrue(40.0 < a["osmLat"] < 42.5 and 68.0 < a["osmLon"] < 71.0, a)
+
+    def test_real_anchors_give_verified_approximate_with_stated_numbers(self):
+        v = mig.verify_against_anchors(self.ANCHORS)
+        self.assertEqual(v["status"], "verified_approximate")
+        self.assertGreaterEqual(v["anchorsInScope"], mig.VERIFY_MIN_ANCHORS)
+        self.assertLessEqual(v["maxErrorInScopeMeters"], mig.VERIFY_TOLERANCE_METERS)
+        self.assertLess(v["medianErrorInScopeMeters"], v["maxErrorInScopeMeters"] + 1e-9)
+        self.assertGreater(v["maxErrorOverallMeters"], v["maxErrorInScopeMeters"])  # error grows with distance; not hidden
+        self.assertIn("not survey-grade", v["reason"])
+        self.assertEqual(v, mig.verify_against_anchors(self.ANCHORS))  # deterministic
+
+    def test_perfect_anchor_has_zero_error_and_wrong_axis_fails(self):
+        def perfect(doc):
+            pts = [(1000.0, 3200.0), (3200.0, 1000.0), (4000.0, 4000.0), (2500.0, 2800.0)]
+            doc["anchors"] = []
+            for i, (x, y) in enumerate(pts):
+                lon, lat = mig.legacy_units_to_wgs84(x, y)
+                doc["anchors"].append({"osmNodeId": i + 1, "name": f"p{i}", "osmLat": lat, "osmLon": lon,
+                                       "legacyX": x, "legacyY": y})
+        v = mig.verify_against_anchors(self.write_anchors(perfect))
+        self.assertEqual((v["status"], v["maxErrorInScopeMeters"]), ("verified_approximate", 0.0))
+
+        def flipped(doc):  # same OSM positions but y axis pointing the other way
+            perfect(doc)
+            for a in doc["anchors"]:
+                a["legacyY"] = 6400.0 - a["legacyY"]
+        v = mig.verify_against_anchors(self.write_anchors(flipped, "flipped.json"))
+        self.assertEqual(v["status"], "failed")
+        self.assertIn("Tolerance exceeded", v["reason"])
+
+    def test_wrong_scale_or_origin_is_detected(self):
+        def shifted(doc):
+            for a in doc["anchors"]:
+                a["legacyX"] += 100.0  # 100 m east
+        self.assertEqual(mig.verify_against_anchors(self.write_anchors(shifted))["status"], "failed")
+
+    def test_missing_corrupt_or_too_few_anchors_stay_unverified(self):
+        self.assertEqual(mig.verify_against_anchors(self.tmp / "nope.json")["status"], "unverified")
+        bad = self.tmp / "bad.json"
+        bad.write_text("{not json", encoding="utf-8")
+        self.assertEqual(mig.verify_against_anchors(bad)["status"], "unverified")
+        self.assertEqual(mig.verify_against_anchors(self.write_anchors(lambda d: d.update(anchors=d["anchors"][:2]), "two.json"))["status"],
+                         "unverified")
+        dup = self.write_anchors(lambda d: d["anchors"].append(dict(d["anchors"][0])), "dup.json")
+        self.assertEqual(mig.verify_against_anchors(dup)["status"], "unverified")
+        nan = self.write_anchors(lambda d: d["anchors"][0].update(osmLat=99.0), "range.json")
+        self.assertEqual(mig.verify_against_anchors(nan)["status"], "unverified")
+
+    def test_manifest_uses_the_verification(self):
+        src = self.write_source([GOOD_A, GOOD_C])
+        m = mig.migrate(src, self.out, anchors_path=self.tmp / "missing.json")
+        self.assertEqual(m["coordinateVerification"]["status"], "unverified")
+        m = mig.migrate(src, self.out)
+        self.assertEqual(m["coordinateVerification"]["status"], "verified_approximate")
+        self.assertIn("allConvertedPointsWithinRegionBbox", m["coordinateVerification"]["checks"])
+
+
 class ParseRoadTests(unittest.TestCase):
     def test_real_shape_is_parsed(self):
         road, reason = mig.parse_road(GOOD_B)
@@ -159,7 +236,7 @@ class MigrationTests(Fixture):
         on_disk = json.loads((self.out / "manifest.json").read_text(encoding="utf-8"))
         self.assertEqual(on_disk["packageSha256"], m["packageSha256"])
         self.assertEqual(m["source"]["sha256"], sha(src.read_bytes()))
-        self.assertEqual(m["coordinateVerification"]["status"], "unverified")
+        self.assertEqual(m["coordinateVerification"]["status"], "verified_approximate")
 
     def test_package_digest_formula_is_the_documented_one(self):
         files = [

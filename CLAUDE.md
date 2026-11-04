@@ -84,7 +84,7 @@ dagi eng yuqori tugallanmagan vazifadan davom et, o'zbekcha qisqa yoz va nima te
 ## O'zbekiston kengaytmasi (haqiqiy holat, 2026-11-03)
 Batafsil: `README.md`, `UZBEKISTAN_EXPANSION_README.md`, `TRAFFICITY_REPAIR_EXECUTION_PROMPT.md` (ledger = dalil). Qisqacha:
 - Paket nomi `trafficity` (importlar `package:trafficity/...`; eski `roadflow_city` emas). Android ilova identifikatori scaffold'dan keladi: `uz.abdulloh.trafficity` (eski `uz.abdulloh.roadflow_city` bilan yonma-yon o'rnatiladi).
-- Faqat Toshkent shahri batafsil; 13 hudud `OVERVIEW_ONLY`; GeoJSON to'rtburchaklar chegara emas; SOATO tasdiqlanmagan; Toshkent koordinata o'tkazmasi `unverified`.
+- Faqat Toshkent shahri batafsil; 13 hudud `OVERVIEW_ONLY`; GeoJSON to'rtburchaklar chegara emas; SOATO tasdiqlanmagan; Toshkent koordinata o'tkazmasi `verified_approximate` (79 OSM tugunga nisbatan: 10 km ichida <=23 m, masofa bilan ~0,2% o'sadi; geodezik aniqlik EMAS; `tools/map/tashkent_osm_anchors.json`).
 - Ulanmagan modullar: `national_save_manager`, `road_graph_linker`, `architecture_profile_engine` (testlangan, lekin o'yin saqlash/yo'l/bino kodiga ulanmagan). Ilova ichida hudud paketini yuklab olish yo'q.
 - FILE_MANIFEST (20/23) kodni o'zgartirgandan keyin `node tools/uzbekistan_pack_cli.mjs update-manifest` bilan qayta hisoblanadi, aks holda `npm test` yiqiladi.
 - HTML packager yoki HUD tugmasi/main.dart integratsiyasi 20/23 ro'yxatda yo'q (egasi qarori kerak).

@@ -33,6 +33,12 @@ from typing import Any
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_SOURCE = REPO_ROOT / "assets" / "map" / "tashkent_roads.json"
 DEFAULT_OUT = REPO_ROOT / "assets" / "world" / "uzbekistan" / "regions" / "tashkent_city"
+DEFAULT_ANCHORS = REPO_ROOT / "tools" / "map" / "tashkent_osm_anchors.json"
+
+# Independent verification policy (see verify_against_anchors).
+VERIFY_SCOPE_METERS = 10000.0   # anchors within this distance of the origin decide the status
+VERIFY_TOLERANCE_METERS = 30.0  # every in-scope anchor must be at most this far from its OSM position
+VERIFY_MIN_ANCHORS = 3
 
 # Legacy frame (must match lib/world/geo_coordinate_system.dart: NationalCoordinateSystem / LegacyTashkentFrame).
 ORIGIN_LON = 69.279737
@@ -40,7 +46,7 @@ ORIGIN_LAT = 41.311081
 ORIGIN_ALT = 475.0
 WORLD_SIZE = 6400.0
 WORLD_CENTER = 3200.0
-METERS_PER_UNIT = 1.0  # unverified hypothesis (basemap 2 m/px, 3200 px, 6400-unit world)
+METERS_PER_UNIT = 1.0  # basemap 2 m/px, 3200 px, 6400-unit world; checked only approximately (verify_against_anchors)
 CHUNK_METERS = 2000.0
 COORD_DECIMALS = 7  # ~1 cm
 
@@ -138,6 +144,71 @@ def legacy_units_to_wgs84(x: float, y: float) -> tuple[float, float]:
     return lon, lat
 
 
+# ----------------------------------------------------------------------------- verification
+
+def _unverified(reason: str) -> dict:
+    return {"status": "unverified", "reason": reason}
+
+
+def verify_against_anchors(anchors_path: Path = DEFAULT_ANCHORS) -> dict:
+    """Compares the conversion with independent OpenStreetMap node coordinates.
+
+    Every anchor has a legacy-unit position and an OSM WGS84 position. The legacy position is converted with
+    [legacy_units_to_wgs84] and the deviation from the OSM position is measured in the local ENU plane.
+    Status: `verified_approximate` when at least VERIFY_MIN_ANCHORS anchors lie within VERIFY_SCOPE_METERS of the
+    origin and all of them deviate by at most VERIFY_TOLERANCE_METERS; `failed` when that tolerance is exceeded;
+    `unverified` when the anchors are missing or too few. Never `verified` in the survey-grade sense.
+    """
+    if not anchors_path.is_file():
+        return _unverified("No anchor file; no independent comparison was made.")
+    try:
+        doc = json.loads(anchors_path.read_text(encoding="utf-8"))
+        rows = []
+        for a in doc["anchors"]:
+            lat, lon = float(a["osmLat"]), float(a["osmLon"])
+            x, y = float(a["legacyX"]), float(a["legacyY"])
+            if not (-90 <= lat <= 90 and -180 <= lon <= 180 and all(map(math.isfinite, (x, y)))):
+                raise ValueError("anchor out of range")
+            ce, cn, _ = wgs84_to_enu(*legacy_units_to_wgs84(x, y))
+            oe, on, _ = wgs84_to_enu(lon, lat)
+            rows.append({"id": int(a["osmNodeId"]), "name": str(a.get("name", "")),
+                         "distance": math.hypot(oe, on), "error": math.hypot(ce - oe, cn - on)})
+        if len({r["id"] for r in rows}) != len(rows):
+            raise ValueError("duplicate anchor id")
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        return _unverified(f"Anchor file unreadable ({exc}); no independent comparison was made.")
+
+    scope = [r for r in rows if r["distance"] <= VERIFY_SCOPE_METERS]
+    if len(scope) < VERIFY_MIN_ANCHORS:
+        return _unverified(f"Only {len(scope)} anchors within {VERIFY_SCOPE_METERS / 1000:.0f} km; need {VERIFY_MIN_ANCHORS}.")
+    errs = sorted(r["error"] for r in scope)
+    median = errs[len(errs) // 2] if len(errs) % 2 else (errs[len(errs) // 2 - 1] + errs[len(errs) // 2]) / 2
+    worst = max(rows, key=lambda r: r["error"])
+    ok = errs[-1] <= VERIFY_TOLERANCE_METERS
+    detail = (
+        f"{len(rows)} OpenStreetMap node positions (OSM API, {doc.get('source', {}).get('fetchedOn', 'unknown date')}) "
+        f"were compared with the converted positions. {len(scope)} anchors within {VERIFY_SCOPE_METERS / 1000:.0f} km: "
+        f"median {median:.1f} m, max {errs[-1]:.1f} m (tolerance {VERIFY_TOLERANCE_METERS:.0f} m). "
+        f"Largest deviation overall {worst['error']:.1f} m at {worst['distance'] / 1000:.1f} km; the error grows with "
+        "distance from the origin (about 0.2% of it). The anchors are OSM place/feature nodes, not survey control points: "
+        "the conversion is approximate (tens of metres), not survey-grade."
+    )
+    return {
+        "status": "verified_approximate" if ok else "failed",
+        "reason": detail if ok else "Tolerance exceeded. " + detail,
+        "method": "independent OpenStreetMap node coordinates vs legacy-unit positions converted by this script",
+        "anchorFile": "tools/map/tashkent_osm_anchors.json",
+        "anchorCount": len(rows),
+        "scopeMeters": VERIFY_SCOPE_METERS,
+        "toleranceMeters": VERIFY_TOLERANCE_METERS,
+        "anchorsInScope": len(scope),
+        "medianErrorInScopeMeters": round(median, 1),
+        "maxErrorInScopeMeters": round(errs[-1], 1),
+        "maxErrorOverallMeters": round(worst["error"], 1),
+        "maxErrorOverallDistanceMeters": round(worst["distance"]),
+    }
+
+
 # ----------------------------------------------------------------------------- parsing
 
 REJECT_REASONS = (
@@ -226,7 +297,8 @@ def chunk_key(points: list[tuple[float, float]]) -> tuple[int, int]:
     return math.floor(east / CHUNK_METERS), math.floor(north / CHUNK_METERS)
 
 
-def build_package(roads: list[Any], source_bytes: bytes, source_rel: str, base: dict) -> tuple[dict[str, bytes], dict]:
+def build_package(roads: list[Any], source_bytes: bytes, source_rel: str, base: dict,
+                  anchors_path: Path = DEFAULT_ANCHORS) -> tuple[dict[str, bytes], dict]:
     """Converts all roads. Returns ({relative path: bytes} incl. manifest.json, manifest dict)."""
     rejected: dict[str, int] = {}
     rejected_examples: list[dict] = []
@@ -286,12 +358,10 @@ def build_package(roads: list[Any], source_bytes: bytes, source_rel: str, base: 
         "coordinateConvention": (
             "WGS84 degrees; positions are [longitude, latitude] (GeoJSON order). Chunk grid: 2000 m ENU cells "
             "relative to referenceAnchor (ix = floor(east/2000), iy = floor(north/2000)); a road belongs to the "
-            "cell of its midpoint vertex. Legacy source units: x east, y south, 1 unit = 1 m (unverified)."
+            "cell of its midpoint vertex. Legacy source units: x east, y south, 1 unit = 1 m (approximate; see coordinateVerification)."
         ),
         "coordinateVerification": {
-            "status": "unverified",
-            "reason": "The origin and the 1 m/unit scale come from the repository's own map-build documentation; "
-                      "no independent surveyed anchor points have been compared against the converted data.",
+            **verify_against_anchors(anchors_path),
             "checks": {
                 "allConvertedPointsWithinRegionBbox": _within_bbox(manifest.get("bbox"), lon_min, lat_min, lon_max, lat_max),
                 "convertedExtent": {
@@ -384,7 +454,8 @@ def validate_package(out_dir: Path, manifest: dict, expected_source_count: int) 
     return problems
 
 
-def migrate(source: Path = DEFAULT_SOURCE, out_dir: Path = DEFAULT_OUT, source_rel: str | None = None) -> dict:
+def migrate(source: Path = DEFAULT_SOURCE, out_dir: Path = DEFAULT_OUT, source_rel: str | None = None,
+            anchors_path: Path = DEFAULT_ANCHORS) -> dict:
     """Runs the full migration and returns the manifest. Raises MigrationError."""
     roads, source_bytes = load_source(source)
     before = _sha256(source_bytes)
@@ -393,7 +464,7 @@ def migrate(source: Path = DEFAULT_SOURCE, out_dir: Path = DEFAULT_OUT, source_r
             source_rel = source.resolve().relative_to(REPO_ROOT).as_posix()
         except ValueError:
             source_rel = source.name
-    outputs, manifest = build_package(roads, source_bytes, source_rel, read_base(out_dir))
+    outputs, manifest = build_package(roads, source_bytes, source_rel, read_base(out_dir), anchors_path)
     write_package(out_dir, outputs)
     problems = validate_package(out_dir, manifest, len(roads))
     if _sha256(source.read_bytes()) != before:
@@ -422,7 +493,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"[migrate_tashkent_legacy] rejected by reason: {m['rejectedByReason']}")
     print(f"[migrate_tashkent_legacy] packageSha256={m['packageSha256']}")
     print(f"[migrate_tashkent_legacy] coordinate verification: {m['coordinateVerification']['status']} "
-          f"(file integrity verified; geographic accuracy not independently surveyed)")
+          f"(file integrity verified; {m['coordinateVerification'].get('reason', '')[:140]}...)")
     return 0
 
 

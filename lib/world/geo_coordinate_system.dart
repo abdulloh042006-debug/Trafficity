@@ -9,7 +9,7 @@ import 'package:flame/components.dart';
 /// * Flame world: x grows east, **y grows downward = south** (screen convention).
 ///   [LocalEnuCoord.toFlameWorld] therefore negates north.
 /// * Legacy Tashkent map units: x east, y south (image convention), centre at
-///   (3200, 3200). See [LegacyTashkentFrame] for the (unverified) scale.
+///   (3200, 3200). See [LegacyTashkentFrame] for the (approximately verified) scale.
 
 /// Raised when a coordinate is NaN, infinite, or outside valid ranges.
 class GeoCoordinateException implements Exception {
@@ -136,9 +136,10 @@ class _Ecef {
 /// Legacy Tashkent map frame (units of the original RoadFlow City world).
 ///
 /// x = east, y = south, centre (3200, 3200) = Amir Temur xiyoboni.
-/// [metersPerUnit] is **an unverified hypothesis**: the basemap is 3200 px at 2 m/px
-/// over a 6400-unit world (=> 1 m per unit) but no surveyed anchor points have been
-/// checked against it yet. The migration manifest reports this as `unverified`.
+/// [metersPerUnit] follows from the basemap (3200 px at 2 m/px over a 6400-unit world => 1 m per unit).
+/// It was checked against 79 independent OpenStreetMap node positions: the manifest reports
+/// `verified_approximate` (21 anchors within 10 km: median 17.7 m, max 23.1 m; error grows ~0.2% with
+/// distance). That is **not survey-grade**; the anchors are OSM place nodes, not control points.
 class LegacyTashkentFrame {
   static const double worldCenter = 3200.0;
   static const double metersPerUnit = 1.0;
