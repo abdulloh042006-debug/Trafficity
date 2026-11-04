@@ -65,12 +65,11 @@ class Signal {
         clusters.last.add(e);
       }
     }
-    if (clusters.length > 1 &&
-        (clusters.first.first.value + pi - clusters.last.last.value) < 0.5) {
+    if (clusters.length > 1 && (clusters.first.first.value + pi - clusters.last.last.value) < 0.5) {
       clusters.first.addAll(clusters.removeLast());
     }
     phases = [
-      for (final c in clusters) [for (final e in c) e.key.id]
+      for (final c in clusters) [for (final e in c) e.key.id],
     ];
     laneToPhase.clear();
     for (var i = 0; i < phases.length; i++) {

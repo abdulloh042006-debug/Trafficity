@@ -1,0 +1,369 @@
+{
+  "schemaVersion": "3.0.0",
+  "repository": "abdulloh042006-debug/Trafficity",
+  "branch": "codex/uzbekistan-expansion",
+  "totalFileCount": 45,
+  "expansionFileCount": 42,
+  "baseFileCount": 3,
+  "fullRepoBundleFileCount": 45,
+  "files": [
+    {
+      "index": 1,
+      "path": "FILE_MANIFEST.json",
+      "scope": "expansion",
+      "description": "Yagona kanonik 23 ta loyiha fayli manifesti"
+    },
+    {
+      "index": 2,
+      "path": "README.md",
+      "scope": "expansion",
+      "sizeBytes": 7026,
+      "sha256": "94a6d606400510581ff917667b8540349db2d70fdb4b688556069b46a4f1b582",
+      "description": "Loyiha hujjati, CLI va test buyruqlari, ma'lumotlar manbasi"
+    },
+    {
+      "index": 3,
+      "path": "package.json",
+      "scope": "expansion",
+      "sizeBytes": 734,
+      "sha256": "8a0db08393b36065a81fc1b7c5c982f87e33c96e3e06c999505cb27037198a57",
+      "description": "Node.js paket konfiguratsiyasi, CLI bin va npm test skripti"
+    },
+    {
+      "index": 4,
+      "path": "LICENSE",
+      "scope": "expansion",
+      "sizeBytes": 444,
+      "sha256": "17cd6f1b8d2c7aa33374f7c627e407acdf102f59cf569653f2124e8a9cacda12",
+      "description": "MIT (kod) va ODbL-1.0 (OpenStreetMap ma'lumotlari) litsenziyasi"
+    },
+    {
+      "index": 5,
+      "path": "assets/world/uzbekistan/world_manifest.json",
+      "scope": "expansion",
+      "sizeBytes": 784,
+      "sha256": "e32e9a7f6b98ff8ebdb572994b0a8f5d08a0c95dda050aa9efb905ee688c6f6f",
+      "description": "O'zbekiston milliy koordinata tizimi va dunyo manifesti"
+    },
+    {
+      "index": 6,
+      "path": "assets/world/uzbekistan/region_catalog.json",
+      "scope": "expansion",
+      "sizeBytes": 10586,
+      "sha256": "95b0fd642e75dce39aa6b9d34590f8186822ba6ec5f7cb45a4afc16e6388ceab",
+      "description": "14 ta birinchi darajali ma'muriy hudud katalogi (latitude, longitude)"
+    },
+    {
+      "index": 7,
+      "path": "assets/world/uzbekistan/cities_index.json",
+      "scope": "expansion",
+      "sizeBytes": 4914,
+      "sha256": "37e1295862ede1a955047c20f8dbc666e7f275dfcf843e5fe16c3f5819642776",
+      "description": "Viloyat markazlari va shaharlar indeksi (latitude, longitude)"
+    },
+    {
+      "index": 8,
+      "path": "assets/world/uzbekistan/administrative_boundaries.geojson",
+      "scope": "expansion",
+      "sizeBytes": 12046,
+      "sha256": "74903eb0fd4408b61ba8956689afc1b0e8e5af1bd34ce7dcefb1fda9287e3c39",
+      "description": "14 ta hududning tekshirilgan bounding-box chegaralari (envelope-only)"
+    },
+    {
+      "index": 9,
+      "path": "tools/map/migrate_tashkent_legacy.py",
+      "scope": "expansion",
+      "sizeBytes": 22617,
+      "sha256": "93225f7bcfd2f0e55dd724c170c07102cd912df5eab99e2a39c08af69bbf2425",
+      "description": "Tuzatilgan Toshkent yo'llari migratsiya skripti (list va dict formatlarini qo'llab-quvvatlaydi)"
+    },
+    {
+      "index": 10,
+      "path": "tools/uzbekistan_pack_cli.mjs",
+      "scope": "expansion",
+      "sizeBytes": 15427,
+      "sha256": "4b4765f7c492fceda9869bc82e92bc57815eae4703d5f12a9a4376d05831d978",
+      "description": "Node.js CLI: list-regions, validate-regions, validate-package"
+    },
+    {
+      "index": 11,
+      "path": "test/packager_and_cli.test.mjs",
+      "scope": "expansion",
+      "sizeBytes": 23364,
+      "sha256": "5ca2e19b2f0984b4982e154d7eb56c15254e7059ee232dad88c4375eab1cd645",
+      "description": "Node.js avtomatlashtirilgan testlar to'plami"
+    },
+    {
+      "index": 12,
+      "path": "lib/world/geo_coordinate_system.dart",
+      "scope": "expansion",
+      "sizeBytes": 13416,
+      "sha256": "139bfdd9fee0d8d715f77743d316ab0215c11f4c7174ce6cf274b69a0e906f7f",
+      "description": "WGS84 <-> Local ENU va Floating Origin koordinata tizimi"
+    },
+    {
+      "index": 13,
+      "path": "lib/world/admin_hierarchy.dart",
+      "scope": "expansion",
+      "sizeBytes": 2414,
+      "sha256": "e44133ad6bd027ccce23aaa5423f994a3fbea5313b969a89ceb9775e4f746db1",
+      "description": "14 hudud ma'muriy iyerarxiyasi va modellari"
+    },
+    {
+      "index": 14,
+      "path": "lib/world/region_package_manager.dart",
+      "scope": "expansion",
+      "sizeBytes": 22593,
+      "sha256": "bc6aaaedfb379cc444fbcb0b5457a7f83c33c7820608141bfd693e5ff070fa55",
+      "description": "SHA-256 paket tekshiruvchi va lokal paket menejeri"
+    },
+    {
+      "index": 15,
+      "path": "lib/world/multi_scale_lod_controller.dart",
+      "scope": "expansion",
+      "sizeBytes": 2802,
+      "sha256": "589ebd8f59d9f930c6b45a0fdae15376a687685a87d774e7b2a533b062454d2f",
+      "description": "4-bosqichli (Country/Region/City2D/Urban3D) LOD kontrolleri"
+    },
+    {
+      "index": 16,
+      "path": "lib/world/road_graph_linker.dart",
+      "scope": "expansion",
+      "sizeBytes": 3441,
+      "sha256": "af634e723d4c57e7fc0f2ef3d71ddd38f4696736a35a56964c38513d9eb7488e",
+      "description": "Hududlararo yo'l grafini ulash moduli"
+    },
+    {
+      "index": 17,
+      "path": "lib/world/architecture_profile_engine.dart",
+      "scope": "expansion",
+      "sizeBytes": 1977,
+      "sha256": "5422c49dc98502c977866e4fce6a2dc935f3ef1fda4df72eb3f85527c264bd0d",
+      "description": "Hududiy arxitektura profillari va obidalar moduli"
+    },
+    {
+      "index": 18,
+      "path": "lib/world/national_save_manager.dart",
+      "scope": "expansion",
+      "sizeBytes": 6709,
+      "sha256": "9f888a841c489df3f48bf1f74260d663676163a58d786bfcdfcdc5e8a8d2d400",
+      "description": "Milliy saqlash formati (v3) moduli"
+    },
+    {
+      "index": 19,
+      "path": "lib/world/world_controller.dart",
+      "scope": "expansion",
+      "sizeBytes": 5418,
+      "sha256": "0b2994c95ab8e66561dc8c78cc71be55a5e3502c1392ad6749ec57aa1441a540",
+      "description": "O'zbekiston dunyo kontrolleri (initializeFromAssets bilan)"
+    },
+    {
+      "index": 20,
+      "path": "lib/ui/region_selector_overlay.dart",
+      "scope": "expansion",
+      "sizeBytes": 9810,
+      "sha256": "915cb2ee11c7dccd2d94c4605bbdf3d221fb2977676aecd14ad907a4e11ccea8",
+      "description": "14 ta hududni tanlash interfeysi (Overlay)"
+    },
+    {
+      "index": 21,
+      "path": ".gitignore",
+      "scope": "base",
+      "sizeBytes": 164,
+      "sha256": "92ab20e558066aac25fb44cc2bcdfcf22a3fdafeca44ce80f2dea93f0c31df36",
+      "description": "Git ignore qoidalari (Node, Flutter, ZIP va token himoyasi)"
+    },
+    {
+      "index": 22,
+      "path": "pubspec.yaml",
+      "scope": "base",
+      "sizeBytes": 902,
+      "sha256": "651f65e27a6fd24e6ba0f520f402008a55fbab46a893f6b9c4c207b2061e4fae",
+      "description": "Flutter/Flame loyiha konfiguratsiyasi va O'zbekiston assetlari"
+    },
+    {
+      "index": 23,
+      "path": "assets/world/uzbekistan/regions/tashkent_city/manifest.json",
+      "scope": "base",
+      "sizeBytes": 4540,
+      "sha256": "0d51643c388a9255a202b4bac637281f69842f1c1b1c3a50130483e9d34ce5d5",
+      "description": "Toshkent shahri (UZ-TK) paket manifesti va SHA-256 xeshi"
+    },
+    {
+      "index": 24,
+      "path": "lib/main.dart",
+      "scope": "expansion",
+      "sizeBytes": 33295,
+      "sha256": "e210675ad44a64e346fc23b62aca417a31202b8413b528b3ce5b14c4c37951e0",
+      "description": "Real app-screen wiring for the Uzbekistan world controller and HUD"
+    },
+    {
+      "index": 25,
+      "path": "lib/game/road_game.dart",
+      "scope": "expansion",
+      "sizeBytes": 85341,
+      "sha256": "8aa2f39fa205209c03a3e5d07c3d9219adade9a2dcda851a7bd8cc97c3781930",
+      "description": "Game integration for region-aware state and national save envelope"
+    },
+    {
+      "index": 26,
+      "path": "lib/ui/uzbekistan_hud_button.dart",
+      "scope": "expansion",
+      "sizeBytes": 2729,
+      "sha256": "5fce7209a1148b990fdbe1684d4b8250e9dc1bf5a86eb3b8210131a187b26a70",
+      "description": "HUD control that opens the Uzbekistan region selector"
+    },
+    {
+      "index": 27,
+      "path": "tools/packager_core.mjs",
+      "scope": "expansion",
+      "sizeBytes": 17513,
+      "sha256": "d6c5405a0f00804151d662720f0d285dbce43e92b73bd0746dcf820982d70c13",
+      "description": "Shared validation, hashing, deterministic ZIP and GitHub push core"
+    },
+    {
+      "index": 28,
+      "path": "Trafficity-Uzbekistan-Complete-Packager.html",
+      "scope": "expansion",
+      "sizeBytes": 34405,
+      "sha256": "51ba9ef13a4cbbb5c449cb52cf976bf4799414f9b4096b942ae9763e138098fa",
+      "description": "Offline browser packager interface with embedded shared core"
+    },
+    {
+      "index": 29,
+      "path": "tools/sync_packager_html.mjs",
+      "scope": "expansion",
+      "sizeBytes": 2950,
+      "sha256": "75784ae40b8555876c2e47777432e26bfa2bd63efb06c45f95e86e7f0d8a378c",
+      "description": "Synchronizes the embedded browser packager core"
+    },
+    {
+      "index": 30,
+      "path": "assets/world/uzbekistan/regions/tashkent_city/chunks/chunk_-1_-1.json",
+      "scope": "expansion",
+      "sizeBytes": 40175,
+      "sha256": "db3201fc0bbf25cfff7340424af58819147b48a5d23ae871f4ce6ee85868a9a2",
+      "description": "Tashkent City road-data chunk (-1, -1)"
+    },
+    {
+      "index": 31,
+      "path": "assets/world/uzbekistan/regions/tashkent_city/chunks/chunk_-1_-2.json",
+      "scope": "expansion",
+      "sizeBytes": 28176,
+      "sha256": "ba3b23d4f3189e90dafd8ab5c92f6df8311a3dd265915c7b48899e9cca024ac2",
+      "description": "Tashkent City road-data chunk (-1, -2)"
+    },
+    {
+      "index": 32,
+      "path": "assets/world/uzbekistan/regions/tashkent_city/chunks/chunk_-1_0.json",
+      "scope": "expansion",
+      "sizeBytes": 22660,
+      "sha256": "80c4b66320f8e5ea088bb08a52616c5fea2cfcd60ca9598324597075bb03ce72",
+      "description": "Tashkent City road-data chunk (-1, 0)"
+    },
+    {
+      "index": 33,
+      "path": "assets/world/uzbekistan/regions/tashkent_city/chunks/chunk_-1_1.json",
+      "scope": "expansion",
+      "sizeBytes": 29113,
+      "sha256": "d372cf45c381e1d47b8982cc768db9353e0591488e99666caaaa97cc64236b35",
+      "description": "Tashkent City road-data chunk (-1, 1)"
+    },
+    {
+      "index": 34,
+      "path": "assets/world/uzbekistan/regions/tashkent_city/chunks/chunk_-2_-1.json",
+      "scope": "expansion",
+      "sizeBytes": 19317,
+      "sha256": "3a8259b19e51bfa6ecfd7f9e4923aac3b02515ffe010407d23dde74f2e4ebccf",
+      "description": "Tashkent City road-data chunk (-2, -1)"
+    },
+    {
+      "index": 35,
+      "path": "assets/world/uzbekistan/regions/tashkent_city/chunks/chunk_-2_-2.json",
+      "scope": "expansion",
+      "sizeBytes": 17294,
+      "sha256": "5bfbddca5698661333a2432f4ccb9336195c778ee5f8627154bbb026c6f9e53c",
+      "description": "Tashkent City road-data chunk (-2, -2)"
+    },
+    {
+      "index": 36,
+      "path": "assets/world/uzbekistan/regions/tashkent_city/chunks/chunk_-2_0.json",
+      "scope": "expansion",
+      "sizeBytes": 20534,
+      "sha256": "73b3b05fcd6fd43e873e10df3c1f86216b33bf200189c08de459d4cf339975ac",
+      "description": "Tashkent City road-data chunk (-2, 0)"
+    },
+    {
+      "index": 37,
+      "path": "assets/world/uzbekistan/regions/tashkent_city/chunks/chunk_-2_1.json",
+      "scope": "expansion",
+      "sizeBytes": 14087,
+      "sha256": "71e4146a853d851ac8e0b9124462f349c02b026cc618ffb9f6d559b04bbf74ac",
+      "description": "Tashkent City road-data chunk (-2, 1)"
+    },
+    {
+      "index": 38,
+      "path": "assets/world/uzbekistan/regions/tashkent_city/chunks/chunk_0_-1.json",
+      "scope": "expansion",
+      "sizeBytes": 35743,
+      "sha256": "d6167998d4e82a249ea1cd69fad041f72363201045606e623a464350ad8ab155",
+      "description": "Tashkent City road-data chunk (0, -1)"
+    },
+    {
+      "index": 39,
+      "path": "assets/world/uzbekistan/regions/tashkent_city/chunks/chunk_0_-2.json",
+      "scope": "expansion",
+      "sizeBytes": 37363,
+      "sha256": "29f4b21bb726993fa701284e77aa1cf1599163ab8d4060f26770483308417483",
+      "description": "Tashkent City road-data chunk (0, -2)"
+    },
+    {
+      "index": 40,
+      "path": "assets/world/uzbekistan/regions/tashkent_city/chunks/chunk_0_0.json",
+      "scope": "expansion",
+      "sizeBytes": 40086,
+      "sha256": "8856ec646e59de68805b9a81c31ab336e9c1934c22424c58a9c8c2972eac2ef7",
+      "description": "Tashkent City road-data chunk (0, 0)"
+    },
+    {
+      "index": 41,
+      "path": "assets/world/uzbekistan/regions/tashkent_city/chunks/chunk_0_1.json",
+      "scope": "expansion",
+      "sizeBytes": 32739,
+      "sha256": "7f0b4b2de3b3d4582d080f6c336bd8e6945c0c0e8cbb43d7fa854b2e0fb4633f",
+      "description": "Tashkent City road-data chunk (0, 1)"
+    },
+    {
+      "index": 42,
+      "path": "assets/world/uzbekistan/regions/tashkent_city/chunks/chunk_1_-1.json",
+      "scope": "expansion",
+      "sizeBytes": 10714,
+      "sha256": "9378ef44a476519454027bdf267e95303fa7803046a3126ca4bf126ae9689385",
+      "description": "Tashkent City road-data chunk (1, -1)"
+    },
+    {
+      "index": 43,
+      "path": "assets/world/uzbekistan/regions/tashkent_city/chunks/chunk_1_-2.json",
+      "scope": "expansion",
+      "sizeBytes": 6906,
+      "sha256": "f2ff7665ed87acf319eba6758393373689c587b75d37900ce6d161a5d00b458e",
+      "description": "Tashkent City road-data chunk (1, -2)"
+    },
+    {
+      "index": 44,
+      "path": "assets/world/uzbekistan/regions/tashkent_city/chunks/chunk_1_0.json",
+      "scope": "expansion",
+      "sizeBytes": 26801,
+      "sha256": "6b6b56483e7af37c42a34a5f1ea1299217744a6cc9a0288136cc323556c37acd",
+      "description": "Tashkent City road-data chunk (1, 0)"
+    },
+    {
+      "index": 45,
+      "path": "assets/world/uzbekistan/regions/tashkent_city/chunks/chunk_1_1.json",
+      "scope": "expansion",
+      "sizeBytes": 9513,
+      "sha256": "ba76b5dd4c1a099e5c7bdfaf4db1dd3c33880bfaf3bade30bd91815e13f0a808",
+      "description": "Tashkent City road-data chunk (1, 1)"
+    }
+  ]
+}

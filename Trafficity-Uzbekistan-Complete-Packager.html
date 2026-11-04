@@ -1,0 +1,694 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src https://api.github.com https://raw.githubusercontent.com; img-src data:; base-uri 'none'; form-action 'none'">
+<title>Trafficity Uzbekistan Packager</title>
+<style>
+  :root {
+    --bg: #0f141a; --panel: #18202a; --panel2: #1f2a36; --line: #2e3b4a;
+    --text: #e8eef5; --muted: #a9b6c4; --accent: #5fb3ff; --ok: #5ed38b; --bad: #ff7b7b; --warn: #f2c14e;
+  }
+  * { box-sizing: border-box; }
+  html { color-scheme: dark; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 920px; margin: 0 auto; padding: 16px; }
+  h1 { font-size: 1.35rem; margin: 8px 0 2px; }
+  h2 { font-size: 1.05rem; margin: 0 0 10px; }
+  p { margin: 6px 0; }
+  .muted { color: var(--muted); }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px; margin: 12px 0; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; }
+  .kv { background: var(--panel2); border-radius: 8px; padding: 8px 10px; word-break: break-word; }
+  .kv b { display: block; font-size: .75rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+  label { display: block; margin: 6px 0; }
+  input[type=text], input[type=password] { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--line); background: #0c1117; color: var(--text); font: inherit; }
+  input:focus-visible, button:focus-visible, summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  button { min-height: 44px; padding: 10px 16px; border-radius: 10px; border: 1px solid var(--accent); background: #12314d; color: var(--text); font: inherit; font-weight: 600; cursor: pointer; margin: 4px 6px 4px 0; }
+  button.danger { border-color: var(--warn); background: #3b3012; }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; }
+  #status { font-weight: 700; }
+  .ok { color: var(--ok); } .bad { color: var(--bad); } .warn { color: var(--warn); }
+  table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; word-break: break-all; }
+  th { color: var(--muted); font-weight: 600; }
+  .scroll { overflow-x: auto; }
+  .scroll table { min-width: 700px; }
+  td:nth-child(3), td:nth-child(4), td:nth-child(6) { white-space: nowrap; }
+  pre { background: #0c1117; border-radius: 8px; padding: 10px; max-height: 240px; overflow: auto; white-space: pre-wrap; word-break: break-word; margin: 8px 0 0; font-size: .82rem; }
+  progress { width: 100%; height: 12px; }
+  .warnbox { border: 1px solid var(--warn); background: #2b2410; border-radius: 8px; padding: 8px 10px; font-size: .9rem; }
+  a { color: var(--accent); }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Trafficity — Uzbekistan Complete Packager</h1>
+    <p class="muted">Validates the Uzbekistan expansion files against <code>FILE_MANIFEST.json</code>, builds a deterministic ZIP, and can push the verified files to the target branch with the official GitHub Git Database API (never forced).</p>
+  </header>
+
+  <section class="panel" aria-labelledby="h-target">
+    <h2 id="h-target">Target</h2>
+    <div class="grid">
+      <div class="kv"><b>Repository</b><span id="repo"></span></div>
+      <div class="kv"><b>Target branch (locked)</b><span id="branch"></span></div>
+      <div class="kv"><b>Manifest version</b><span id="mver">not loaded</span></div>
+      <div class="kv"><b>Package summary</b><span id="summary">not loaded</span></div>
+    </div>
+    <p class="muted">The branch is fixed in code. <code>main</code> and <code>master</code> are rejected and there is no control that can change the target.</p>
+  </section>
+
+  <section class="panel" aria-labelledby="h-source">
+    <h2 id="h-source">1. Files</h2>
+    <fieldset class="row" style="border:0;padding:0;margin:0">
+      <legend class="muted">Source</legend>
+      <label><input type="radio" name="source" value="github" checked> A. Public branch on GitHub (raw URLs)</label>
+      <label><input type="radio" name="source" value="local"> B. Local files (offline)</label>
+    </fieldset>
+    <div id="local-box" hidden>
+      <label for="files">Choose the repository folder (or all listed files). Files are matched by their path relative to the folder.</label>
+      <input id="files" type="file" webkitdirectory multiple>
+    </div>
+    <fieldset class="row" style="border:0;padding:0;margin:8px 0 0">
+      <legend class="muted">Bundle</legend>
+      <label><input type="radio" name="mode" value="expansion" checked> Expansion ZIP — <b>42</b> files</label>
+      <label><input type="radio" name="mode" value="full"> Full ZIP — <b>45</b> files</label>
+    </fieldset>
+    <button id="btn-validate" type="button">Load manifest and validate</button>
+    <p>Status: <span id="status" role="status" aria-live="polite">idle</span></p>
+    <progress id="progress" max="100" value="0" hidden></progress>
+  </section>
+
+  <section class="panel" aria-labelledby="h-zip">
+    <h2 id="h-zip">2. ZIP</h2>
+    <p class="muted">The ZIP is built only after every file exists and its size and SHA-256 match the manifest. Entries are sorted and use fixed timestamps, so the same input gives the same bytes. The manifest's own digest is exempt (self-reference).</p>
+    <button id="btn-zip" type="button" disabled>Build validated ZIP</button>
+    <div id="zip-result" aria-live="polite"></div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-push">
+    <h2 id="h-push">3. GitHub Direct Push</h2>
+    <div class="warnbox">
+      Use a <b>fine-grained, repository-scoped, short-lived</b> token with <i>Contents: Read and write</i> for this repository only.
+      The token stays in memory for the duration of one push, is sent only to <code>api.github.com</code> as an Authorization header, and is cleared afterwards. Never commit it. This page does not store it.
+    </div>
+    <label for="token">Token</label>
+    <input id="token" type="password" autocomplete="off" spellcheck="false" placeholder="paste token, used once">
+    <label for="msg">Commit message</label>
+    <input id="msg" type="text" value="chore(uzbekistan): update expansion files via packager">
+    <label><input id="confirm" type="checkbox"> I confirm: push <b id="confirm-n">0</b> verified files to <b id="confirm-target"></b> as one commit on top of the current branch tip.</label>
+    <button id="btn-push" type="button" class="danger" disabled>Push to branch</button>
+    <div id="push-result" aria-live="polite"></div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-log">
+    <h2 id="h-log">Progress, results and errors</h2>
+    <pre id="log" aria-live="polite">Ready.</pre>
+  </section>
+
+  <section class="panel" aria-labelledby="h-files">
+    <h2 id="h-files">Manifest file inventory</h2>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>#</th><th>Path</th><th>Scope</th><th>Bytes</th><th>SHA-256</th><th>Check</th></tr></thead>
+        <tbody id="inventory"><tr><td colspan="6" class="muted">Load the manifest first.</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<!-- CORE-SYNC:BEGIN (generated by tools/sync_packager_html.mjs - do not edit by hand) -->
+<script id="packager-core">
+/* CORE:BEGIN
+ * packager_core.mjs - pure logic shared by the CLI (tools/uzbekistan_pack_cli.mjs), the browser packager
+ * (Trafficity-Uzbekistan-Complete-Packager.html) and the tests.
+ *
+ * Rules for this file (so it can be pasted verbatim into the HTML page by tools/sync_packager_html.mjs):
+ *   - no `import` statements and no Node-only APIs (uses Web Crypto, TextEncoder, btoa);
+ *   - the only module syntax is the `export` keyword in front of declarations.
+ */
+
+const REPOSITORY = "abdulloh042006-debug/Trafficity";
+const TARGET_BRANCH = "codex/uzbekistan-expansion";
+const FORBIDDEN_BRANCHES = ["main", "master"];
+const MANIFEST_SELF_PATH = "FILE_MANIFEST.json";
+const BUNDLE_MODES = { expansion: 42, full: 45 };
+
+class PackagerError extends Error {
+  constructor(code, message) {
+    super(message);
+    this.name = "PackagerError";
+    this.code = code;
+  }
+}
+
+const HEX64 = /^[0-9a-f]{64}$/;
+const textEncoder = new TextEncoder();
+
+/* ------------------------------------------------------------------ hashing */
+
+async function sha256Hex(bytes) {
+  const data = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+  const digest = await globalThis.crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/** SHA-256 of the sorted "<path>\t<bytes>\t<sha256>\n" lines (same formula as the Dart and Python tools). */
+async function packageDigest(files) {
+  const lines = [...files]
+    .sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0))
+    .map((f) => `${f.path}\t${f.bytes}\t${f.sha256}\n`)
+    .join("");
+  return sha256Hex(textEncoder.encode(lines));
+}
+
+/* ------------------------------------------------------------------ paths */
+
+/** Rejects absolute paths, drive prefixes, NUL, empty / "." / ".." segments, backslashes. */
+function isSafeRelativePath(p) {
+  if (typeof p !== "string" || p.length === 0) return false;
+  if (p.includes("\\") || p.includes("\u0000") || p.startsWith("/") || /^[A-Za-z]:/.test(p)) return false;
+  const trimmed = p.endsWith("/") ? p.slice(0, -1) : p;
+  if (trimmed.length === 0) return false;
+  return trimmed.split("/").every((seg) => seg !== "" && seg !== "." && seg !== "..");
+}
+
+/* ------------------------------------------------------------------ FILE_MANIFEST.json */
+
+/**
+ * Validates the structure of FILE_MANIFEST.json and returns it. Throws PackagerError.
+ * Self-reference rule: the manifest cannot contain its own digest, so the entry for
+ * FILE_MANIFEST.json must NOT carry sizeBytes/sha256 and is exempt from digest checks.
+ */
+function validateFileManifest(m) {
+  const fail = (msg) => {
+    throw new PackagerError("invalid_manifest", msg);
+  };
+  if (!m || typeof m !== "object" || !Array.isArray(m.files)) fail("FILE_MANIFEST.json must contain a files array");
+  const seen = new Set();
+  let expansion = 0;
+  let base = 0;
+  m.files.forEach((f, i) => {
+    if (!isSafeRelativePath(f.path)) fail(`unsafe or missing path at entry ${i}: ${f.path}`);
+    if (seen.has(f.path)) fail(`duplicate path: ${f.path}`);
+    seen.add(f.path);
+    if (f.index !== i + 1) fail(`entry ${f.path} has index ${f.index}, expected ${i + 1}`);
+    if (f.scope === "expansion") expansion++;
+    else if (f.scope === "base") base++;
+    else fail(`entry ${f.path} has unknown scope ${f.scope}`);
+    if (f.path === MANIFEST_SELF_PATH) {
+      if ("sha256" in f || "sizeBytes" in f) fail("FILE_MANIFEST.json must not list its own digest or size (self-reference)");
+    } else {
+      if (!Number.isInteger(f.sizeBytes) || f.sizeBytes < 0) fail(`entry ${f.path} needs an integer sizeBytes`);
+      if (!HEX64.test(f.sha256 ?? "")) fail(`entry ${f.path} needs a 64-character lowercase sha256`);
+    }
+  });
+  if (m.totalFileCount !== m.files.length) fail(`totalFileCount ${m.totalFileCount} != ${m.files.length} listed files`);
+  if (m.expansionFileCount !== expansion) fail(`expansionFileCount ${m.expansionFileCount} != ${expansion} expansion entries`);
+  if (m.baseFileCount !== base) fail(`baseFileCount ${m.baseFileCount} != ${base} base entries`);
+  if (m.fullRepoBundleFileCount !== m.files.length) fail("fullRepoBundleFileCount must equal the number of listed files");
+  return m;
+}
+
+/** Entries of a bundle, sorted by path. "expansion" = 42 files, "full" = 45 files. */
+function selectBundle(manifest, mode) {
+  if (!Object.prototype.hasOwnProperty.call(BUNDLE_MODES, mode)) {
+    throw new PackagerError("bad_mode", `unknown bundle mode "${mode}" (use expansion or full)`);
+  }
+  const picked = manifest.files.filter((f) => mode === "full" || f.scope === "expansion");
+  if (picked.length !== BUNDLE_MODES[mode]) {
+    throw new PackagerError("bad_bundle_size", `${mode} bundle has ${picked.length} files, expected ${BUNDLE_MODES[mode]}`);
+  }
+  return [...picked].sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
+}
+
+/**
+ * Checks every entry against the real bytes. `readBytes(path)` returns Uint8Array or null/undefined when missing.
+ * Returns { ok, problems: [{ path, code, detail }] } - never throws for a bad file.
+ */
+async function verifyBundle(entries, readBytes) {
+  const problems = [];
+  for (const e of entries) {
+    const bytes = await readBytes(e.path);
+    if (bytes === null || bytes === undefined) {
+      problems.push({ path: e.path, code: "missing", detail: "file not found" });
+      continue;
+    }
+    if (e.path === MANIFEST_SELF_PATH) continue; // self-reference: nothing to compare
+    if (bytes.length !== e.sizeBytes) {
+      problems.push({ path: e.path, code: "size_mismatch", detail: `${bytes.length} != ${e.sizeBytes}` });
+      continue;
+    }
+    const actual = await sha256Hex(bytes);
+    if (actual !== e.sha256) problems.push({ path: e.path, code: "sha256_mismatch", detail: `${actual} != ${e.sha256}` });
+  }
+  return { ok: problems.length === 0, problems };
+}
+
+/* ------------------------------------------------------------------ ZIP (deterministic, STORE only) */
+
+const CRC_TABLE = (() => {
+  const t = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    t[n] = c >>> 0;
+  }
+  return t;
+})();
+
+function crc32(bytes) {
+  let c = 0xffffffff;
+  for (let i = 0; i < bytes.length; i++) c = CRC_TABLE[(c ^ bytes[i]) & 0xff] ^ (c >>> 8);
+  return (c ^ 0xffffffff) >>> 0;
+}
+
+const DOS_TIME = 0; // 00:00:00
+const DOS_DATE = 0x0021; // 1980-01-01 (fixed so that equal input gives equal bytes)
+
+/** Builds a ZIP from [{ path, bytes }]. Entries are written sorted by path with fixed timestamps and attributes. */
+function createZip(files) {
+  const sorted = [...files].sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
+  const seen = new Set();
+  const parts = [];
+  const central = [];
+  let offset = 0;
+  const u16 = (v) => [v & 0xff, (v >>> 8) & 0xff];
+  const u32 = (v) => [v & 0xff, (v >>> 8) & 0xff, (v >>> 16) & 0xff, (v >>> 24) & 0xff];
+  for (const f of sorted) {
+    if (!isSafeRelativePath(f.path) || f.path.endsWith("/")) throw new PackagerError("unsafe_path", `unsafe ZIP path: ${f.path}`);
+    if (seen.has(f.path)) throw new PackagerError("duplicate_path", `duplicate ZIP path: ${f.path}`);
+    seen.add(f.path);
+    const name = textEncoder.encode(f.path);
+    const crc = crc32(f.bytes);
+    const local = new Uint8Array([
+      ...u32(0x04034b50), ...u16(20), ...u16(0x0800), ...u16(0), ...u16(DOS_TIME), ...u16(DOS_DATE),
+      ...u32(crc), ...u32(f.bytes.length), ...u32(f.bytes.length), ...u16(name.length), ...u16(0),
+    ]);
+    parts.push(local, name, f.bytes);
+    central.push(
+      new Uint8Array([
+        ...u32(0x02014b50), ...u16(0x0314), ...u16(20), ...u16(0x0800), ...u16(0), ...u16(DOS_TIME), ...u16(DOS_DATE),
+        ...u32(crc), ...u32(f.bytes.length), ...u32(f.bytes.length), ...u16(name.length), ...u16(0), ...u16(0),
+        ...u16(0), ...u16(0), ...u32(((0o100644 << 16) >>> 0)), ...u32(offset),
+      ]),
+      name,
+    );
+    offset += local.length + name.length + f.bytes.length;
+  }
+  const cdSize = central.reduce((n, p) => n + p.length, 0);
+  const eocd = new Uint8Array([
+    ...u32(0x06054b50), ...u16(0), ...u16(0), ...u16(sorted.length), ...u16(sorted.length), ...u32(cdSize), ...u32(offset), ...u16(0),
+  ]);
+  const all = [...parts, ...central, eocd];
+  const out = new Uint8Array(all.reduce((n, p) => n + p.length, 0));
+  let pos = 0;
+  for (const p of all) {
+    out.set(p, pos);
+    pos += p.length;
+  }
+  return out;
+}
+
+/** Re-opens a ZIP made by createZip (or any STORE-only ZIP), verifies the central directory and every CRC. */
+function readZip(bytes) {
+  const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  let eocd = -1;
+  for (let i = bytes.length - 22; i >= Math.max(0, bytes.length - 22 - 65535); i--) {
+    if (dv.getUint32(i, true) === 0x06054b50) {
+      eocd = i;
+      break;
+    }
+  }
+  if (eocd < 0) throw new PackagerError("bad_zip", "end of central directory not found");
+  const count = dv.getUint16(eocd + 10, true);
+  const cdSize = dv.getUint32(eocd + 12, true);
+  const cdOffset = dv.getUint32(eocd + 16, true);
+  if (cdOffset + cdSize > eocd) throw new PackagerError("bad_zip", "central directory is out of range");
+  const decoder = new TextDecoder("utf-8", { fatal: true });
+  const entries = [];
+  let p = cdOffset;
+  for (let i = 0; i < count; i++) {
+    if (dv.getUint32(p, true) !== 0x02014b50) throw new PackagerError("bad_zip", `bad central header #${i}`);
+    const method = dv.getUint16(p + 10, true);
+    const crc = dv.getUint32(p + 16, true);
+    const csize = dv.getUint32(p + 20, true);
+    const usize = dv.getUint32(p + 24, true);
+    const nlen = dv.getUint16(p + 28, true);
+    const elen = dv.getUint16(p + 30, true);
+    const clen = dv.getUint16(p + 32, true);
+    const lho = dv.getUint32(p + 42, true);
+    const path = decoder.decode(bytes.subarray(p + 46, p + 46 + nlen));
+    if (method !== 0) throw new PackagerError("bad_zip", `unsupported compression for ${path}`);
+    if (!isSafeRelativePath(path)) throw new PackagerError("unsafe_path", `unsafe path in ZIP: ${path}`);
+    if (dv.getUint32(lho, true) !== 0x04034b50) throw new PackagerError("bad_zip", `bad local header for ${path}`);
+    const lnlen = dv.getUint16(lho + 26, true);
+    const lelen = dv.getUint16(lho + 28, true);
+    const start = lho + 30 + lnlen + lelen;
+    const data = bytes.slice(start, start + csize);
+    if (csize !== usize || data.length !== usize) throw new PackagerError("bad_zip", `size mismatch for ${path}`);
+    if (crc32(data) !== crc) throw new PackagerError("bad_zip", `CRC mismatch for ${path}`);
+    entries.push({ path, bytes: data });
+    p += 46 + nlen + elen + clen;
+  }
+  return entries;
+}
+
+/** Builds the ZIP for a bundle after verifying the sources, then re-opens it and validates entries and counts. */
+async function buildVerifiedBundleZip(manifest, mode, readBytes) {
+  const entries = selectBundle(manifest, mode);
+  const check = await verifyBundle(entries, readBytes);
+  if (!check.ok) throw new PackagerError("verification_failed", `bundle verification failed: ${JSON.stringify(check.problems)}`);
+  const files = [];
+  for (const e of entries) files.push({ path: e.path, bytes: await readBytes(e.path) });
+  const zip = createZip(files);
+  const reopened = readZip(zip);
+  if (reopened.length !== BUNDLE_MODES[mode]) throw new PackagerError("zip_validation_failed", `ZIP has ${reopened.length} entries, expected ${BUNDLE_MODES[mode]}`);
+  const expected = entries.map((e) => e.path);
+  const got = reopened.map((e) => e.path);
+  if (JSON.stringify(expected) !== JSON.stringify(got)) throw new PackagerError("zip_validation_failed", "ZIP entry list differs from the bundle");
+  for (const f of files) {
+    const r = reopened.find((x) => x.path === f.path);
+    if ((await sha256Hex(r.bytes)) !== (await sha256Hex(f.bytes))) throw new PackagerError("zip_validation_failed", `ZIP content differs for ${f.path}`);
+  }
+  return { zip, entries: reopened.map((e) => e.path), sha256: await sha256Hex(zip), size: zip.length, mode };
+}
+
+/* ------------------------------------------------------------------ GitHub Direct Push (Git Database API) */
+
+function redactToken(text, token) {
+  let out = String(text);
+  if (token) out = out.split(token).join("[REDACTED]");
+  return out.replace(/(ghp_|gho_|ghs_|ghu_|github_pat_)[A-Za-z0-9_]+/g, "[REDACTED]");
+}
+
+function toBase64(bytes) {
+  let s = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  return btoa(s);
+}
+
+function apiError(status, headers, token) {
+  const remaining = headers && typeof headers.get === "function" ? headers.get("x-ratelimit-remaining") : null;
+  if (status === 401) return new PackagerError("auth", "GitHub rejected the token (401). Check that it is valid, not expired, and allowed to write to this repository.");
+  if (status === 403 && remaining === "0") return new PackagerError("rate_limit", "GitHub rate limit reached (403). Wait and try again later.");
+  if (status === 403) return new PackagerError("forbidden", "The token has no permission for this action (403). It needs Contents: read and write on this repository only.");
+  if (status === 404) return new PackagerError("not_found", "Repository or branch not found (404), or the token cannot see the repository.");
+  if (status === 409 || status === 422) return new PackagerError("conflict", `The branch changed or the update is not a fast-forward (${status}). Nothing was forced; reload the branch state and try again.`);
+  if (status === 429) return new PackagerError("rate_limit", "GitHub rate limit reached (429). Wait and try again later.");
+  return new PackagerError("http_error", `GitHub returned HTTP ${status}.`);
+}
+
+/**
+ * Pushes `files` ([{ path, bytes }]) as ONE commit on TARGET_BRANCH using the official Git Database API:
+ *   read ref -> read commit -> create blobs -> create tree (base = current tree) -> create commit (parent = old tip)
+ *   -> update ref with force:false -> read the ref and the commit back.
+ * Success is reported only when the ref read back points at the new commit and that commit can be read.
+ * `fetchFn` is injectable for tests. The token is only ever placed in the Authorization header.
+ */
+async function pushToGitHub({ fetchFn, token, repository = REPOSITORY, branch = TARGET_BRANCH, files, message, onProgress = () => {} }) {
+  if (FORBIDDEN_BRANCHES.includes(branch) || branch !== TARGET_BRANCH) {
+    throw new PackagerError("branch_locked", `Refusing to push to "${branch}". Only ${TARGET_BRANCH} is allowed.`);
+  }
+  if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repository)) throw new PackagerError("bad_repository", "Repository must look like owner/name");
+  if (typeof token !== "string" || token.length < 10) throw new PackagerError("auth", "A GitHub token is required.");
+  if (!Array.isArray(files) || files.length === 0) throw new PackagerError("no_files", "Nothing to push.");
+  for (const f of files) if (!isSafeRelativePath(f.path)) throw new PackagerError("unsafe_path", `Unsafe path: ${f.path}`);
+
+  const base = `https://api.github.com/repos/${repository}`;
+  const call = async (method, path, body) => {
+    let res;
+    try {
+      res = await fetchFn(base + path, {
+        method,
+        headers: {
+          Accept: "application/vnd.github+json",
+          Authorization: `Bearer ${token}`,
+          "X-GitHub-Api-Version": "2022-11-28",
+          ...(body ? { "Content-Type": "application/json" } : {}),
+        },
+        body: body ? JSON.stringify(body) : undefined,
+      });
+    } catch (err) {
+      throw new PackagerError("network", `Network error: ${redactToken(err && err.message ? err.message : err, token)}`);
+    }
+    if (!res.ok) throw apiError(res.status, res.headers, token);
+    return res.json();
+  };
+
+  onProgress("Reading branch reference");
+  const ref = await call("GET", `/git/ref/heads/${branch}`);
+  const parentSha = ref.object.sha;
+  onProgress("Reading current commit");
+  const parent = await call("GET", `/git/commits/${parentSha}`);
+  const tree = [];
+  let n = 0;
+  for (const f of files) {
+    n++;
+    onProgress(`Creating blob ${n}/${files.length}: ${f.path}`);
+    const blob = await call("POST", "/git/blobs", { content: toBase64(f.bytes), encoding: "base64" });
+    tree.push({ path: f.path, mode: "100644", type: "blob", sha: blob.sha });
+  }
+  onProgress("Creating tree");
+  const newTree = await call("POST", "/git/trees", { base_tree: parent.tree.sha, tree });
+  onProgress("Creating commit");
+  const commit = await call("POST", "/git/commits", { message, tree: newTree.sha, parents: [parentSha] });
+  onProgress("Updating branch reference (no force)");
+  await call("PATCH", `/git/refs/heads/${branch}`, { sha: commit.sha, force: false });
+  onProgress("Verifying result");
+  const after = await call("GET", `/git/ref/heads/${branch}`);
+  if (after.object.sha !== commit.sha) throw new PackagerError("verify_failed", "The branch does not point at the new commit; do not assume the push succeeded.");
+  const readBack = await call("GET", `/git/commits/${commit.sha}`);
+  if (readBack.sha !== commit.sha) throw new PackagerError("verify_failed", "The new commit could not be read back.");
+  return { commitSha: commit.sha, parentSha, branch, repository, fileCount: files.length };
+}
+/* CORE:END */
+</script>
+<!-- CORE-SYNC:END -->
+
+<script id="packager-ui">
+"use strict";
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const RAW = `https://raw.githubusercontent.com/${REPOSITORY}/${TARGET_BRANCH}/`;
+  const cache = new Map();           // path -> Uint8Array | null
+  let manifest = null;
+  let localIndex = [];               // [{ rel, file }]
+  let validated = null;              // { mode, entries } after a fully successful validation
+  let busy = false;
+
+  $("repo").textContent = REPOSITORY;
+  $("branch").textContent = TARGET_BRANCH;
+  $("confirm-target").textContent = `${REPOSITORY}@${TARGET_BRANCH}`;
+
+  const sourceMode = () => document.querySelector("input[name=source]:checked").value;
+  const bundleMode = () => document.querySelector("input[name=mode]:checked").value;
+
+  function log(line) {
+    const el = $("log");
+    el.textContent += (el.textContent ? "\n" : "") + line;
+    el.scrollTop = el.scrollHeight;
+  }
+  function setStatus(text, cls) {
+    const s = $("status");
+    s.textContent = text;
+    s.className = cls || "";
+  }
+  function setBusy(v) {
+    busy = v;
+    $("btn-validate").disabled = v;
+    refreshButtons();
+  }
+  function refreshButtons() {
+    const ok = !!validated && validated.mode === bundleMode();
+    $("btn-zip").disabled = busy || !ok;
+    $("btn-push").disabled = busy || !ok || !$("confirm").checked || $("token").value.length < 10;
+    $("confirm-n").textContent = ok ? String(validated.entries.length) : "0";
+  }
+  function safeMessage(err) {
+    const token = $("token").value;
+    const text = err && err.message ? err.message : String(err);
+    return redactToken(text, token);
+  }
+
+  function relOf(file) {
+    const rel = file.webkitRelativePath || file.name;
+    return rel.replace(/\\/g, "/");
+  }
+  async function readBytes(path) {
+    if (cache.has(path)) return cache.get(path);
+    let bytes = null;
+    if (sourceMode() === "github") {
+      const res = await fetch(RAW + path.split("/").map(encodeURIComponent).join("/"), { cache: "no-store" });
+      if (res.ok) bytes = new Uint8Array(await res.arrayBuffer());
+    } else {
+      // the user picks the repository folder; its name is the first segment of every relative path
+      const hit = localIndex.find((e) => e.rel === path || e.rel.endsWith("/" + path));
+      if (hit) bytes = new Uint8Array(await hit.file.arrayBuffer());
+    }
+    cache.set(path, bytes);
+    return bytes;
+  }
+
+  function renderInventory(results) {
+    const body = $("inventory");
+    body.textContent = "";
+    manifest.files.forEach((f) => {
+      const tr = document.createElement("tr");
+      const cells = [String(f.index), f.path, f.scope, f.sizeBytes === undefined ? "(self)" : String(f.sizeBytes), f.sha256 ? f.sha256.slice(0, 16) + "…" : "(self)"];
+      cells.forEach((c) => {
+        const td = document.createElement("td");
+        td.textContent = c;
+        tr.appendChild(td);
+      });
+      const td = document.createElement("td");
+      const r = results && results.get(f.path);
+      td.textContent = r ? (r === "ok" ? "OK" : r) : "—";
+      td.className = r ? (r === "ok" ? "ok" : "bad") : "muted";
+      tr.appendChild(td);
+      body.appendChild(tr);
+    });
+  }
+
+  async function validate() {
+    if (busy) return;
+    setBusy(true);
+    validated = null;
+    $("zip-result").textContent = "";
+    $("push-result").textContent = "";
+    $("progress").hidden = false;
+    $("progress").value = 5;
+    try {
+      cache.clear();
+      setStatus("loading manifest…", "warn");
+      log(`Source: ${sourceMode() === "github" ? "GitHub raw (" + TARGET_BRANCH + ")" : "local files"}; mode: ${bundleMode()}`);
+      if (sourceMode() === "local" && localIndex.length === 0) throw new PackagerError("no_files", "Choose the repository folder first.");
+      const raw = await readBytes(MANIFEST_SELF_PATH);
+      if (!raw) throw new PackagerError("missing_manifest", "FILE_MANIFEST.json was not found in the chosen source.");
+      manifest = validateFileManifest(JSON.parse(new TextDecoder().decode(raw)));
+      $("mver").textContent = `schema ${manifest.schemaVersion}`;
+      $("summary").textContent = `${manifest.expansionFileCount} expansion + ${manifest.baseFileCount} base = ${manifest.totalFileCount} files`;
+      if (manifest.repository && manifest.repository !== REPOSITORY) log(`Note: manifest says repository ${manifest.repository}`);
+      const mode = bundleMode();
+      const entries = selectBundle(manifest, mode);
+      setStatus("verifying files…", "warn");
+      $("progress").value = 30;
+      const results = new Map();
+      let done = 0;
+      const problems = [];
+      for (const e of entries) {
+        const check = await verifyBundle([e], readBytes);
+        done++;
+        $("progress").value = 30 + Math.round((done / entries.length) * 65);
+        if (check.ok) results.set(e.path, "ok");
+        else {
+          const p = check.problems[0];
+          results.set(e.path, p.code);
+          problems.push(`${p.path}: ${p.code} (${p.detail})`);
+        }
+      }
+      renderInventory(results);
+      if (problems.length) {
+        setStatus(`INVALID — ${problems.length} problem(s)`, "bad");
+        log("Validation failed:\n  " + problems.join("\n  "));
+        return;
+      }
+      validated = { mode, entries };
+      setStatus(`VALID — ${entries.length} files match the manifest`, "ok");
+      log(`Validation passed: ${entries.length} files, every size and SHA-256 matches.`);
+    } catch (err) {
+      setStatus("ERROR", "bad");
+      log("Error: " + safeMessage(err));
+    } finally {
+      $("progress").hidden = true;
+      setBusy(false);
+    }
+  }
+
+  async function buildZip() {
+    if (busy || !validated) return;
+    setBusy(true);
+    try {
+      setStatus("building ZIP…", "warn");
+      const built = await buildVerifiedBundleZip(manifest, validated.mode, readBytes);
+      const blob = new Blob([built.zip], { type: "application/zip" });
+      const url = URL.createObjectURL(blob);
+      const name = `Trafficity-Uzbekistan-${built.mode}.zip`;
+      const box = $("zip-result");
+      box.textContent = "";
+      const p = document.createElement("p");
+      p.className = "ok";
+      p.textContent = `Validated ZIP: ${built.entries.length} entries, ${built.size} bytes, sha256 ${built.sha256}`;
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = name;
+      a.id = "zip-link";
+      a.textContent = `Download ${name}`;
+      box.append(p, a);
+      setStatus("ZIP built and re-opened successfully", "ok");
+      log(`ZIP ${name}: ${built.entries.length} entries, ${built.size} bytes, sha256 ${built.sha256}`);
+    } catch (err) {
+      setStatus("ERROR", "bad");
+      $("zip-result").textContent = "";
+      log("ZIP not created: " + safeMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function push() {
+    if (busy || !validated || !$("confirm").checked) return;
+    const token = $("token").value;           // read once, never stored anywhere
+    setBusy(true);
+    $("push-result").textContent = "";
+    try {
+      setStatus("pushing…", "warn");
+      const files = [];
+      for (const e of validated.entries) files.push({ path: e.path, bytes: await readBytes(e.path) });
+      const result = await pushToGitHub({
+        fetchFn: (url, init) => fetch(url, init),
+        token,
+        files,
+        message: $("msg").value || "chore(uzbekistan): update expansion files via packager",
+        onProgress: (m) => log(redactToken(m, token)),
+      });
+      setStatus("pushed and verified", "ok");
+      const p = document.createElement("p");
+      p.className = "ok";
+      p.textContent = `Pushed ${result.fileCount} files to ${result.repository}@${result.branch}; commit ${result.commitSha} (parent ${result.parentSha}). GitHub confirmed the new branch tip.`;
+      $("push-result").append(p);
+      log(p.textContent);
+    } catch (err) {
+      setStatus("PUSH FAILED — nothing was forced", "bad");
+      log("Push failed: " + redactToken(err && err.message ? err.message : String(err), token));
+      if (err && err.code === "conflict") log("The branch moved. Reload the page state (Load manifest and validate) and try again; this tool never forces an update.");
+    } finally {
+      $("token").value = "";                  // clear the secret in every outcome
+      $("confirm").checked = false;
+      setBusy(false);
+    }
+  }
+
+  document.querySelectorAll("input[name=source]").forEach((r) => r.addEventListener("change", () => {
+    $("local-box").hidden = sourceMode() !== "local";
+    validated = null; cache.clear(); refreshButtons();
+  }));
+  document.querySelectorAll("input[name=mode]").forEach((r) => r.addEventListener("change", () => { validated = null; refreshButtons(); }));
+  $("files").addEventListener("change", (ev) => {
+    localIndex = Array.from(ev.target.files).map((file) => ({ rel: relOf(file), file }));
+    validated = null; cache.clear(); refreshButtons();
+    log(`Selected ${localIndex.length} local files.`);
+  });
+  $("btn-validate").addEventListener("click", validate);
+  $("btn-zip").addEventListener("click", buildZip);
+  $("btn-push").addEventListener("click", push);
+  $("confirm").addEventListener("change", refreshButtons);
+  $("token").addEventListener("input", refreshButtons);
+  refreshButtons();
+})();
+</script>
+</body>
+</html>

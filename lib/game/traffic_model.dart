@@ -90,13 +90,7 @@ class Lane extends Track {
 }
 
 class Connector extends Track {
-  Connector(
-    super.pts, {
-    required this.from,
-    required this.to,
-    required this.nodeId,
-    required this.vmax,
-  });
+  Connector(super.pts, {required this.from, required this.to, required this.nodeId, required this.vmax});
 
   final Lane from;
   final Lane to;
@@ -138,11 +132,11 @@ class Vehicle {
     required this.isReturn,
     required this.born,
     required this.color,
-  })  : length = type == VType.truck ? 22.0 : 9.0,
-        width = type == VType.truck ? 6.0 : 4.4,
-        aMax = type == VType.truck ? 3.0 : 6.0,
-        bComf = type == VType.truck ? 6.0 : 8.0,
-        vMaxSelf = type == VType.truck ? 42.0 : 58.0;
+  }) : length = type == VType.truck ? 22.0 : 9.0,
+       width = type == VType.truck ? 6.0 : 4.4,
+       aMax = type == VType.truck ? 3.0 : 6.0,
+       bComf = type == VType.truck ? 6.0 : 8.0,
+       vMaxSelf = type == VType.truck ? 42.0 : 58.0;
 
   final int id;
   final VType type;

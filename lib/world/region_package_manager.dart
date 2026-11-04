@@ -1,305 +1,572 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
+
+import 'package:archive/archive.dart';
+import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
+import 'package:path/path.dart' as p;
+
 import 'admin_hierarchy.dart';
 
-enum PackageInstallState {
-  notInstalled,
-  downloading,
-  verifying,
-  installed,
-  updateAvailable,
-  corrupted,
-  overviewOnly,
-}
-
-class RegionPackageDescriptor {
-  final String packageId;
-  final String regionId;
-  final String tier;
-  final String datasetVersion;
-  final int downloadSizeBytes;
-  final String sha256;
-  final List<String> featureLayers;
-  final List<int> detailLevels;
-
-  const RegionPackageDescriptor({
-    required this.packageId,
-    required this.regionId,
-    required this.tier,
-    required this.datasetVersion,
-    required this.downloadSizeBytes,
-    required this.sha256,
-    required this.featureLayers,
-    required this.detailLevels,
-  });
-
-  factory RegionPackageDescriptor.fromJson(Map<String, dynamic> json) {
-    return RegionPackageDescriptor(
-      packageId: json['packageId'] as String,
-      regionId: json['regionId'] as String,
-      tier: json['tier'] as String? ?? 'city_detail',
-      datasetVersion: json['datasetVersion'] as String? ?? '2026.11.0',
-      downloadSizeBytes: (json['downloadSizeBytes'] as num?)?.toInt() ?? 0,
-      sha256: json['sha256'] as String? ?? '',
-      featureLayers: (json['featureLayers'] as List<dynamic>? ?? const [])
-          .map((e) => e.toString())
-          .toList(),
-      detailLevels: (json['detailLevels'] as List<dynamic>? ?? const [1, 2])
-          .map((e) => (e as num).toInt())
-          .toList(),
-    );
-  }
-
-  Map<String, dynamic> toJson() => {
-        'packageId': packageId,
-        'regionId': regionId,
-        'tier': tier,
-        'datasetVersion': datasetVersion,
-        'downloadSizeBytes': downloadSizeBytes,
-        'sha256': sha256,
-        'featureLayers': featureLayers,
-        'detailLevels': detailLevels,
-      };
-}
-
-class LocalPackageRecord {
-  final String packageId;
-  final String regionId;
-  final String datasetVersion;
-  final int sizeBytes;
-  final String sha256;
-  final DateTime installedAt;
-  DateTime lastAccessedAt;
-  bool pinnedOffline;
-  PackageInstallState state;
-
-  LocalPackageRecord({
-    required this.packageId,
-    required this.regionId,
-    required this.datasetVersion,
-    required this.sizeBytes,
-    required this.sha256,
-    required this.installedAt,
-    required this.lastAccessedAt,
-    this.pinnedOffline = true,
-    this.state = PackageInstallState.installed,
-  });
-
-  factory LocalPackageRecord.fromJson(Map<String, dynamic> json) {
-    return LocalPackageRecord(
-      packageId: json['packageId'] as String,
-      regionId: json['regionId'] as String,
-      datasetVersion: json['datasetVersion'] as String,
-      sizeBytes: (json['sizeBytes'] as num).toInt(),
-      sha256: json['sha256'] as String,
-      installedAt: DateTime.parse(json['installedAt'] as String),
-      lastAccessedAt: DateTime.parse(json['lastAccessedAt'] as String),
-      pinnedOffline: json['pinnedOffline'] as bool? ?? true,
-      state: PackageInstallState.values.firstWhere(
-        (e) => e.name == (json['state'] as String? ?? 'installed'),
-        orElse: () => PackageInstallState.installed,
-      ),
-    );
-  }
-
-  Map<String, dynamic> toJson() => {
-        'packageId': packageId,
-        'regionId': regionId,
-        'datasetVersion': datasetVersion,
-        'sizeBytes': sizeBytes,
-        'sha256': sha256,
-        'installedAt': installedAt.toIso8601String(),
-        'lastAccessedAt': lastAccessedAt.toIso8601String(),
-        'pinnedOffline': pinnedOffline,
-        'state': state.name,
-      };
-}
-
+/// SHA-256 helpers. Digests are always lowercase hexadecimal, exactly 64 characters.
 class Sha256Verifier {
-  static const List<int> _k = [
-    0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5,
-    0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
-    0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3,
-    0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
-    0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc,
-    0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
-    0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7,
-    0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
-    0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13,
-    0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
-    0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3,
-    0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
-    0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5,
-    0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
-    0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208,
-    0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
-  ];
+  static final RegExp _hex64 = RegExp(r'^[0-9a-f]{64}$');
 
-  static int _rotr(int x, int n) =>
-      ((x & 0xffffffff) >>> n) | ((x << (32 - n)) & 0xffffffff);
+  /// SHA-256 of [inputBytes] as a 64-character lowercase hex string.
+  static String sha256Hex(List<int> inputBytes) => sha256.convert(inputBytes).toString();
 
-  static String sha256Hex(List<int> inputBytes) {
-    int h0 = 0x6a09e667;
-    int h1 = 0xbb67ae85;
-    int h2 = 0x3c6ef372;
-    int h3 = 0xa54ff53a;
-    int h4 = 0x510e527f;
-    int h5 = 0x9b05688c;
-    int h6 = 0x1f83d9ab;
-    int h7 = 0x5be0cd19;
+  /// Returns the normalised (trimmed, lowercase) digest, or null when it is not a valid SHA-256 hex string.
+  static String? normalize(String? digest) {
+    if (digest == null) return null;
+    final d = digest.trim().toLowerCase();
+    return _hex64.hasMatch(d) ? d : null;
+  }
 
-    final int bitLen = inputBytes.length * 8;
-    final List<int> padded = List<int>.from(inputBytes)..add(0x80);
-    while ((padded.length % 64) != 56) {
-      padded.add(0x00);
+  /// Constant-time comparison. Fails closed: invalid or missing digests never match.
+  static bool digestsMatch(String? a, String? b) {
+    final na = normalize(a);
+    final nb = normalize(b);
+    if (na == null || nb == null) return false;
+    var diff = 0;
+    for (var i = 0; i < na.length; i++) {
+      diff |= na.codeUnitAt(i) ^ nb.codeUnitAt(i);
     }
-    final bd = ByteData(8)..setUint64(0, bitLen, Endian.big);
-    for (int i = 0; i < 8; i++) {
-      padded.add(bd.getUint8(i));
+    return diff == 0;
+  }
+
+  /// True only when [bytes] hash to [expectedDigest].
+  static bool verify(List<int> bytes, String? expectedDigest) => digestsMatch(sha256Hex(bytes), expectedDigest);
+}
+
+/// Typed failure raised by package validation / lifecycle operations. [code] is stable and machine-readable.
+class RegionPackageException implements Exception {
+  final String code;
+  final String message;
+  const RegionPackageException(this.code, this.message);
+  @override
+  String toString() => 'RegionPackageException($code): $message';
+}
+
+/// One file listed in a package manifest.
+class PackageFileEntry {
+  final String path;
+  final int bytes;
+  final String sha256;
+  final int featureCount;
+  const PackageFileEntry({required this.path, required this.bytes, required this.sha256, this.featureCount = 0});
+}
+
+/// Region package manifest (schema documented in the repository README).
+///
+/// `packageSha256` = SHA-256 (UTF-8) of the concatenation, in ascending `path` order, of
+/// `"<path>\t<bytes>\t<sha256>\n"` for every entry of `files`. Paths are ASCII-only so that
+/// the Dart, Python and JavaScript tools sort them identically.
+class RegionPackageManifest {
+  static const String manifestFileName = 'manifest.json';
+  static final RegExp _versionPattern = RegExp(r'^\d+\.\d+\.\d+$');
+  static final RegExp _pathPattern = RegExp(r'^[A-Za-z0-9_./-]+$');
+
+  final String schemaVersion;
+  final String packageId;
+  final String regionId;
+  final String version;
+  final String packageSha256;
+  final List<PackageFileEntry> files;
+
+  const RegionPackageManifest({
+    required this.schemaVersion,
+    required this.packageId,
+    required this.regionId,
+    required this.version,
+    required this.packageSha256,
+    required this.files,
+  });
+
+  static String computePackageDigest(List<PackageFileEntry> files) {
+    final sorted = [...files]..sort((a, b) => a.path.compareTo(b.path));
+    final sb = StringBuffer();
+    for (final f in sorted) {
+      sb.write('${f.path}\t${f.bytes}\t${f.sha256}\n');
+    }
+    return Sha256Verifier.sha256Hex(utf8.encode(sb.toString()));
+  }
+
+  static RegionPackageManifest parse(String jsonText) {
+    Object? decoded;
+    try {
+      decoded = jsonDecode(jsonText);
+    } on FormatException {
+      throw const RegionPackageException('invalid_manifest', 'Manifest is not valid JSON');
+    }
+    if (decoded is! Map<String, dynamic>) {
+      throw const RegionPackageException('invalid_manifest', 'Manifest root must be an object');
+    }
+    final Map<String, dynamic> m = decoded;
+
+    String requireString(String key) {
+      final v = m[key];
+      if (v is! String || v.isEmpty) {
+        throw RegionPackageException('invalid_manifest', 'Manifest field "$key" must be a non-empty string');
+      }
+      return v;
     }
 
-    final List<int> w = List<int>.filled(64, 0);
-    final chunkData = ByteData.sublistView(Uint8List.fromList(padded));
-
-    for (int offset = 0; offset < padded.length; offset += 64) {
-      for (int i = 0; i < 16; i++) {
-        w[i] = chunkData.getUint32(offset + i * 4, Endian.big);
-      }
-      for (int i = 16; i < 64; i++) {
-        final int s0 =
-            _rotr(w[i - 15], 7) ^ _rotr(w[i - 15], 18) ^ (w[i - 15] >>> 3);
-        final int s1 =
-            _rotr(w[i - 2], 17) ^ _rotr(w[i - 2], 19) ^ (w[i - 2] >>> 10);
-        w[i] = (w[i - 16] + s0 + w[i - 7] + s1) & 0xffffffff;
-      }
-
-      int a = h0, b = h1, c = h2, d = h3, e = h4, f = h5, g = h6, h = h7;
-
-      for (int i = 0; i < 64; i++) {
-        final int s1 = _rotr(e, 6) ^ _rotr(e, 11) ^ _rotr(e, 25);
-        final int ch = (e & f) ^ ((~e & 0xffffffff) & g);
-        final int temp1 = (h + s1 + ch + _k[i] + w[i]) & 0xffffffff;
-        final int s0 = _rotr(a, 2) ^ _rotr(a, 13) ^ _rotr(a, 22);
-        final int maj = (a & b) ^ (a & c) ^ (b & c);
-        final int temp2 = (s0 + maj) & 0xffffffff;
-
-        h = g;
-        g = f;
-        f = e;
-        e = (d + temp1) & 0xffffffff;
-        d = c;
-        c = b;
-        b = a;
-        a = (temp1 + temp2) & 0xffffffff;
-      }
-
-      h0 = (h0 + a) & 0xffffffff;
-      h1 = (h1 + b) & 0xffffffff;
-      h2 = (h2 + c) & 0xffffffff;
-      h3 = (h3 + d) & 0xffffffff;
-      h4 = (h4 + e) & 0xffffffff;
-      h5 = (h5 + f) & 0xffffffff;
-      h6 = (h6 + g) & 0xffffffff;
-      h7 = (h7 + h) & 0xffffffff;
+    final version = requireString('version');
+    if (!_versionPattern.hasMatch(version)) {
+      throw RegionPackageException('invalid_manifest', 'Manifest version "$version" must look like 1.2.3');
     }
-
-    return [h0, h1, h2, h3, h4, h5, h6, h7]
-        .map((v) => v.toRadixString(16).padLeft(8, '0'))
-        .join();
+    final rawDigest = m['packageSha256'];
+    final digest = Sha256Verifier.normalize(rawDigest is String ? rawDigest : null);
+    if (digest == null) {
+      throw const RegionPackageException(
+        'invalid_manifest',
+        'Manifest packageSha256 must be 64 lowercase hex characters',
+      );
+    }
+    final rawFiles = m['files'];
+    if (rawFiles is! List || rawFiles.isEmpty) {
+      throw const RegionPackageException('invalid_manifest', 'Manifest files must be a non-empty list');
+    }
+    final files = <PackageFileEntry>[];
+    final seen = <String>{};
+    for (final raw in rawFiles) {
+      if (raw is! Map<String, dynamic>) {
+        throw const RegionPackageException('invalid_manifest', 'Each manifest file entry must be an object');
+      }
+      final path = raw['path'];
+      final bytes = raw['bytes'];
+      final rawFileDigest = raw['sha256'];
+      final fileDigest = Sha256Verifier.normalize(rawFileDigest is String ? rawFileDigest : null);
+      if (path is! String || !_pathPattern.hasMatch(path) || !RegionPackageManager.isSafeRelativePath(path)) {
+        throw RegionPackageException('invalid_manifest', 'Unsafe or invalid manifest file path: $path');
+      }
+      if (path == manifestFileName) {
+        throw const RegionPackageException('invalid_manifest', 'manifest.json must not list itself');
+      }
+      if (bytes is! int || bytes < 0) {
+        throw RegionPackageException('invalid_manifest', 'Invalid byte size for $path');
+      }
+      if (fileDigest == null) {
+        throw RegionPackageException('invalid_manifest', 'Invalid sha256 for $path');
+      }
+      if (!seen.add(path)) {
+        throw RegionPackageException('invalid_manifest', 'Duplicate manifest path: $path');
+      }
+      final fc = raw['featureCount'];
+      files.add(PackageFileEntry(path: path, bytes: bytes, sha256: fileDigest, featureCount: fc is int ? fc : 0));
+    }
+    return RegionPackageManifest(
+      schemaVersion: requireString('schemaVersion'),
+      packageId: requireString('packageId'),
+      regionId: requireString('regionId'),
+      version: version,
+      packageSha256: digest,
+      files: List.unmodifiable(files),
+    );
   }
 }
 
+/// Persisted record of an installed region package.
+class InstalledPackage {
+  final String regionId;
+  final String packageId;
+  final String version;
+  final String packageSha256;
+  const InstalledPackage({
+    required this.regionId,
+    required this.packageId,
+    required this.version,
+    required this.packageSha256,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'regionId': regionId,
+    'packageId': packageId,
+    'version': version,
+    'packageSha256': packageSha256,
+  };
+
+  static InstalledPackage? tryFromJson(String regionId, Object? json) {
+    if (json is! Map<String, dynamic>) return null;
+    final packageId = json['packageId'];
+    final version = json['version'];
+    final digest = json['packageSha256'];
+    if (packageId is! String || version is! String || digest is! String) return null;
+    return InstalledPackage(regionId: regionId, packageId: packageId, version: version, packageSha256: digest);
+  }
+}
+
+/// Installs, updates, removes and lists region data packages and resolves region readiness.
+///
+/// Storage layout under [rootDirectory]:
+///   packages/<regionId>/   installed package (manifest.json + files)
+///   staging/               temporary extraction area, always cleared on start
+///   backup/<regionId>/     previous version kept while an update is being promoted
+///   installed_state.json   persisted state (written atomically via temp file + rename)
+///
+/// Regions in [bundledRegionIds] ship inside the app assets (Tashkent) and are always ready.
+/// A manager created without a root directory can only resolve readiness; installs are rejected.
 class RegionPackageManager {
-  final Map<String, LocalPackageRecord> _installedByRegionId = {};
-  final Map<String, double> _downloadProgressByRegionId = {};
+  final Directory? _root;
+  final Set<String> _bundledRegionIds;
+  final Set<String> _knownRegionIds = {};
+  Map<String, InstalledPackage> _installed = {};
 
-  RegionPackageManager() {
-    _installedByRegionId['uz_tashkent_city'] = LocalPackageRecord(
-      packageId: 'pkg_uz_tashkent_city_l3_l4',
-      regionId: 'uz_tashkent_city',
-      datasetVersion: '2026.11.0',
-      sizeBytes: 1859500,
-      sha256: 'bundled_verified_tashkent_city',
-      installedAt: DateTime.utc(2026, 11, 1),
-      lastAccessedAt: DateTime.utc(2026, 11, 1),
-      pinnedOffline: true,
-      state: PackageInstallState.installed,
-    );
+  /// Test hook: called with a stage name ('extracted', 'promoted'); throwing simulates a crash.
+  @visibleForTesting
+  Future<void> Function(String stage)? debugFailureHook;
+
+  RegionPackageManager({Set<String> bundledRegionIds = const {'uz_tashkent_city'}})
+    : _root = null,
+      _bundledRegionIds = bundledRegionIds;
+
+  RegionPackageManager._(this._root, this._bundledRegionIds);
+
+  /// Opens a persistent manager: recovers from incomplete installs and loads the saved state.
+  static Future<RegionPackageManager> open({
+    required Directory rootDirectory,
+    Set<String> bundledRegionIds = const {'uz_tashkent_city'},
+    Iterable<String> knownRegionIds = const [],
+  }) async {
+    final m = RegionPackageManager._(rootDirectory, bundledRegionIds);
+    m._knownRegionIds.addAll(knownRegionIds);
+    await rootDirectory.create(recursive: true);
+    await m._loadState();
+    await m._recover();
+    return m;
   }
 
-  void restoreFromJsonString(String? rawJson) {
-    if (rawJson == null || rawJson.isEmpty) return;
-    try {
-      final list = jsonDecode(rawJson) as List<dynamic>;
-      for (final item in list) {
-        final rec = LocalPackageRecord.fromJson(item as Map<String, dynamic>);
-        _installedByRegionId[rec.regionId] = rec;
-      }
-    } catch (_) {}
+  /// Region IDs the manager accepts packages for (from the catalog). Unknown regions are rejected.
+  void registerKnownRegions(Iterable<String> regionIds) {
+    _knownRegionIds
+      ..clear()
+      ..addAll(regionIds);
   }
 
-  String exportToJsonString() {
-    final list = _installedByRegionId.values.map((e) => e.toJson()).toList();
-    return jsonEncode(list);
+  List<InstalledPackage> get installedPackages {
+    final list = _installed.values.toList()..sort((a, b) => a.regionId.compareTo(b.regionId));
+    return List.unmodifiable(list);
   }
 
+  bool isInstalled(String regionId) => _bundledRegionIds.contains(regionId) || _installed.containsKey(regionId);
+
+  InstalledPackage? installedPackage(String regionId) => _installed[regionId];
+
+  /// Directory holding an installed (non-bundled) package, or null.
+  Directory? installedDirectory(String regionId) {
+    final root = _root;
+    if (root == null || !_installed.containsKey(regionId)) return null;
+    return Directory(p.join(root.path, 'packages', regionId));
+  }
+
+  /// A region is only "installed detailed" when its data is bundled or a validated package is installed.
+  /// A catalog default that claims detailed data without a real package never overstates readiness.
   RegionReadinessStatus resolveReadiness(RegionCatalogEntry entry) {
-    final local = _installedByRegionId[entry.regionId];
-    if (local != null && local.state == PackageInstallState.installed) {
-      return RegionReadinessStatus.installedDetailed;
-    }
-    return entry.defaultReadiness;
+    if (isInstalled(entry.regionId)) return RegionReadinessStatus.installedDetailed;
+    return entry.defaultReadiness == RegionReadinessStatus.installedDetailed
+        ? RegionReadinessStatus.overviewOnly
+        : entry.defaultReadiness;
   }
 
-  double getDownloadProgress(String regionId) =>
-      _downloadProgressByRegionId[regionId] ?? 0.0;
+  /// Instance form of [isSafeRelativePath].
+  bool isPathSafe(String relativePath) => isSafeRelativePath(relativePath);
 
-  bool isDetailedRegionInstalled(String regionId) {
-    final rec = _installedByRegionId[regionId];
-    return rec != null && rec.state == PackageInstallState.installed;
-  }
-
-  bool verifyAndInstallPackageBytes({
-    required String regionId,
-    required String packageId,
-    required String datasetVersion,
-    required List<int> payloadBytes,
-    required String expectedSha256,
-  }) {
-    final actualHash = Sha256Verifier.sha256Hex(payloadBytes);
-    if (actualHash.toLowerCase() != expectedSha256.toLowerCase()) {
-      _installedByRegionId[regionId] = LocalPackageRecord(
-        packageId: packageId,
-        regionId: regionId,
-        datasetVersion: datasetVersion,
-        sizeBytes: payloadBytes.length,
-        sha256: actualHash,
-        installedAt: DateTime.now().toUtc(),
-        lastAccessedAt: DateTime.now().toUtc(),
-        state: PackageInstallState.corrupted,
-      );
-      return false;
+  /// Rejects absolute paths, drive prefixes, NUL bytes, empty/`.`/`..` segments (a trailing slash is allowed).
+  static bool isSafeRelativePath(String relativePath) {
+    if (relativePath.isEmpty) return false;
+    final normalized = relativePath.replaceAll('\\', '/');
+    if (normalized.startsWith('/')) return false;
+    if (RegExp(r'^[A-Za-z]:').hasMatch(normalized)) return false;
+    if (normalized.contains('\u0000')) return false;
+    final trimmed = normalized.endsWith('/') ? normalized.substring(0, normalized.length - 1) : normalized;
+    if (trimmed.isEmpty) return false;
+    for (final seg in trimmed.split('/')) {
+      if (seg.isEmpty || seg == '.' || seg == '..') return false;
     }
-
-    _installedByRegionId[regionId] = LocalPackageRecord(
-      packageId: packageId,
-      regionId: regionId,
-      datasetVersion: datasetVersion,
-      sizeBytes: payloadBytes.length,
-      sha256: actualHash,
-      installedAt: DateTime.now().toUtc(),
-      lastAccessedAt: DateTime.now().toUtc(),
-      pinnedOffline: true,
-      state: PackageInstallState.installed,
-    );
     return true;
   }
 
-  bool removeRegionPackage(String regionId) {
-    if (regionId == 'uz_tashkent_city') return false;
-    return _installedByRegionId.remove(regionId) != null;
+  /// True when a ZIP/unix mode marks a symbolic link.
+  static bool isSymlinkMode(int mode) => (mode & 0xF000) == 0xA000;
+
+  static int compareVersions(String a, String b) {
+    final pa = a.split('.').map(int.parse).toList();
+    final pb = b.split('.').map(int.parse).toList();
+    for (var i = 0; i < 3; i++) {
+      final c = pa[i].compareTo(pb[i]);
+      if (c != 0) return c;
+    }
+    return 0;
   }
 
-  List<LocalPackageRecord> get installedPackages =>
-      _installedByRegionId.values.toList(growable: false);
+  Directory _requireRoot() {
+    final root = _root;
+    if (root == null) {
+      throw const RegionPackageException('storage_unavailable', 'This manager has no storage directory');
+    }
+    return root;
+  }
+
+  /// Validates [zipBytes] completely (paths, manifest, sizes, digests) and returns the manifest.
+  /// Nothing is written to disk.
+  RegionPackageManifest validateArchive(Uint8List zipBytes) => _validate(zipBytes).manifest;
+
+  ({RegionPackageManifest manifest, Map<String, List<int>> entries}) _validate(Uint8List zipBytes) {
+    Archive archive;
+    try {
+      archive = ZipDecoder().decodeBytes(zipBytes);
+    } catch (_) {
+      throw const RegionPackageException('invalid_archive', 'Package is not a readable ZIP archive');
+    }
+    final entries = <String, List<int>>{};
+    for (final f in archive.files) {
+      final name = f.name.replaceAll('\\', '/');
+      if (!isSafeRelativePath(name)) {
+        throw RegionPackageException('unsafe_path', 'Unsafe path in archive: ${f.name}');
+      }
+      if (isSymlinkMode(f.mode)) {
+        throw RegionPackageException('symlink_entry', 'Symbolic links are not allowed: ${f.name}');
+      }
+      if (!f.isFile) continue;
+      if (entries.containsKey(name)) {
+        throw RegionPackageException('duplicate_entry', 'Duplicate archive entry: $name');
+      }
+      entries[name] = f.content as List<int>;
+    }
+    final manifestBytes = entries[RegionPackageManifest.manifestFileName];
+    if (manifestBytes == null) {
+      throw const RegionPackageException('missing_manifest', 'Archive has no manifest.json');
+    }
+    String manifestText;
+    try {
+      manifestText = utf8.decode(manifestBytes);
+    } on FormatException {
+      throw const RegionPackageException('invalid_manifest', 'manifest.json is not valid UTF-8');
+    }
+    final manifest = RegionPackageManifest.parse(manifestText);
+    if (!_knownRegionIds.contains(manifest.regionId)) {
+      throw RegionPackageException('unknown_region', 'Unknown region id: ${manifest.regionId}');
+    }
+    final listed = <String>{RegionPackageManifest.manifestFileName};
+    for (final f in manifest.files) {
+      listed.add(f.path);
+      final data = entries[f.path];
+      if (data == null) {
+        throw RegionPackageException('missing_file', 'Listed file is missing from the archive: ${f.path}');
+      }
+      if (data.length != f.bytes) {
+        throw RegionPackageException('size_mismatch', 'Size mismatch for ${f.path}: ${data.length} != ${f.bytes}');
+      }
+      if (!Sha256Verifier.verify(data, f.sha256)) {
+        throw RegionPackageException('hash_mismatch', 'SHA-256 mismatch for ${f.path}');
+      }
+    }
+    for (final name in entries.keys) {
+      if (!listed.contains(name)) {
+        throw RegionPackageException('unlisted_file', 'Archive contains a file not listed in the manifest: $name');
+      }
+    }
+    if (!Sha256Verifier.digestsMatch(
+      RegionPackageManifest.computePackageDigest(manifest.files),
+      manifest.packageSha256,
+    )) {
+      throw const RegionPackageException('package_hash_mismatch', 'Package digest does not match the file list');
+    }
+    return (manifest: manifest, entries: entries);
+  }
+
+  /// Installs a new package or updates an existing one. The region is marked installed only after
+  /// every validation and extraction step succeeded; a failed update keeps the previous version.
+  Future<InstalledPackage> installFromZip(Uint8List zipBytes) async {
+    final root = _requireRoot();
+    final validated = _validate(zipBytes);
+    final manifest = validated.manifest;
+    final regionId = manifest.regionId;
+    if (_bundledRegionIds.contains(regionId)) {
+      throw RegionPackageException('bundled_region', 'Region $regionId is bundled with the app and cannot be replaced');
+    }
+    final existing = _installed[regionId];
+    if (existing != null) {
+      final c = compareVersions(manifest.version, existing.version);
+      if (c == 0) {
+        throw RegionPackageException(
+          'already_installed',
+          'Version ${manifest.version} of $regionId is already installed',
+        );
+      }
+      if (c < 0) {
+        throw RegionPackageException(
+          'downgrade_rejected',
+          'Refusing to downgrade $regionId from ${existing.version} to ${manifest.version}',
+        );
+      }
+    }
+
+    final stagingRoot = Directory(p.join(root.path, 'staging'));
+    final staging = Directory(p.join(stagingRoot.path, '$regionId-${DateTime.now().microsecondsSinceEpoch}'));
+    try {
+      await staging.create(recursive: true);
+      for (final entry in validated.entries.entries) {
+        final dest = p.normalize(p.join(staging.path, entry.key));
+        if (!p.isWithin(staging.path, dest)) {
+          throw RegionPackageException('unsafe_path', 'Path escapes the installation directory: ${entry.key}');
+        }
+        final file = File(dest);
+        await file.parent.create(recursive: true);
+        await file.writeAsBytes(entry.value, flush: true);
+      }
+      await debugFailureHook?.call('extracted');
+    } catch (_) {
+      if (await staging.exists()) await staging.delete(recursive: true);
+      rethrow;
+    }
+
+    final packagesDir = Directory(p.join(root.path, 'packages'));
+    await packagesDir.create(recursive: true);
+    final target = Directory(p.join(packagesDir.path, regionId));
+    final backup = Directory(p.join(root.path, 'backup', regionId));
+    final hadOld = await target.exists();
+    if (hadOld) {
+      await backup.parent.create(recursive: true);
+      if (await backup.exists()) await backup.delete(recursive: true);
+      await target.rename(backup.path);
+    }
+    final record = InstalledPackage(
+      regionId: regionId,
+      packageId: manifest.packageId,
+      version: manifest.version,
+      packageSha256: manifest.packageSha256,
+    );
+    try {
+      await staging.rename(target.path);
+      await debugFailureHook?.call('promoted');
+      final next = Map<String, InstalledPackage>.of(_installed)..[regionId] = record;
+      await _writeState(next);
+      _installed = next;
+    } catch (_) {
+      if (await target.exists()) await target.delete(recursive: true);
+      if (hadOld) await backup.rename(target.path);
+      if (await staging.exists()) await staging.delete(recursive: true);
+      rethrow;
+    }
+    if (hadOld && await backup.exists()) await backup.delete(recursive: true);
+    return record;
+  }
+
+  /// Removes an installed package and persists the new state first, then deletes its files.
+  Future<void> removeRegion(String regionId) async {
+    final root = _requireRoot();
+    if (_bundledRegionIds.contains(regionId)) {
+      throw RegionPackageException('bundled_region', 'Region $regionId is bundled with the app and cannot be removed');
+    }
+    if (!_installed.containsKey(regionId)) {
+      throw RegionPackageException('not_installed', 'Region $regionId is not installed');
+    }
+    final next = Map<String, InstalledPackage>.of(_installed)..remove(regionId);
+    await _writeState(next);
+    _installed = next;
+    final dir = Directory(p.join(root.path, 'packages', regionId));
+    if (await dir.exists()) await dir.delete(recursive: true);
+  }
+
+  File get _stateFile => File(p.join(_requireRoot().path, 'installed_state.json'));
+
+  Future<void> _writeState(Map<String, InstalledPackage> state) async {
+    final root = _requireRoot();
+    final payload = jsonEncode({
+      'schemaVersion': 1,
+      'installed': {for (final e in state.entries) e.key: e.value.toJson()},
+    });
+    final tmp = File(p.join(root.path, 'installed_state.json.tmp'));
+    await tmp.writeAsString(payload, flush: true);
+    await tmp.rename(_stateFile.path);
+  }
+
+  Future<void> _loadState() async {
+    final file = _stateFile;
+    if (!await file.exists()) {
+      _installed = {};
+      return;
+    }
+    try {
+      final decoded = jsonDecode(await file.readAsString());
+      final installed = (decoded is Map<String, dynamic>) ? decoded['installed'] : null;
+      final result = <String, InstalledPackage>{};
+      if (installed is Map<String, dynamic>) {
+        for (final e in installed.entries) {
+          final rec = InstalledPackage.tryFromJson(e.key, e.value);
+          if (rec != null) result[e.key] = rec;
+        }
+      }
+      _installed = result;
+    } on FormatException {
+      // Corrupt state is never trusted: keep the evidence and start with nothing installed.
+      await file.rename('${file.path}.corrupt');
+      _installed = {};
+    }
+  }
+
+  Future<String?> _readManifestVersion(Directory dir) async {
+    try {
+      final f = File(p.join(dir.path, RegionPackageManifest.manifestFileName));
+      if (!await f.exists()) return null;
+      final decoded = jsonDecode(await f.readAsString());
+      if (decoded is Map<String, dynamic> && decoded['version'] is String) {
+        return decoded['version'] as String;
+      }
+    } catch (_) {
+      return null;
+    }
+    return null;
+  }
+
+  /// Cleans up after an interrupted install/update and reconciles disk with the saved state.
+  Future<void> _recover() async {
+    final root = _requireRoot();
+    final staging = Directory(p.join(root.path, 'staging'));
+    if (await staging.exists()) await staging.delete(recursive: true);
+
+    final packages = Directory(p.join(root.path, 'packages'));
+    final backupRoot = Directory(p.join(root.path, 'backup'));
+    if (await backupRoot.exists()) {
+      final backups = await backupRoot.list().toList();
+      for (final ent in backups) {
+        if (ent is! Directory) continue;
+        final regionId = p.basename(ent.path);
+        final target = Directory(p.join(packages.path, regionId));
+        final stateVersion = _installed[regionId]?.version;
+        final dirVersion = await _readManifestVersion(target);
+        if (stateVersion != null && dirVersion == stateVersion) {
+          await ent.delete(recursive: true); // promotion had completed
+        } else {
+          if (await target.exists()) await target.delete(recursive: true);
+          await ent.rename(target.path); // roll back to the previous version
+        }
+      }
+    }
+
+    var changed = false;
+    if (await packages.exists()) {
+      final dirs = await packages.list().toList();
+      for (final ent in dirs) {
+        if (ent is! Directory) continue;
+        if (!_installed.containsKey(p.basename(ent.path))) {
+          await ent.delete(recursive: true); // orphan of an interrupted install
+        }
+      }
+    }
+    final next = Map<String, InstalledPackage>.of(_installed);
+    for (final rec in _installed.values) {
+      final dirVersion = await _readManifestVersion(Directory(p.join(packages.path, rec.regionId)));
+      if (dirVersion != rec.version) {
+        next.remove(rec.regionId);
+        changed = true;
+      }
+    }
+    if (changed) {
+      await _writeState(next);
+      _installed = next;
+    }
+  }
 }

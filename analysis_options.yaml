@@ -1,0 +1,7 @@
+# Formatter width follows the existing code style (long lines were written for 120 columns).
+analyzer:
+  exclude:
+    - build/**
+    - android/**
+formatter:
+  page_width: 120

@@ -9,11 +9,11 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'game/road_game.dart';
+import 'ui/region_selector_overlay.dart';
+import 'ui/uzbekistan_hud_button.dart';
+import 'world/world_controller.dart';
 import 'game/terrain.dart';
 import 'l10n.dart';
-import 'ui/uzbekistan_hud_button.dart';
-import 'world/admin_hierarchy.dart';
-import 'world/world_controller.dart';
 
 /// Oxirgi xatoni ekranda ko'rsatish uchun (release rejimida xatolar sezilmay qolmasligi uchun).
 class AppErr {
@@ -65,12 +65,55 @@ class GameScreen extends StatefulWidget {
 
 class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   late final RoadGame game = RoadGame();
-  late final UzbekistanWorldController _uzbekistanWorld = UzbekistanWorldController();
-  String? _worldLoadError;
-
-  String get _languageCode => const ['uz', 'ru', 'en'][L.lang.clamp(0, 2).toInt()];
+  // The one Uzbekistan world controller of this screen: created once, disposed with the screen.
+  final UzbekistanWorldController world = UzbekistanWorldController();
   double _uiScale = 1.0;
   bool _menu = true;
+  bool _overview = false; // active region has no detailed package: show the overview card, pause the game
+  bool _selectorOpen = false;
+
+  static const _langCodes = ['uz', 'ru', 'en'];
+  String get _langCode => _langCodes[L.lang.clamp(0, 2)];
+
+  /// The game runs only while neither the main menu nor an overview-only region covers it.
+  void _syncPause() {
+    game.menuOpen = _menu || _overview;
+  }
+
+  void _onWorldChanged() {
+    if (!mounted) return;
+    final overview = world.isReady && !world.isActiveDetailed;
+    if (overview != _overview) {
+      _overview = overview;
+      _syncPause();
+      game.setRegion(world.activeRegion?.regionId, detailed: !overview);
+      game.hud.value++;
+    } else {
+      game.setRegion(world.activeRegion?.regionId, detailed: !overview);
+    }
+    setState(() {});
+  }
+
+  void _onGameHud() => world.updateCamera(zoom: game.zoom);
+
+  Future<void> _openSelector() async {
+    if (_selectorOpen || !mounted) return;
+    _selectorOpen = true;
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => UzbekistanRegionSelectorOverlay(
+        worldController: world,
+        languageCode: _langCode,
+        scale: _uiScale,
+        onRegionConfirmed: (r) {
+          world.selectRegion(r.regionId);
+          Navigator.of(ctx).pop();
+        },
+        onClose: () => Navigator.of(ctx).pop(),
+      ),
+    );
+    _selectorOpen = false;
+  }
 
   // fon musiqasi (24 soniyalik uzluksiz sokin pad, loyiha ichida yaratilgan)
   final AudioPlayer _music = AudioPlayer();
@@ -104,28 +147,31 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     game.menuOpen = true;
-    _uzbekistanWorld.initializeFromAssets().catchError((Object error) {
-      if (mounted) setState(() => _worldLoadError = error.toString());
-    });
+    world.addListener(_onWorldChanged);
+    game.hud.addListener(_onGameHud);
+    world.initializeFromAssets();
     // yuklashni birinchi kadrdan keyin boshlaymiz: ekran darhol chiqadi, xatolar ko'rinadi
-    WidgetsBinding.instance
-        .addPostFrameCallback((_) => game.newMap(game.seed, ideal: RoadGame.idealCityOnStart));
-    SharedPreferences.getInstance().then((p) {
-      final sc = p.getDouble('uiScale');
-      if (sc != null && sc >= 0.8 && sc <= 1.5 && mounted) setState(() => _uiScale = sc);
-      final v = p.getInt('lang');
-      if (v != null && v >= 0 && v < 3 && mounted) {
-        setState(() => L.lang = v);
-        game.hud.value++;
-      }
-    }).catchError((_) {});
+    WidgetsBinding.instance.addPostFrameCallback((_) => game.newMap(game.seed, ideal: RoadGame.idealCityOnStart));
+    SharedPreferences.getInstance()
+        .then((p) {
+          final sc = p.getDouble('uiScale');
+          if (sc != null && sc >= 0.8 && sc <= 1.5 && mounted) setState(() => _uiScale = sc);
+          final v = p.getInt('lang');
+          if (v != null && v >= 0 && v < 3 && mounted) {
+            setState(() => L.lang = v);
+            game.hud.value++;
+          }
+        })
+        .catchError((_) {});
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    game.hud.removeListener(_onGameHud);
+    world.removeListener(_onWorldChanged);
+    world.dispose();
     _music.dispose();
-    _uzbekistanWorld.dispose();
     super.dispose();
   }
 
@@ -182,6 +228,8 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                           : () async {
                               Navigator.pop(ctx);
                               final ok = await game.load(slot: i);
+                              final nat = game.loadedNational;
+                              if (ok && nat != null) world.restoreDetailedRegion(nat.regionId);
                               _toast(ok ? "Yuklandi" : "Saqlangan o'yin topilmadi");
                               if (ok) _closeMenu();
                             },
@@ -199,7 +247,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   void _closeMenu() {
     if (!mounted) return;
     setState(() => _menu = false);
-    game.menuOpen = false;
+    _syncPause();
     game.hud.value++;
   }
 
@@ -299,12 +347,12 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
 
   Widget _menuOverlay() {
     Widget item(IconData icon, String label, VoidCallback onTap) => Padding(
-          padding: const EdgeInsets.symmetric(vertical: 5),
-          child: SizedBox(
-            width: 270,
-            child: FilledButton.tonalIcon(onPressed: onTap, icon: Icon(icon), label: Text(L.t(label))),
-          ),
-        );
+      padding: const EdgeInsets.symmetric(vertical: 5),
+      child: SizedBox(
+        width: 270,
+        child: FilledButton.tonalIcon(onPressed: onTap, icon: Icon(icon), label: Text(L.t(label))),
+      ),
+    );
     return Container(
       color: const Color(0xD91F2A22),
       child: SafeArea(
@@ -318,10 +366,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                   style: TextStyle(fontSize: 34, fontWeight: FontWeight.w800, color: Colors.white),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  L.t("Yo'l qurilishi va transport simulyatsiyasi"),
-                  style: const TextStyle(color: Colors.white70),
-                ),
+                Text(L.t("Yo'l qurilishi va transport simulyatsiyasi"), style: const TextStyle(color: Colors.white70)),
                 const SizedBox(height: 22),
                 item(Icons.play_arrow, "Davom etish", _closeMenu),
                 item(Icons.add_circle_outline, "Yangi o'yin", _newGameDialog),
@@ -337,8 +382,10 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                 item(Icons.settings, "Sozlamalar", _settingsDialog),
                 item(Icons.exit_to_app, "Chiqish", () => SystemNavigator.pop()),
                 const SizedBox(height: 14),
-                const Text("Toshkent xaritasi: © OpenStreetMap contributors",
-                    style: TextStyle(color: Colors.white54, fontSize: 11)),
+                const Text(
+                  "Toshkent xaritasi: © OpenStreetMap contributors",
+                  style: TextStyle(color: Colors.white54, fontSize: 11),
+                ),
               ],
             ),
           ),
@@ -354,79 +401,76 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
     var req = 0;
     final go = await showDialog<bool>(
       context: context,
-      builder: (ctx) => StatefulBuilder(builder: (ctx, setS) {
-        // xarita ko'rinishi: tanlangan seed va biom bo'yicha kichik relyef rasmi
-        Future<void> regen() async {
-          final my = ++req;
-          final sd = int.tryParse(seedCtl.text) ?? 0;
-          try {
-            final im = await Terrain(sd, biome).toImage(res: 96);
-            if (my == req) setS(() => preview = im);
-          } catch (_) {}
-        }
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setS) {
+          // xarita ko'rinishi: tanlangan seed va biom bo'yicha kichik relyef rasmi
+          Future<void> regen() async {
+            final my = ++req;
+            final sd = int.tryParse(seedCtl.text) ?? 0;
+            try {
+              final im = await Terrain(sd, biome).toImage(res: 96);
+              if (my == req) setS(() => preview = im);
+            } catch (_) {}
+          }
 
-        if (req == 0) regen();
-        Widget chips(List<String> names, int sel, void Function(int) on) => Wrap(
-              spacing: 6,
-              children: [
-                for (var i = 0; i < names.length; i++)
-                  ChoiceChip(
-                    label: Text(L.t(names[i])),
-                    selected: sel == i,
-                    onSelected: (_) => setS(() => on(i)),
-                  ),
-              ],
-            );
-        return AlertDialog(
-          title: Text(L.t("Yangi o'yin")),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (preview != null)
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: SizedBox(
-                      height: 120,
-                      width: double.infinity,
-                      child: RawImage(image: preview, fit: BoxFit.cover, filterQuality: FilterQuality.medium),
+          if (req == 0) regen();
+          Widget chips(List<String> names, int sel, void Function(int) on) => Wrap(
+            spacing: 6,
+            children: [
+              for (var i = 0; i < names.length; i++)
+                ChoiceChip(label: Text(L.t(names[i])), selected: sel == i, onSelected: (_) => setS(() => on(i))),
+            ],
+          );
+          return AlertDialog(
+            title: Text(L.t("Yangi o'yin")),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (preview != null)
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: SizedBox(
+                        height: 120,
+                        width: double.infinity,
+                        child: RawImage(image: preview, fit: BoxFit.cover, filterQuality: FilterQuality.medium),
+                      ),
                     ),
+                  const SizedBox(height: 10),
+                  Text(L.t("Biom")),
+                  chips(const ["Tekislik", "Daryo deltasi", "Tog' vodiysi", "Orollar", "Toshkent"], biome, (i) {
+                    biome = i;
+                    regen();
+                  }),
+                  const SizedBox(height: 12),
+                  Text(L.t("Qiyinlik")),
+                  chips(const ["Oson", "Oddiy", "Qiyin"], diff, (i) => diff = i),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(L.t("Sandbox (cheksiz mablag')")),
+                    value: sbx,
+                    onChanged: (v) => setS(() => sbx = v),
                   ),
-                const SizedBox(height: 10),
-                Text(L.t("Biom")),
-                chips(const ["Tekislik", "Daryo deltasi", "Tog' vodiysi", "Orollar", "Toshkent"], biome, (i) {
-                  biome = i;
-                  regen();
-                }),
-                const SizedBox(height: 12),
-                Text(L.t("Qiyinlik")),
-                chips(const ["Oson", "Oddiy", "Qiyin"], diff, (i) => diff = i),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(L.t("Sandbox (cheksiz mablag')")),
-                  value: sbx,
-                  onChanged: (v) => setS(() => sbx = v),
-                ),
-                TextField(
-                  controller: seedCtl,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: "Seed"),
-                  onChanged: (_) => regen(),
-                ),
-              ],
+                  TextField(
+                    controller: seedCtl,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(labelText: "Seed"),
+                    onChanged: (_) => regen(),
+                  ),
+                ],
+              ),
             ),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(L.t("Bekor"))),
-            FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(L.t("Boshlash"))),
-          ],
-        );
-      }),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(L.t("Bekor"))),
+              FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(L.t("Boshlash"))),
+            ],
+          );
+        },
+      ),
     );
     if (go == true) {
-      game.newMap(int.tryParse(seedCtl.text) ?? Random().nextInt(100000),
-          biome: biome, difficulty: diff, sandbox: sbx);
+      game.newMap(int.tryParse(seedCtl.text) ?? Random().nextInt(100000), biome: biome, difficulty: diff, sandbox: sbx);
       _closeMenu();
     }
   }
@@ -466,26 +510,28 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
     return Scaffold(
       body: Stack(
         children: [
-          LayoutBuilder(builder: (context, c) {
-            game.widgetSize = Size(c.maxWidth, c.maxHeight);
-            return Listener(
-              behavior: HitTestBehavior.opaque,
-              onPointerDown: (e) {
-                game.lastGlobal = e.position;
-                game.pointerDown(e.pointer, e.localPosition);
-              },
-              onPointerMove: (e) {
-                game.lastGlobal = e.position;
-                game.pointerMove(e.pointer, e.localPosition);
-              },
-              onPointerUp: (e) => game.pointerUp(e.pointer),
-              onPointerCancel: (e) => game.pointerUp(e.pointer),
-              onPointerSignal: (e) {
-                if (e is PointerScrollEvent) game.wheel(e.localPosition, e.scrollDelta.dy);
-              },
-              child: GameWidget(game: game),
-            );
-          }),
+          LayoutBuilder(
+            builder: (context, c) {
+              game.widgetSize = Size(c.maxWidth, c.maxHeight);
+              return Listener(
+                behavior: HitTestBehavior.opaque,
+                onPointerDown: (e) {
+                  game.lastGlobal = e.position;
+                  game.pointerDown(e.pointer, e.localPosition);
+                },
+                onPointerMove: (e) {
+                  game.lastGlobal = e.position;
+                  game.pointerMove(e.pointer, e.localPosition);
+                },
+                onPointerUp: (e) => game.pointerUp(e.pointer),
+                onPointerCancel: (e) => game.pointerUp(e.pointer),
+                onPointerSignal: (e) {
+                  if (e is PointerScrollEvent) game.wheel(e.localPosition, e.scrollDelta.dy);
+                },
+                child: GameWidget(game: game),
+              );
+            },
+          ),
           Positioned.fill(
             child: SafeArea(
               child: ValueListenableBuilder<int>(
@@ -495,13 +541,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                   final plan = game.currentPlan;
                   return Stack(
                     children: [
-                      Align(
-                        alignment: Alignment.topCenter,
-                        child: ListenableBuilder(
-                          listenable: _uzbekistanWorld,
-                          builder: (context, _) => _topBar(plan),
-                        ),
-                      ),
+                      Align(alignment: Alignment.topCenter, child: _topBar(plan)),
                       if (game.showCharts && !game.loading)
                         Align(
                           alignment: Alignment.bottomCenter,
@@ -531,6 +571,16 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
               ),
             ),
           ),
+          if (_overview)
+            Positioned.fill(
+              child: RegionOverviewCard(
+                worldController: world,
+                languageCode: _langCode,
+                scale: _uiScale,
+                onBackToDetailed: () => world.selectRegion('uz_tashkent_city'),
+                onOpenSelector: _openSelector,
+              ),
+            ),
           if (_menu) Positioned.fill(child: _menuOverlay()),
         ],
       ),
@@ -546,8 +596,10 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
           children: [
             SizedBox(
               width: 128,
-              child: Text(L.t("$label: ${fmt(cur)}"),
-                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
+              child: Text(
+                L.t("$label: ${fmt(cur)}"),
+                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+              ),
             ),
             Expanded(
               child: SizedBox(height: 30, child: CustomPaint(painter: _SparkPainter(data, color))),
@@ -560,10 +612,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 8),
       padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: const Color(0xF2FFFFFF),
-        borderRadius: BorderRadius.circular(12),
-      ),
+      decoration: BoxDecoration(color: const Color(0xF2FFFFFF), borderRadius: BorderRadius.circular(12)),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -587,10 +636,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   Widget _chip(String text, {Color? color}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: const Color(0xE6FFFFFF),
-        borderRadius: BorderRadius.circular(12),
-      ),
+      decoration: BoxDecoration(color: const Color(0xE6FFFFFF), borderRadius: BorderRadius.circular(12)),
       child: Text(
         L.t(text),
         style: TextStyle(fontSize: 12 * _uiScale, fontWeight: FontWeight.w600, color: color ?? const Color(0xFF2B2E33)),
@@ -612,10 +658,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   Widget _panel(List<Widget> children) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      decoration: BoxDecoration(
-        color: const Color(0xEBFFFFFF),
-        borderRadius: BorderRadius.circular(14),
-      ),
+      decoration: BoxDecoration(color: const Color(0xEBFFFFFF), borderRadius: BorderRadius.circular(14)),
       child: Column(mainAxisSize: MainAxisSize.min, children: children),
     );
   }
@@ -628,26 +671,14 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (_uzbekistanWorld.isInitialized)
-            Align(
-              alignment: Alignment.centerLeft,
-              child: UzbekistanHudButton(
-                worldController: _uzbekistanWorld,
-                languageCode: _languageCode,
-                onRegionSelected: (RegionCatalogEntry region) {
-                  final ready = _uzbekistanWorld.packageManager.resolveReadiness(region);
-                  _toast(ready == RegionReadinessStatus.installedDetailed
-                      ? '${region.names.forLang(_languageCode)} tanlandi. Batafsil paket mavjud.'
-                      : '${region.names.forLang(_languageCode)} tanlandi. Hozircha faqat umumiy xarita mavjud; shahar simulyatsiyasi hali ulanmagan.');
-                },
-              ),
-            )
-          else if (_worldLoadError != null)
-            Align(
-              alignment: Alignment.centerLeft,
-              child: _chip('Hududlar yuklanmadi: $_worldLoadError', color: const Color(0xFFC0392B)),
-            ),
           _panel([
+            UzbekistanHudButton(
+              worldController: world,
+              languageCode: _langCode,
+              scale: _uiScale,
+              onPressed: _openSelector,
+            ),
+            const SizedBox(height: 2),
             Wrap(
               spacing: 14,
               runSpacing: 2,
@@ -693,10 +724,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
             ),
           ]),
           const SizedBox(height: 6),
-          if (game.debug) ...[
-            _chip(game.debugText()),
-            const SizedBox(height: 6),
-          ],
+          if (game.debug) ...[_chip(game.debugText()), const SizedBox(height: 6)],
           if (AppErr.last != null) ...[
             const SizedBox(height: 6),
             GestureDetector(
@@ -714,10 +742,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
               color: const Color(0xFF1B6EA0),
             ),
           ],
-          if (!game.loading && game.satNote.isNotEmpty) ...[
-            const SizedBox(height: 6),
-            _chip(game.satNote),
-          ],
+          if (!game.loading && game.satNote.isNotEmpty) ...[const SizedBox(height: 6), _chip(game.satNote)],
           const SizedBox(height: 6),
           if (plan != null)
             _chip(
@@ -747,7 +772,10 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(icon, size: 21 * _uiScale, color: fg),
-                Text(L.t(label), style: TextStyle(fontSize: 10.5 * _uiScale, color: fg)),
+                Text(
+                  L.t(label),
+                  style: TextStyle(fontSize: 10.5 * _uiScale, color: fg),
+                ),
               ],
             ),
           ),
@@ -767,33 +795,47 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
           children: [
             _btn(Icons.menu, "Menyu", () {
               setState(() => _menu = true);
-              game.menuOpen = true;
+              _syncPause();
             }),
             _btn(Icons.open_with, "Kamera", () => game.setTool(Tool.pan), selected: game.tool == Tool.pan),
             if (game.rot.abs() > 0.01) _btn(Icons.explore, "Shimol", game.resetRotation),
             if (game.canUndo) _btn(Icons.undo, "Ortga", game.undo),
             if (game.canRedo) _btn(Icons.redo, "Oldinga", game.redo),
             const SizedBox(width: 10),
-            _btn(Icons.horizontal_rule, "To'g'ri", () => game.setTool(Tool.straight),
-                selected: game.tool == Tool.straight),
+            _btn(
+              Icons.horizontal_rule,
+              "To'g'ri",
+              () => game.setTool(Tool.straight),
+              selected: game.tool == Tool.straight,
+            ),
             _btn(Icons.gesture, "Egri", () => game.setTool(Tool.curve), selected: game.tool == Tool.curve),
             _btn(Icons.grid_on, "To'r", () => game.setTool(Tool.grid), selected: game.tool == Tool.grid),
             if (game.tool == Tool.grid) _btn(Icons.space_bar, "Oraliq ${game.gridSpacing}", game.cycleGridSpacing),
-            _btn(Icons.traffic, "Svetofor", () => game.setTool(Tool.signal),
-                selected: game.tool == Tool.signal),
-            _btn(Icons.trip_origin, "Aylana", () => game.setTool(Tool.roundabout),
-                selected: game.tool == Tool.roundabout),
-            _btn(Icons.delete_outline, "O'chirish", () => game.setTool(Tool.erase),
-                selected: game.tool == Tool.erase),
-            _btn(Icons.info_outline, "Ma'lumot", () => game.setTool(Tool.inspect),
-                selected: game.tool == Tool.inspect),
+            _btn(Icons.traffic, "Svetofor", () => game.setTool(Tool.signal), selected: game.tool == Tool.signal),
+            _btn(
+              Icons.trip_origin,
+              "Aylana",
+              () => game.setTool(Tool.roundabout),
+              selected: game.tool == Tool.roundabout,
+            ),
+            _btn(Icons.delete_outline, "O'chirish", () => game.setTool(Tool.erase), selected: game.tool == Tool.erase),
+            _btn(Icons.info_outline, "Ma'lumot", () => game.setTool(Tool.inspect), selected: game.tool == Tool.inspect),
             const SizedBox(width: 10),
             if (!game.railMode)
               _btn(Icons.alt_route, ["Oddiy yo'l", "Katta yo'l", "Magistral"][game.roadType], game.cycleRoadType),
-            _btn(game.railMode ? Icons.train : Icons.layers, const ["Yer usti", "Estakada", "Temir yo'l", "Tunnel"][game.roadLayer],
-                game.cycleRoadLayer, selected: game.roadLayer != 0),
+            _btn(
+              game.railMode ? Icons.train : Icons.layers,
+              const ["Yer usti", "Estakada", "Temir yo'l", "Tunnel"][game.roadLayer],
+              game.cycleRoadLayer,
+              selected: game.roadLayer != 0,
+            ),
             if (game.railMode || game.tool == Tool.station)
-              _btn(Icons.directions_railway, "Stansiya", () => game.setTool(Tool.station), selected: game.tool == Tool.station),
+              _btn(
+                Icons.directions_railway,
+                "Stansiya",
+                () => game.setTool(Tool.station),
+                selected: game.tool == Tool.station,
+              ),
             if (game.sandbox) ...[
               _btn(Icons.home_work, ["Uy", "Do'kon", "Zavod"][game.buildType], () {
                 if (game.tool == Tool.building) {

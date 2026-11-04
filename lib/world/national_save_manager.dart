@@ -1,237 +1,167 @@
 import 'geo_coordinate_system.dart';
 
-class SavedRoadV3 {
-  final String id;
-  final List<Wgs84Coord> wgs84Polyline;
-  final int lanes;
-  final String roadClass;
-
-  const SavedRoadV3({
-    required this.id,
-    required this.wgs84Polyline,
-    required this.lanes,
-    this.roadClass = 'URBAN_SECONDARY',
-  });
-
-  factory SavedRoadV3.fromJson(Map<String, dynamic> json) {
-    final pts = (json['wgs84Polyline'] as List<dynamic>)
-        .map((p) => Wgs84Coord.fromJson(p))
-        .toList();
-    return SavedRoadV3(
-      id: json['id'] as String,
-      wgs84Polyline: pts,
-      lanes: (json['lanes'] as num?)?.toInt() ?? 2,
-      roadClass: json['roadClass'] as String? ?? 'URBAN_SECONDARY',
-    );
-  }
-
-  Map<String, dynamic> toJson() => {
-        'id': id,
-        'wgs84Polyline': wgs84Polyline.map((p) => p.toJsonList()).toList(),
-        'lanes': lanes,
-        'roadClass': roadClass,
-      };
+/// Raised for saves that cannot be read. [code]: `malformed`, `unknown_version`, `missing_field`.
+class SaveFormatException implements Exception {
+  final String code;
+  final String message;
+  const SaveFormatException(this.code, this.message);
+  @override
+  String toString() => 'SaveFormatException($code): $message';
 }
 
+/// National save envelope, format version 3.
+///
+/// Carries only the geographic identity of a save (country, region, camera in WGS84) and version
+/// metadata. Gameplay payload (roads, buildings, ...) stays in the game's own save map.
 class NationalSaveV3 {
+  static const int currentVersion = 3;
+  static const String defaultCountryId = 'UZ';
+
   final int saveFormatVersion;
-  final String savedAt;
   final String countryId;
   final String regionId;
-  final String districtId;
-  final String selectedCityId;
-  final String datasetVersion;
-  final Wgs84Coord cameraPosition;
+
+  /// Camera centre in WGS84, or null when the save has no geographic meaning (see [fromLegacy]).
+  final Wgs84Coord? cameraPosition;
   final double cameraZoom;
-  final double cameraPitchDegrees;
-  final double cameraBearingDegrees;
-  final bool is3DMode;
-  final List<String> activeMapLayers;
-  final List<SavedRoadV3> addedRoads;
-  final Map<String, dynamic> legacyPayload;
+
+  /// Format version this save was originally written in (1 or 2 for migrated legacy saves).
+  final int migratedFromVersion;
 
   const NationalSaveV3({
-    this.saveFormatVersion = 3,
-    required this.savedAt,
-    this.countryId = 'UZ',
+    this.saveFormatVersion = currentVersion,
+    this.countryId = defaultCountryId,
     required this.regionId,
-    required this.districtId,
-    required this.selectedCityId,
-    this.datasetVersion = '2026.11.0',
-    required this.cameraPosition,
-    required this.cameraZoom,
-    this.cameraPitchDegrees = 0.0,
-    this.cameraBearingDegrees = 0.0,
-    this.is3DMode = false,
-    required this.activeMapLayers,
-    required this.addedRoads,
-    this.legacyPayload = const {},
+    this.cameraPosition,
+    this.cameraZoom = 1.0,
+    this.migratedFromVersion = currentVersion,
   });
 
   Map<String, dynamic> toJson() => {
-        'saveFormatVersion': saveFormatVersion,
-        'savedAt': savedAt,
-        'worldContext': {
-          'countryId': countryId,
-          'regionId': regionId,
-          'districtId': districtId,
-          'selectedCityId': selectedCityId,
-          'datasetVersion': datasetVersion,
-        },
-        'cameraGeoPose': {
-          'lon': cameraPosition.lon,
-          'lat': cameraPosition.lat,
-          'alt': cameraPosition.alt,
-          'zoom': cameraZoom,
-          'pitchDegrees': cameraPitchDegrees,
-          'bearingDegrees': cameraBearingDegrees,
-          'is3DMode': is3DMode,
-        },
-        'activeMapLayers': activeMapLayers,
-        'playerInfrastructure': {
-          'addedRoads': addedRoads.map((r) => r.toJson()).toList(),
-        },
-        'legacyPayload': legacyPayload,
-      };
+    'v': saveFormatVersion,
+    'country': countryId,
+    'region': regionId,
+    if (cameraPosition != null) 'camera': [cameraPosition!.lon, cameraPosition!.lat],
+    'zoom': cameraZoom,
+    'migratedFrom': migratedFromVersion,
+  };
 
-  factory NationalSaveV3.fromJson(Map<String, dynamic> json) {
-    final ctx = json['worldContext'] as Map<String, dynamic>? ?? const {};
-    final cam = json['cameraGeoPose'] as Map<String, dynamic>? ?? const {};
-    final infra =
-        json['playerInfrastructure'] as Map<String, dynamic>? ?? const {};
-    final roadsList = infra['addedRoads'] as List<dynamic>? ?? const [];
-
+  /// Reads a v3 save. Throws [SaveFormatException] for anything else or for invalid values.
+  factory NationalSaveV3.fromJson(Object? json) {
+    if (json is! Map<String, dynamic>) {
+      throw const SaveFormatException('malformed', 'Save root must be an object');
+    }
+    final v = json['v'];
+    if (v is! int) throw const SaveFormatException('malformed', 'Save has no integer version');
+    if (v != currentVersion) throw SaveFormatException('unknown_version', 'Not a v3 save: v=$v');
+    final region = json['region'];
+    if (region is! String || region.isEmpty) {
+      throw const SaveFormatException('missing_field', 'region is required');
+    }
+    final country = json['country'];
+    Wgs84Coord? camera;
+    final rawCam = json['camera'];
+    if (rawCam != null) {
+      if (rawCam is! List || rawCam.length < 2 || rawCam[0] is! num || rawCam[1] is! num) {
+        throw const SaveFormatException('malformed', 'camera must be [lon, lat]');
+      }
+      camera = Wgs84Coord(lon: (rawCam[0] as num).toDouble(), lat: (rawCam[1] as num).toDouble());
+      if (!camera.isValid) throw const SaveFormatException('malformed', 'camera is not a valid WGS84 position');
+    }
+    final zoom = json['zoom'];
+    final migrated = json['migratedFrom'];
     return NationalSaveV3(
-      saveFormatVersion: (json['saveFormatVersion'] as num?)?.toInt() ?? 3,
-      savedAt: json['savedAt'] as String? ??
-          DateTime.now().toUtc().toIso8601String(),
-      countryId: ctx['countryId'] as String? ?? 'UZ',
-      regionId: ctx['regionId'] as String? ?? 'uz_tashkent_city',
-      districtId: ctx['districtId'] as String? ?? 'UZ-TK',
-      selectedCityId: ctx['selectedCityId'] as String? ?? 'city_tashkent',
-      datasetVersion: ctx['datasetVersion'] as String? ?? '2026.11.0',
-      cameraPosition: Wgs84Coord(
-        lon: (cam['lon'] as num?)?.toDouble() ??
-            NationalCoordinateSystem.legacyTashkentOrigin.lon,
-        lat: (cam['lat'] as num?)?.toDouble() ??
-            NationalCoordinateSystem.legacyTashkentOrigin.lat,
-        alt: (cam['alt'] as num?)?.toDouble() ?? 475.0,
-      ),
-      cameraZoom: (cam['zoom'] as num?)?.toDouble() ?? 1.0,
-      cameraPitchDegrees: (cam['pitchDegrees'] as num?)?.toDouble() ?? 0.0,
-      cameraBearingDegrees: (cam['bearingDegrees'] as num?)?.toDouble() ?? 0.0,
-      is3DMode: cam['is3DMode'] as bool? ?? false,
-      activeMapLayers: (json['activeMapLayers'] as List<dynamic>? ??
-              const [
-                'roads',
-                'buildings',
-                'signals',
-                'parks',
-                'waterways',
-                'metro',
-              ])
-          .map((e) => e.toString())
-          .toList(),
-      addedRoads: roadsList
-          .map((r) => SavedRoadV3.fromJson(r as Map<String, dynamic>))
-          .toList(),
-      legacyPayload:
-          json['legacyPayload'] as Map<String, dynamic>? ?? const {},
+      countryId: country is String && country.isNotEmpty ? country : defaultCountryId,
+      regionId: region,
+      cameraPosition: camera,
+      cameraZoom: zoom is num && zoom.isFinite ? zoom.toDouble() : 1.0,
+      migratedFromVersion: migrated is int ? migrated : currentVersion,
     );
+  }
+
+  /// Biome id of the real Tashkent map in legacy saves (`Terrain.tashkent`).
+  static const int legacyTashkentBiome = 4;
+
+  /// World size (units) of the Tashkent map whose centre (3200, 3200) is the Tashkent origin.
+  static const double legacyTashkentWorldSize = 6400.0;
+
+  /// Migrates a legacy v1/v2 game save (`{'v': 1|2, 'biome':…, 'ws':…, 'cam':[x,y], 'zoom':…}`).
+  ///
+  /// Only real-Tashkent saves (biome 4, 6400-unit world) have a geographic camera; procedural
+  /// biomes have no real-world position, so [cameraPosition] stays null instead of inventing one.
+  /// The input map is never modified.
+  factory NationalSaveV3.fromLegacy(Object? json) {
+    if (json is! Map<String, dynamic>) {
+      throw const SaveFormatException('malformed', 'Legacy save root must be an object');
+    }
+    final v = json['v'];
+    if (v != 1 && v != 2) {
+      throw SaveFormatException('unknown_version', 'Unsupported legacy save version: $v');
+    }
+    final biome = (json['biome'] as num?)?.toInt() ?? 0;
+    final ws = (json['ws'] as num?)?.toDouble() ?? (biome == legacyTashkentBiome ? legacyTashkentWorldSize : 3200.0);
+    final zoomRaw = json['zoom'];
+    final zoom = zoomRaw is num && zoomRaw.isFinite ? zoomRaw.toDouble() : 1.0;
+
+    Wgs84Coord? camera;
+    final cam = json['cam'];
+    if (biome == legacyTashkentBiome && ws == legacyTashkentWorldSize && cam is List && cam.length >= 2) {
+      final x = cam[0];
+      final y = cam[1];
+      if (x is num && y is num && x.isFinite && y.isFinite) {
+        camera = NationalCoordinateSystem.legacyUnitsToWgs84(x.toDouble(), y.toDouble());
+      }
+    }
+    return NationalSaveV3(
+      regionId: 'uz_tashkent_city',
+      cameraPosition: camera,
+      cameraZoom: zoom,
+      migratedFromVersion: v as int,
+    );
+  }
+
+  /// Envelope for a game state that is being written right now (the game's own `save()` stores it under `nat`).
+  ///
+  /// Same camera rule as [fromLegacy]: only a real-Tashkent world (biome 4, 6400 units) has a geographic camera.
+  factory NationalSaveV3.fromGameState({
+    required String regionId,
+    required int biome,
+    required double worldSize,
+    required double camX,
+    required double camY,
+    required double zoom,
+  }) {
+    final legacy = NationalSaveV3.fromLegacy({
+      'v': 2,
+      'biome': biome,
+      'ws': worldSize,
+      'cam': [camX, camY],
+      'zoom': zoom,
+    });
+    return NationalSaveV3(regionId: regionId, cameraPosition: legacy.cameraPosition, cameraZoom: legacy.cameraZoom);
+  }
+
+  /// Reads any supported save (v3, or legacy v1/v2) and returns it as v3.
+  static NationalSaveV3 parseAny(Object? json) {
+    if (json is! Map<String, dynamic>) {
+      throw const SaveFormatException('malformed', 'Save root must be an object');
+    }
+    final v = json['v'];
+    if (v == currentVersion) return NationalSaveV3.fromJson(json);
+    if (v == 1 || v == 2) return NationalSaveV3.fromLegacy(json);
+    throw SaveFormatException('unknown_version', 'Unknown save version: $v');
   }
 }
 
-class SaveMigrationAdapter {
-  static NationalSaveV3 migrateAnySaveToV3(Map<String, dynamic> rawSave) {
-    final int version = (rawSave['saveFormatVersion'] as num?)?.toInt() ??
-        (rawSave['version'] as num?)?.toInt() ??
-        1;
-
-    if (version >= 3 && rawSave.containsKey('worldContext')) {
-      return NationalSaveV3.fromJson(rawSave);
+/// Decides which stored value to keep. A legacy save is only replaced after its v3 form
+/// has been produced successfully; on any failure the original string is kept untouched.
+class NationalSaveMigrator {
+  /// Returns the migrated v3 JSON map, or null when [rawLegacy] cannot be migrated (caller keeps the original).
+  static Map<String, dynamic>? tryMigrate(Object? decodedLegacy) {
+    try {
+      return NationalSaveV3.parseAny(decodedLegacy).toJson();
+    } on SaveFormatException {
+      return null;
     }
-
-    final double camX = (rawSave['camX'] as num?)?.toDouble() ??
-        (rawSave['camera'] is Map
-            ? ((rawSave['camera']['x'] as num?)?.toDouble() ?? 0.0)
-            : 0.0);
-    final double camY = (rawSave['camY'] as num?)?.toDouble() ??
-        (rawSave['camera'] is Map
-            ? ((rawSave['camera']['y'] as num?)?.toDouble() ?? 0.0)
-            : 0.0);
-    final double zoom = (rawSave['zoom'] as num?)?.toDouble() ??
-        (rawSave['camera'] is Map
-            ? ((rawSave['camera']['zoom'] as num?)?.toDouble() ?? 1.0)
-            : 1.0);
-
-    final Wgs84Coord wgsCam =
-        NationalCoordinateSystem.legacyTashkentToWgs84(camX, camY);
-
-    final List<SavedRoadV3> migratedRoads = [];
-    final dynamic rawRoads = rawSave['roads'] ?? rawSave['customRoads'];
-    if (rawRoads is List) {
-      int idx = 0;
-      for (final r in rawRoads) {
-        if (r is Map<String, dynamic>) {
-          final List<Wgs84Coord> poly = [];
-          if (r['points'] is List) {
-            for (final pt in (r['points'] as List)) {
-              if (pt is Map) {
-                poly.add(NationalCoordinateSystem.legacyTashkentToWgs84(
-                  (pt['x'] as num).toDouble(),
-                  (pt['y'] as num).toDouble(),
-                ));
-              } else if (pt is List && pt.length >= 2) {
-                poly.add(NationalCoordinateSystem.legacyTashkentToWgs84(
-                  (pt[0] as num).toDouble(),
-                  (pt[1] as num).toDouble(),
-                ));
-              }
-            }
-          } else if (r.containsKey('x1') && r.containsKey('y1')) {
-            poly.add(NationalCoordinateSystem.legacyTashkentToWgs84(
-              (r['x1'] as num).toDouble(),
-              (r['y1'] as num).toDouble(),
-            ));
-            poly.add(NationalCoordinateSystem.legacyTashkentToWgs84(
-              (r['x2'] as num).toDouble(),
-              (r['y2'] as num).toDouble(),
-            ));
-          }
-          migratedRoads.add(
-            SavedRoadV3(
-              id: r['id']?.toString() ?? 'legacy_road_${idx++}',
-              wgs84Polyline: poly,
-              lanes: (r['lanes'] as num?)?.toInt() ?? 2,
-            ),
-          );
-        }
-      }
-    }
-
-    return NationalSaveV3(
-      saveFormatVersion: 3,
-      savedAt: rawSave['savedAt'] as String? ??
-          DateTime.now().toUtc().toIso8601String(),
-      countryId: 'UZ',
-      regionId: 'uz_tashkent_city',
-      districtId: 'UZ-TK',
-      selectedCityId: 'city_tashkent',
-      datasetVersion: '2026.11.0-migrated-v$version',
-      cameraPosition: wgsCam,
-      cameraZoom: zoom,
-      is3DMode:
-          (rawSave['is3D'] as bool?) ?? (rawSave['deck3D'] as bool?) ?? false,
-      activeMapLayers: const [
-        'roads',
-        'buildings',
-        'signals',
-        'parks',
-        'waterways',
-        'metro',
-      ],
-      addedRoads: migratedRoads,
-      legacyPayload: Map<String, dynamic>.from(rawSave),
-    );
   }
 }

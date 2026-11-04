@@ -116,10 +116,7 @@ class LaneGraph {
       final n = max(3, (th / 0.25).ceil());
       for (var k = 0; k <= n; k++) {
         final t = k / n, q = 1 - t;
-        out.add(Offset(
-          q * q * a.dx + 2 * q * t * v.dx + t * t * b.dx,
-          q * q * a.dy + 2 * q * t * v.dy + t * t * b.dy,
-        ));
+        out.add(Offset(q * q * a.dx + 2 * q * t * v.dx + t * t * b.dx, q * q * a.dy + 2 * q * t * v.dy + t * t * b.dy));
       }
     }
     out.add(p.last);
@@ -190,19 +187,20 @@ class LaneGraph {
           if (old == null) {
             final base = fwd ? r.pts : r.pts.reversed.toList();
             final full = smoothCorners(offsetPath(base, laneOffset + k * 7.0));
-            final lane = Lane(
-              full,
-              id: id,
-              roadId: r.id,
-              fwd: fwd,
-              fromNode: fwd ? r.a : r.b,
-              toNode: fwd ? r.b : r.a,
-              speedLimit: r.type == 2 ? 55.0 : (r.type == 1 ? 33.0 : 22.0),
-              laneIdx: k,
-              laneCount: count,
-            )
-              ..full = full
-              ..fullLen = _pathLen(full);
+            final lane =
+                Lane(
+                    full,
+                    id: id,
+                    roadId: r.id,
+                    fwd: fwd,
+                    fromNode: fwd ? r.a : r.b,
+                    toNode: fwd ? r.b : r.a,
+                    speedLimit: r.type == 2 ? 55.0 : (r.type == 1 ? 33.0 : 22.0),
+                    laneIdx: k,
+                    laneCount: count,
+                  )
+                  ..full = full
+                  ..fullLen = _pathLen(full);
             _applyTrim(lane);
             lanes[id] = lane;
           } else if (_applyTrim(old)) {
@@ -222,8 +220,7 @@ class LaneGraph {
         }
       }
     }
-    connectors.removeWhere(
-        (_, c) => !lanes.containsKey(c.from.id) || !lanes.containsKey(c.to.id));
+    connectors.removeWhere((_, c) => !lanes.containsKey(c.from.id) || !lanes.containsKey(c.to.id));
     connectorsFrom.clear();
     for (final c in connectors.values) {
       connectorsFrom.putIfAbsent(c.from.id, () => []).add(c);
@@ -278,7 +275,7 @@ class LaneGraph {
                 q * q * pA.dx + 2 * q * s * c.dx + s * s * pB.dx,
                 q * q * pA.dy + 2 * q * s * c.dy + s * s * pB.dy,
               );
-            }()
+            }(),
         ];
       }
     }
@@ -295,7 +292,7 @@ class LaneGraph {
             q * q * q * pA.dx + 3 * q * q * s * c1.dx + 3 * q * s * s * c2.dx + s * s * s * pB.dx,
             q * q * q * pA.dy + 3 * q * q * s * c1.dy + 3 * q * s * s * c2.dy + s * s * s * pB.dy,
           );
-        }()
+        }(),
     ];
   }
 
@@ -305,22 +302,16 @@ class LaneGraph {
       final dA = a.dirAt(a.length), dB = b.dirAt(0);
       final dot = (dA.dx * dB.dx + dA.dy * dB.dy).clamp(-1.0, 1.0).toDouble();
       final ang = acos(dot);
-      final c = Connector(
-        _turnPts(a, b),
-        from: a,
-        to: b,
-        nodeId: a.toNode,
-        vmax: a.speedLimit * (1 - 0.75 * ang / pi),
-      );
+      final c = Connector(_turnPts(a, b), from: a, to: b, nodeId: a.toNode, vmax: a.speedLimit * (1 - 0.75 * ang / pi));
       connectorsFrom.putIfAbsent(a.id, () => []).add(c);
       return c;
     });
   }
 
   List<Lane> lanesOf(int roadId) => [
-        for (var i = 0; i < 8; i++)
-          if (lanes.containsKey(roadId * 8 + i)) lanes[roadId * 8 + i]!
-      ];
+    for (var i = 0; i < 8; i++)
+      if (lanes.containsKey(roadId * 8 + i)) lanes[roadId * 8 + i]!,
+  ];
 
   /// Kirish nuqtasi polosa boshidan kamida ~30, oxiridan ~14 birlik (qisqa polosada nisbatan).
   static double _clampS(double s, double len) {
@@ -338,7 +329,8 @@ class LaneGraph {
       var bestS = 0.0;
       for (final l in lanes.values) {
         final rdd = net.roads[l.roadId];
-        if (rdd == null || rdd.length < 50) continue; // qisqa yo'lga bino chiqmaydi (kesilgan polosa emas, yo'l uzunligi)
+        if (rdd == null || rdd.length < 50)
+          continue; // qisqa yo'lga bino chiqmaydi (kesilgan polosa emas, yo'l uzunligi)
         if (rdd.layer == 1 || rdd.type == 2) continue; // estakada va magistralga bino to'g'ridan-to'g'ri chiqmaydi
         for (var i = 1; i < l.pts.length; i++) {
           final q = closestOnSegment(b.pos, l.pts[i - 1], l.pts[i]);
@@ -400,7 +392,7 @@ class LaneGraph {
     routeCalls++;
     final gm = <int, double>{
       for (final e in (goals ?? {goal.id: goalS}).entries)
-        if (lanes.containsKey(e.key)) e.key: e.value
+        if (lanes.containsKey(e.key)) e.key: e.value,
     };
     if (gm.isEmpty || !lanes.containsKey(start.id)) return null;
     final direct = gm[start.id];
@@ -422,7 +414,11 @@ class LaneGraph {
 
     void expand(Lane from, double baseG, int fromKey) {
       for (final s in _successors(from)) {
-        final cost = baseG + s.length / s.speedLimit + _turn(from, s) + min(s.vehicles.length * 0.3, s.length / s.speedLimit * 0.8);
+        final cost =
+            baseG +
+            s.length / s.speedLimit +
+            _turn(from, s) +
+            min(s.vehicles.length * 0.3, s.length / s.speedLimit * 0.8);
         if (cost < (g[s.id] ?? double.infinity)) {
           g[s.id] = cost;
           prev[s.id] = fromKey;

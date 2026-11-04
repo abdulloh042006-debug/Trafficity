@@ -1,0 +1,803 @@
+{
+ "anchors": [
+  {
+   "legacyX": 3116.232,
+   "legacyY": 3062.882,
+   "name": "Ташкент",
+   "osmLat": 41.3123363,
+   "osmLon": 69.2787079,
+   "osmNodeId": 27524773,
+   "osmTimestamp": "2025-10-19T11:41:29Z",
+   "osmVersion": 77
+  },
+  {
+   "legacyX": -91.673,
+   "legacyY": 4720.403,
+   "name": "Водослив",
+   "osmLat": 41.2974448,
+   "osmLon": 69.2403433,
+   "osmNodeId": 303757103,
+   "osmTimestamp": "2025-01-22T19:50:46Z",
+   "osmVersion": 8
+  },
+  {
+   "legacyX": 17869.321,
+   "legacyY": -7132.6,
+   "name": "Улугбек",
+   "osmLat": 41.4038597,
+   "osmLon": 69.455146,
+   "osmNodeId": 1170315979,
+   "osmTimestamp": "2025-10-09T15:34:43Z",
+   "osmVersion": 21
+  },
+  {
+   "legacyX": 16575.46,
+   "legacyY": 666.517,
+   "name": "Чингильды",
+   "osmLat": 41.3338597,
+   "osmLon": 69.4396722,
+   "osmNodeId": 1232203832,
+   "osmTimestamp": "2024-03-12T17:37:54Z",
+   "osmVersion": 5
+  },
+  {
+   "legacyX": 17366.405,
+   "legacyY": 6512.627,
+   "name": "Балта",
+   "osmLat": 41.2813393,
+   "osmLon": 69.4491314,
+   "osmNodeId": 1260485960,
+   "osmTimestamp": "2022-01-18T08:31:11Z",
+   "osmVersion": 3
+  },
+  {
+   "legacyX": 15351.944,
+   "legacyY": 6317.699,
+   "name": "Джинсиз",
+   "osmLat": 41.2830912,
+   "osmLon": 69.4250397,
+   "osmNodeId": 1260485961,
+   "osmTimestamp": "2025-10-14T16:25:12Z",
+   "osmVersion": 3
+  },
+  {
+   "legacyX": 17772.571,
+   "legacyY": 4243.673,
+   "name": "Сурум",
+   "osmLat": 41.3017282,
+   "osmLon": 69.4539889,
+   "osmNodeId": 1339711598,
+   "osmTimestamp": "2023-08-29T05:44:27Z",
+   "osmVersion": 2
+  },
+  {
+   "legacyX": 10896.907,
+   "legacyY": 12445.808,
+   "name": "Йик-Ата",
+   "osmLat": 41.2279934,
+   "osmLon": 69.3717601,
+   "osmNodeId": 1647290879,
+   "osmTimestamp": "2026-09-18T17:11:52Z",
+   "osmVersion": 9
+  },
+  {
+   "legacyX": 16333.202,
+   "legacyY": 9451.425,
+   "name": "Дустлик (Политотдел)",
+   "osmLat": 41.2549217,
+   "osmLon": 69.4367749,
+   "osmNodeId": 1647290884,
+   "osmTimestamp": "2025-09-24T17:46:02Z",
+   "osmVersion": 13
+  },
+  {
+   "legacyX": 20087.951,
+   "legacyY": 9970.097,
+   "name": "Гулистан (колхоз Правда)",
+   "osmLat": 41.2502581,
+   "osmLon": 69.4816795,
+   "osmNodeId": 1647290887,
+   "osmTimestamp": "2023-09-11T09:17:58Z",
+   "osmVersion": 8
+  },
+  {
+   "legacyX": 4204.957,
+   "legacyY": 14913.698,
+   "name": "Ходжа 1",
+   "osmLat": 41.2057915,
+   "osmLon": 69.2917284,
+   "osmNodeId": 1765761121,
+   "osmTimestamp": "2024-03-12T17:37:54Z",
+   "osmVersion": 4
+  },
+  {
+   "legacyX": 12247.285,
+   "legacyY": 16798.266,
+   "name": "Мустакиллик",
+   "osmLat": 41.1888323,
+   "osmLon": 69.3879098,
+   "osmNodeId": 1773378421,
+   "osmTimestamp": "2025-03-17T22:52:35Z",
+   "osmVersion": 7
+  },
+  {
+   "legacyX": 10670.593,
+   "legacyY": 15902.151,
+   "name": "Бирлик",
+   "osmLat": 41.196897,
+   "osmLon": 69.3690535,
+   "osmNodeId": 1773381140,
+   "osmTimestamp": "2025-03-17T22:43:08Z",
+   "osmVersion": 8
+  },
+  {
+   "legacyX": -8354.377,
+   "legacyY": 6036.981,
+   "name": "Урикзар",
+   "osmLat": 41.285614,
+   "osmLon": 69.1415263,
+   "osmNodeId": 1866821179,
+   "osmTimestamp": "2025-10-15T12:05:15Z",
+   "osmVersion": 9
+  },
+  {
+   "legacyX": 19065.3,
+   "legacyY": 3876.924,
+   "name": "Узбекистан",
+   "osmLat": 41.3050232,
+   "osmLon": 69.4694492,
+   "osmNodeId": 1971955381,
+   "osmTimestamp": "2021-11-01T12:47:04Z",
+   "osmVersion": 8
+  },
+  {
+   "legacyX": 17637.294,
+   "legacyY": 611.817,
+   "name": "Чингельды",
+   "osmLat": 41.3343509,
+   "osmLon": 69.4523711,
+   "osmNodeId": 2088085572,
+   "osmTimestamp": "2026-09-20T18:04:33Z",
+   "osmVersion": 7
+  },
+  {
+   "legacyX": 17952.229,
+   "legacyY": -14.725,
+   "name": "Аранчи",
+   "osmLat": 41.3399771,
+   "osmLon": 69.4561375,
+   "osmNodeId": 2088101865,
+   "osmTimestamp": "2024-03-12T17:37:54Z",
+   "osmVersion": 3
+  },
+  {
+   "legacyX": 14178.143,
+   "legacyY": 12826.832,
+   "name": "Балыкчи",
+   "osmLat": 41.2245661,
+   "osmLon": 69.4110017,
+   "osmNodeId": 2113555215,
+   "osmTimestamp": "2024-03-06T21:08:30Z",
+   "osmVersion": 7
+  },
+  {
+   "legacyX": 14769.074,
+   "legacyY": 3378.152,
+   "name": "Ташисти",
+   "osmLat": 41.3095041,
+   "osmLon": 69.4180689,
+   "osmNodeId": 2127151979,
+   "osmTimestamp": "2025-03-20T17:39:21Z",
+   "osmVersion": 5
+  },
+  {
+   "legacyX": 13337.322,
+   "legacyY": 4002.989,
+   "name": "Тешабайгузар (Тузель)",
+   "osmLat": 41.3038906,
+   "osmLon": 69.400946,
+   "osmNodeId": 2127151980,
+   "osmTimestamp": "2025-03-20T17:39:21Z",
+   "osmVersion": 6
+  },
+  {
+   "legacyX": 10876.72,
+   "legacyY": 7157.242,
+   "name": "Алмаслык",
+   "osmLat": 41.2755456,
+   "osmLon": 69.3715187,
+   "osmNodeId": 2133373403,
+   "osmTimestamp": "2024-09-14T01:00:48Z",
+   "osmVersion": 6
+  },
+  {
+   "legacyX": 18613.742,
+   "legacyY": 9324.529,
+   "name": "Суктияр",
+   "osmLat": 41.2560626,
+   "osmLon": 69.4640488,
+   "osmNodeId": 2133373408,
+   "osmTimestamp": "2025-03-14T19:55:07Z",
+   "osmVersion": 4
+  },
+  {
+   "legacyX": 13909.465,
+   "legacyY": 14453.886,
+   "name": "Каракалпак",
+   "osmLat": 41.2099287,
+   "osmLon": 69.4077885,
+   "osmNodeId": 2135795036,
+   "osmTimestamp": "2025-10-09T08:27:12Z",
+   "osmVersion": 5
+  },
+  {
+   "legacyX": 14575.326,
+   "legacyY": 16326.361,
+   "name": "Мамут",
+   "osmLat": 41.1930794,
+   "osmLon": 69.4157518,
+   "osmNodeId": 2135795040,
+   "osmTimestamp": "2025-10-09T12:30:58Z",
+   "osmVersion": 7
+  },
+  {
+   "legacyX": 19117.003,
+   "legacyY": 17103.508,
+   "name": "Кызылту",
+   "osmLat": 41.186085,
+   "osmLon": 69.4700675,
+   "osmNodeId": 2135842296,
+   "osmTimestamp": "2026-09-19T13:40:01Z",
+   "osmVersion": 8
+  },
+  {
+   "legacyX": 13444.309,
+   "legacyY": 9866.613,
+   "name": "Барданкуль",
+   "osmLat": 41.2511886,
+   "osmLon": 69.4022255,
+   "osmNodeId": 2135857820,
+   "osmTimestamp": "2023-10-18T19:16:53Z",
+   "osmVersion": 8
+  },
+  {
+   "legacyX": 13976.486,
+   "legacyY": 10369.388,
+   "name": "Кайтмас",
+   "osmLat": 41.2466677,
+   "osmLon": 69.40859,
+   "osmNodeId": 2135857821,
+   "osmTimestamp": "2023-10-18T19:16:53Z",
+   "osmVersion": 5
+  },
+  {
+   "legacyX": 16209.697,
+   "legacyY": 7488.759,
+   "name": "Тукалбалта",
+   "osmLat": 41.2725658,
+   "osmLon": 69.4352979,
+   "osmNodeId": 2135857822,
+   "osmTimestamp": "2025-04-03T14:37:01Z",
+   "osmVersion": 4
+  },
+  {
+   "legacyX": 13633.752,
+   "legacyY": 8813.553,
+   "name": "Шаназар",
+   "osmLat": 41.2606566,
+   "osmLon": 69.4044911,
+   "osmNodeId": 2135857823,
+   "osmTimestamp": "2024-03-01T15:24:37Z",
+   "osmVersion": 5
+  },
+  {
+   "legacyX": 12421.006,
+   "legacyY": 12521.332,
+   "name": "Назараул",
+   "osmLat": 41.2273141,
+   "osmLon": 69.3899874,
+   "osmNodeId": 2135863082,
+   "osmTimestamp": "2024-03-24T23:27:15Z",
+   "osmVersion": 7
+  },
+  {
+   "legacyX": 9646.98,
+   "legacyY": 11760.523,
+   "name": "Бузаучи",
+   "osmLat": 41.2341571,
+   "osmLon": 69.3568117,
+   "osmNodeId": 2136839542,
+   "osmTimestamp": "2024-03-08T09:39:05Z",
+   "osmVersion": 11
+  },
+  {
+   "legacyX": 8328.273,
+   "legacyY": 13060.496,
+   "name": "Устозлар",
+   "osmLat": 41.2224642,
+   "osmLon": 69.3410408,
+   "osmNodeId": 2136839544,
+   "osmTimestamp": "2025-03-14T19:55:07Z",
+   "osmVersion": 7
+  },
+  {
+   "legacyX": 21012.346,
+   "legacyY": 14450.383,
+   "name": "Акмала",
+   "osmLat": 41.2099602,
+   "osmLon": 69.4927347,
+   "osmNodeId": 2136852986,
+   "osmTimestamp": "2025-05-12T11:47:11Z",
+   "osmVersion": 6
+  },
+  {
+   "legacyX": 19812.126,
+   "legacyY": 12891.468,
+   "name": "Навои",
+   "osmLat": 41.2239847,
+   "osmLon": 69.4783808,
+   "osmNodeId": 2136873634,
+   "osmTimestamp": "2023-09-11T09:17:58Z",
+   "osmVersion": 4
+  },
+  {
+   "legacyX": 8558.478,
+   "legacyY": 13788.054,
+   "name": "Забардаст",
+   "osmLat": 41.2159191,
+   "osmLon": 69.3437939,
+   "osmNodeId": 2137023315,
+   "osmTimestamp": "2025-03-17T22:43:08Z",
+   "osmVersion": 7
+  },
+  {
+   "legacyX": 21375.642,
+   "legacyY": 12024.275,
+   "name": "Кирсадак",
+   "osmLat": 41.2317849,
+   "osmLon": 69.4970795,
+   "osmNodeId": 2137023319,
+   "osmTimestamp": "2026-09-18T17:58:54Z",
+   "osmVersion": 8
+  },
+  {
+   "legacyX": 13487.966,
+   "legacyY": 17920.125,
+   "name": "Машал",
+   "osmLat": 41.1787346,
+   "osmLon": 69.4027476,
+   "osmNodeId": 2142302274,
+   "osmTimestamp": "2025-03-17T22:52:35Z",
+   "osmVersion": 6
+  },
+  {
+   "legacyX": 7335.156,
+   "legacyY": 16994.583,
+   "name": "Шаликор",
+   "osmLat": 41.1870654,
+   "osmLon": 69.3291637,
+   "osmNodeId": 2142337559,
+   "osmTimestamp": "2025-09-16T20:26:49Z",
+   "osmVersion": 10
+  },
+  {
+   "legacyX": 6489.671,
+   "legacyY": 17040.67,
+   "name": "Учакли",
+   "osmLat": 41.1866506,
+   "osmLon": 69.3190522,
+   "osmNodeId": 2142337566,
+   "osmTimestamp": "2025-12-06T02:04:18Z",
+   "osmVersion": 5
+  },
+  {
+   "legacyX": 4526.47,
+   "legacyY": 16520.92,
+   "name": "Ташлак",
+   "osmLat": 41.1913284,
+   "osmLon": 69.2955735,
+   "osmNodeId": 2142348660,
+   "osmTimestamp": "2025-03-14T19:55:07Z",
+   "osmVersion": 6
+  },
+  {
+   "legacyX": 17065.763,
+   "legacyY": 17296.415,
+   "name": "Ахмад Яссави",
+   "osmLat": 41.1843487,
+   "osmLon": 69.4455359,
+   "osmNodeId": 2143504655,
+   "osmTimestamp": "2024-04-23T17:33:11Z",
+   "osmVersion": 10
+  },
+  {
+   "legacyX": 9507.53,
+   "legacyY": 17601.527,
+   "name": "Байкурган",
+   "osmLat": 41.1816024,
+   "osmLon": 69.355144,
+   "osmNodeId": 2146154373,
+   "osmTimestamp": "2025-10-05T18:22:57Z",
+   "osmVersion": 6
+  },
+  {
+   "legacyX": 7574.14,
+   "legacyY": 14115.932,
+   "name": "Бектемир",
+   "osmLat": 41.2129693,
+   "osmLon": 69.3320218,
+   "osmNodeId": 2146154374,
+   "osmTimestamp": "2024-03-12T17:37:54Z",
+   "osmVersion": 5
+  },
+  {
+   "legacyX": 4915.569,
+   "legacyY": 18863.167,
+   "name": "Турткурган",
+   "osmLat": 41.1702452,
+   "osmLon": 69.3002269,
+   "osmNodeId": 2150212917,
+   "osmTimestamp": "2024-05-26T18:32:42Z",
+   "osmVersion": 5
+  },
+  {
+   "legacyX": 4874.899,
+   "legacyY": 17372.901,
+   "name": "Кокандаул",
+   "osmLat": 41.1836603,
+   "osmLon": 69.2997405,
+   "osmNodeId": 2172897937,
+   "osmTimestamp": "2024-05-26T18:32:42Z",
+   "osmVersion": 6
+  },
+  {
+   "legacyX": 3119.846,
+   "legacyY": 18352.628,
+   "name": "Джалоир",
+   "osmLat": 41.1748413,
+   "osmLon": 69.2787511,
+   "osmNodeId": 2173125325,
+   "osmTimestamp": "2025-09-16T20:26:49Z",
+   "osmVersion": 7
+  },
+  {
+   "legacyX": 394.19,
+   "legacyY": 12383.417,
+   "name": "Актепа",
+   "osmLat": 41.2285546,
+   "osmLon": 69.2461539,
+   "osmNodeId": 2199143453,
+   "osmTimestamp": "2024-03-12T17:37:54Z",
+   "osmVersion": 5
+  },
+  {
+   "legacyX": 5592.376,
+   "legacyY": 11836.941,
+   "name": "Абад",
+   "osmLat": 41.2334698,
+   "osmLon": 69.3083211,
+   "osmNodeId": 2199143454,
+   "osmTimestamp": "2025-03-14T16:46:35Z",
+   "osmVersion": 6
+  },
+  {
+   "legacyX": 5322.026,
+   "legacyY": 10802.285,
+   "name": "Казахаул",
+   "osmLat": 41.2427749,
+   "osmLon": 69.3050879,
+   "osmNodeId": 2199143455,
+   "osmTimestamp": "2025-10-15T12:05:15Z",
+   "osmVersion": 17
+  },
+  {
+   "legacyX": 3992.956,
+   "legacyY": 11567.305,
+   "name": "Киргизаул",
+   "osmLat": 41.2358949,
+   "osmLon": 69.289193,
+   "osmNodeId": 2199143456,
+   "osmTimestamp": "2025-03-12T18:37:14Z",
+   "osmVersion": 7
+  },
+  {
+   "legacyX": 1019.591,
+   "legacyY": 11367.563,
+   "name": "Кухна Кумарык",
+   "osmLat": 41.2376913,
+   "osmLon": 69.2536333,
+   "osmNodeId": 2199143457,
+   "osmTimestamp": "2025-03-11T19:26:07Z",
+   "osmVersion": 7
+  },
+  {
+   "legacyX": 3387.777,
+   "legacyY": 11059.876,
+   "name": "Намданак",
+   "osmLat": 41.2404584,
+   "osmLon": 69.2819554,
+   "osmNodeId": 2199143458,
+   "osmTimestamp": "2025-03-12T18:37:14Z",
+   "osmVersion": 7
+  },
+  {
+   "legacyX": 2531.175,
+   "legacyY": 12043.5,
+   "name": "Ханабад",
+   "osmLat": 41.231612,
+   "osmLon": 69.271711,
+   "osmNodeId": 2199143459,
+   "osmTimestamp": "2025-10-15T12:05:15Z",
+   "osmVersion": 10
+  },
+  {
+   "legacyX": 7967.995,
+   "legacyY": 11451.899,
+   "name": "Куйлюк Ц",
+   "osmLat": 41.2369328,
+   "osmLon": 69.3367321,
+   "osmNodeId": 2318857988,
+   "osmTimestamp": "2025-01-10T00:09:42Z",
+   "osmVersion": 7
+  },
+  {
+   "legacyX": 23480.081,
+   "legacyY": 6905.296,
+   "name": "Акаул",
+   "osmLat": 41.2778101,
+   "osmLon": 69.5222473,
+   "osmNodeId": 2353329952,
+   "osmTimestamp": "2025-03-16T12:17:19Z",
+   "osmVersion": 5
+  },
+  {
+   "legacyX": 22611.406,
+   "legacyY": 6243.812,
+   "name": "Каратепа",
+   "osmLat": 41.2837552,
+   "osmLon": 69.5118585,
+   "osmNodeId": 2353329955,
+   "osmTimestamp": "2025-03-16T12:17:19Z",
+   "osmVersion": 5
+  },
+  {
+   "legacyX": 22259.382,
+   "legacyY": 8199.677,
+   "name": "Усманабад",
+   "osmLat": 41.2661753,
+   "osmLon": 69.5076485,
+   "osmNodeId": 2353329956,
+   "osmTimestamp": "2025-03-16T12:17:19Z",
+   "osmVersion": 7
+  },
+  {
+   "legacyX": 21791.826,
+   "legacyY": 14586.559,
+   "name": "Тухумбай",
+   "osmLat": 41.208735,
+   "osmLon": 69.5020568,
+   "osmNodeId": 2409517446,
+   "osmTimestamp": "2025-05-12T11:47:11Z",
+   "osmVersion": 8
+  },
+  {
+   "legacyX": 7404.398,
+   "legacyY": 11698.783,
+   "name": "Куйлюк Ц",
+   "osmLat": 41.2347124,
+   "osmLon": 69.3299918,
+   "osmNodeId": 3546166597,
+   "osmTimestamp": "2021-10-13T15:04:01Z",
+   "osmVersion": 3
+  },
+  {
+   "legacyX": 12155.598,
+   "legacyY": 75.213,
+   "name": "Геофизика",
+   "osmLat": 41.3391695,
+   "osmLon": 69.3868133,
+   "osmNodeId": 3914074529,
+   "osmTimestamp": "2024-08-29T17:44:48Z",
+   "osmVersion": 6
+  },
+  {
+   "legacyX": 17722.156,
+   "legacyY": 11983.703,
+   "name": "Джалолтепа",
+   "osmLat": 41.2321498,
+   "osmLon": 69.453386,
+   "osmNodeId": 4713152024,
+   "osmTimestamp": "2023-09-11T09:17:58Z",
+   "osmVersion": 4
+  },
+  {
+   "legacyX": 5008.811,
+   "legacyY": 13704.655,
+   "name": "Автомобилчи гузар",
+   "osmLat": 41.2166694,
+   "osmLon": 69.301342,
+   "osmNodeId": 4848188721,
+   "osmTimestamp": "2025-03-14T19:55:07Z",
+   "osmVersion": 3
+  },
+  {
+   "legacyX": 2135.504,
+   "legacyY": 13371.923,
+   "name": "Ханабадтепа",
+   "osmLat": 41.2196627,
+   "osmLon": 69.266979,
+   "osmNodeId": 5011316029,
+   "osmTimestamp": "2025-10-15T12:05:15Z",
+   "osmVersion": 7
+  },
+  {
+   "legacyX": 4208.572,
+   "legacyY": 12640.678,
+   "name": "Закиров",
+   "osmLat": 41.2262406,
+   "osmLon": 69.2917716,
+   "osmNodeId": 5011316030,
+   "osmTimestamp": "2021-08-10T09:10:04Z",
+   "osmVersion": 4
+  },
+  {
+   "legacyX": 14105.219,
+   "legacyY": 968.306,
+   "name": "Тукайтепа",
+   "osmLat": 41.3311495,
+   "osmLon": 69.4101296,
+   "osmNodeId": 5020042221,
+   "osmTimestamp": "2024-08-29T17:44:48Z",
+   "osmVersion": 3
+  },
+  {
+   "legacyX": 4216.68,
+   "legacyY": 18679.996,
+   "name": "Гульзар",
+   "osmLat": 41.1718942,
+   "osmLon": 69.2918686,
+   "osmNodeId": 6539046463,
+   "osmTimestamp": "2024-05-26T18:32:42Z",
+   "osmVersion": 4
+  },
+  {
+   "legacyX": -1903.753,
+   "legacyY": 6303.556,
+   "name": "Бушуйка",
+   "osmLat": 41.2832183,
+   "osmLon": 69.2186719,
+   "osmNodeId": 7271618236,
+   "osmTimestamp": "2026-10-12T14:57:34Z",
+   "osmVersion": 5
+  },
+  {
+   "legacyX": 7124.895,
+   "legacyY": 13394.155,
+   "name": "Кипчак",
+   "osmLat": 41.2194627,
+   "osmLon": 69.3266491,
+   "osmNodeId": 9384256138,
+   "osmTimestamp": "2025-03-14T19:55:07Z",
+   "osmVersion": 3
+  },
+  {
+   "legacyX": -1270.871,
+   "legacyY": 11667.908,
+   "name": "Бабур",
+   "osmLat": 41.2349901,
+   "osmLon": 69.2262408,
+   "osmNodeId": 10014646184,
+   "osmTimestamp": "2025-10-15T12:05:15Z",
+   "osmVersion": 2
+  },
+  {
+   "legacyX": 617.38,
+   "legacyY": 17951.909,
+   "name": "Бинокор",
+   "osmLat": 41.1784485,
+   "osmLon": 69.2488231,
+   "osmNodeId": 11738627224,
+   "osmTimestamp": "2025-03-14T19:55:07Z",
+   "osmVersion": 2
+  },
+  {
+   "legacyX": 14229.866,
+   "legacyY": 295.434,
+   "name": "Заковат",
+   "osmLat": 41.337192,
+   "osmLon": 69.4116203,
+   "osmNodeId": 12144738058,
+   "osmTimestamp": "2024-08-29T17:44:48Z",
+   "osmVersion": 1
+  },
+  {
+   "legacyX": 11910.026,
+   "legacyY": 4004.427,
+   "name": "Таукенттепа",
+   "osmLat": 41.3038777,
+   "osmLon": 69.3838764,
+   "osmNodeId": 12175618495,
+   "osmTimestamp": "2024-09-13T20:58:13Z",
+   "osmVersion": 1
+  },
+  {
+   "legacyX": 10814.537,
+   "legacyY": 4596.825,
+   "name": "Уччинар",
+   "osmLat": 41.2985552,
+   "osmLon": 69.370775,
+   "osmNodeId": 12175619517,
+   "osmTimestamp": "2025-03-20T17:39:21Z",
+   "osmVersion": 2
+  },
+  {
+   "legacyX": 12883.923,
+   "legacyY": 4928.409,
+   "name": "Уткир",
+   "osmLat": 41.2955758,
+   "osmLon": 69.3955236,
+   "osmNodeId": 12175619518,
+   "osmTimestamp": "2024-09-13T20:58:13Z",
+   "osmVersion": 1
+  },
+  {
+   "legacyX": 11794.702,
+   "legacyY": 6592.47,
+   "name": "Аргын",
+   "osmLat": 41.2806217,
+   "osmLon": 69.3824972,
+   "osmNodeId": 12175619561,
+   "osmTimestamp": "2024-09-13T20:58:13Z",
+   "osmVersion": 1
+  },
+  {
+   "legacyX": 1971.961,
+   "legacyY": 11771.212,
+   "name": "Янги Турмиш",
+   "osmLat": 41.234061,
+   "osmLon": 69.2650231,
+   "osmNodeId": 12663073970,
+   "osmTimestamp": "2025-03-14T16:46:35Z",
+   "osmVersion": 1
+  },
+  {
+   "legacyX": 3690.619,
+   "legacyY": 15827.249,
+   "name": "Учкун",
+   "osmLat": 41.197571,
+   "osmLon": 69.2855772,
+   "osmNodeId": 12663385608,
+   "osmTimestamp": "2025-03-14T19:55:07Z",
+   "osmVersion": 1
+  },
+  {
+   "legacyX": 6324.685,
+   "legacyY": 14673.951,
+   "name": "Мехнатабад",
+   "osmLat": 41.2079487,
+   "osmLon": 69.3170791,
+   "osmNodeId": 12663385669,
+   "osmTimestamp": "2025-03-14T19:55:07Z",
+   "osmVersion": 1
+  },
+  {
+   "legacyX": 16152.839,
+   "legacyY": 2389.505,
+   "name": "Жарбаши",
+   "osmLat": 41.3183851,
+   "osmLon": 69.4346179,
+   "osmNodeId": 12685270823,
+   "osmTimestamp": "2025-03-20T17:39:21Z",
+   "osmVersion": 1
+  }
+ ],
+ "limits": "These are OSM place/feature nodes, not survey control points. The legacy side comes from the same drawing as the roads, so this checks origin, axes and scale of the conversion, not OSM's own accuracy.",
+ "purpose": "Independent check of the legacy Tashkent units -> WGS84 conversion (tools/map/migrate_tashkent_legacy.py).",
+ "schema": "trafficity-tashkent-osm-anchors/1",
+ "source": {
+  "fetchedOn": "2026-11-04",
+  "legacyCoordinates": "centre of the node circle drawn in the user-supplied OSM SVG export (the SVG itself is not in the repository, 27 MB) converted with the same map-build constants as tools/map/svg_layers.py: legacy = 3200 + (svgCoord - svgCentre) * 4.858385231123688 with svgCentre = (2749.8, 2565.5)",
+  "license": "© OpenStreetMap contributors (ODbL-1.0)",
+  "osmCoordinates": "OpenStreetMap API 0.6, GET https://api.openstreetmap.org/api/0.6/nodes.json?nodes=<ids>"
+ }
+}

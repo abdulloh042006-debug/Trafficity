@@ -1,17 +1,45 @@
 import 'dart:math' as math;
 import 'package:flame/components.dart';
 
-/// Canonical WGS84 (EPSG:4326) geographical coordinate in 64-bit precision.
+/// Coordinate conventions used across the Uzbekistan world layer
+/// ------------------------------------------------------------
+/// * Geographic coordinates are WGS84 degrees stored as longitude, latitude
+///   (GeoJSON order). Heights are metres above the WGS84 ellipsoid.
+/// * Local ENU: east (+x), north (+y), up (+z), metres, tangent plane at an origin.
+/// * Flame world: x grows east, **y grows downward = south** (screen convention).
+///   [LocalEnuCoord.toFlameWorld] therefore negates north.
+/// * Legacy Tashkent map units: x east, y south (image convention), centre at
+///   (3200, 3200). See [LegacyTashkentFrame] for the (approximately verified) scale.
+
+/// Raised when a coordinate is NaN, infinite, or outside valid ranges.
+class GeoCoordinateException implements Exception {
+  final String message;
+  const GeoCoordinateException(this.message);
+  @override
+  String toString() => 'GeoCoordinateException: $message';
+}
+
 class Wgs84Coord {
   final double lon;
   final double lat;
   final double alt;
 
-  const Wgs84Coord({
-    required this.lon,
-    required this.lat,
-    this.alt = 0.0,
-  });
+  const Wgs84Coord({required this.lon, required this.lat, this.alt = 0.0});
+  double get latitude => lat;
+  double get longitude => lon;
+
+  /// True when all three components are finite and lon/lat are in range.
+  bool get isValid =>
+      lon.isFinite && lat.isFinite && alt.isFinite && lon >= -180.0 && lon <= 180.0 && lat >= -90.0 && lat <= 90.0;
+
+  /// Returns a coordinate or throws [GeoCoordinateException] for invalid input.
+  factory Wgs84Coord.checked({required double lon, required double lat, double alt = 0.0}) {
+    final c = Wgs84Coord(lon: lon, lat: lat, alt: alt);
+    if (!c.isValid) {
+      throw GeoCoordinateException('Invalid WGS84 coordinate lon=$lon lat=$lat alt=$alt');
+    }
+    return c;
+  }
 
   factory Wgs84Coord.fromJson(dynamic json) {
     if (json is List) {
@@ -23,116 +51,128 @@ class Wgs84Coord {
     }
     final map = json as Map<String, dynamic>;
     return Wgs84Coord(
-      lon: (map['lon'] as num).toDouble(),
-      lat: (map['lat'] as num).toDouble(),
-      alt: (map['alt'] as num?)?.toDouble() ??
-          (map['elevationMeters'] as num?)?.toDouble() ??
-          0.0,
+      lon: ((map['longitude'] ?? map['lon']) as num).toDouble(),
+      lat: ((map['latitude'] ?? map['lat']) as num).toDouble(),
+      alt: (map['alt'] as num?)?.toDouble() ?? 0.0,
     );
   }
 
-  List<double> toJsonList() => [lon, lat, alt];
-
-  Map<String, double> toJsonMap() => {
-        'lon': lon,
-        'lat': lat,
-        'alt': alt,
-      };
-
-  @override
-  String toString() =>
-      'Wgs84Coord(lon: ${lon.toStringAsFixed(6)}, lat: ${lat.toStringAsFixed(6)}, alt: ${alt.toStringAsFixed(1)})';
+  /// GeoJSON position `[lon, lat]` (plus altitude only when non-zero).
+  List<double> toGeoJson() => alt == 0.0 ? [lon, lat] : [lon, lat, alt];
 }
 
-/// Local East-North-Up (ENU) metric coordinate relative to the active floating origin.
 class LocalEnuCoord {
   final double eastMeters;
   final double northMeters;
   final double upMeters;
+  const LocalEnuCoord({required this.eastMeters, required this.northMeters, this.upMeters = 0.0});
 
-  const LocalEnuCoord({
-    required this.eastMeters,
-    required this.northMeters,
-    this.upMeters = 0.0,
-  });
+  bool get isFinite => eastMeters.isFinite && northMeters.isFinite && upMeters.isFinite;
 
-  /// Converts local metric ENU to Flame 2D world canvas coordinates (East = +X, North = -Y).
-  Vector2 toFlameWorld({double pixelsPerMeter = 1.0}) {
-    return Vector2(eastMeters * pixelsPerMeter, -northMeters * pixelsPerMeter);
-  }
+  /// Horizontal distance from the origin in metres.
+  double get horizontalMeters => math.sqrt(eastMeters * eastMeters + northMeters * northMeters);
 
-  static LocalEnuCoord fromFlameWorld(
-    Vector2 worldPos, {
-    double pixelsPerMeter = 1.0,
-    double upMeters = 0.0,
-  }) {
-    return LocalEnuCoord(
-      eastMeters: worldPos.x / pixelsPerMeter,
-      northMeters: -worldPos.y / pixelsPerMeter,
-      upMeters: upMeters,
-    );
-  }
+  /// Flame world vector. Flame's y axis points down (south), so north is negated.
+  Vector2 toFlameWorld({double pixelsPerMeter = 1.0}) =>
+      Vector2(eastMeters * pixelsPerMeter, -northMeters * pixelsPerMeter);
+
+  /// Inverse of [toFlameWorld].
+  static LocalEnuCoord fromFlameWorld(Vector2 world, {double pixelsPerMeter = 1.0, double upMeters = 0.0}) =>
+      LocalEnuCoord(eastMeters: world.x / pixelsPerMeter, northMeters: -world.y / pixelsPerMeter, upMeters: upMeters);
 }
 
-/// Geographical bounding box in WGS84 degrees.
 class GeoBoundingBox {
   final double minLon;
   final double minLat;
   final double maxLon;
   final double maxLat;
+  const GeoBoundingBox({required this.minLon, required this.minLat, required this.maxLon, required this.maxLat});
+  factory GeoBoundingBox.fromJson(Map<String, dynamic> json) => GeoBoundingBox(
+    minLon: (json['minLon'] as num).toDouble(),
+    minLat: (json['minLat'] as num).toDouble(),
+    maxLon: (json['maxLon'] as num).toDouble(),
+    maxLat: (json['maxLat'] as num).toDouble(),
+  );
+}
 
-  const GeoBoundingBox({
-    required this.minLon,
-    required this.minLat,
-    required this.maxLon,
-    required this.maxLat,
-  });
+/// WGS84 ellipsoid constants and derived per-degree lengths.
+class Wgs84Ellipsoid {
+  /// Semi-major axis (metres).
+  static const double a = 6378137.0;
 
-  factory GeoBoundingBox.fromJson(Map<String, dynamic> json) {
-    return GeoBoundingBox(
-      minLon: (json['minLon'] as num).toDouble(),
-      minLat: (json['minLat'] as num).toDouble(),
-      maxLon: (json['maxLon'] as num).toDouble(),
-      maxLat: (json['maxLat'] as num).toDouble(),
-    );
+  /// Flattening.
+  static const double f = 1.0 / 298.257223563;
+
+  /// First eccentricity squared.
+  static const double e2 = f * (2.0 - f);
+
+  static double _rad(double deg) => deg * math.pi / 180.0;
+
+  /// Length of one degree of latitude (metres) at [latDeg]; meridional radius of curvature.
+  static double metersPerDegreeLat(double latDeg) {
+    final s = math.sin(_rad(latDeg));
+    final w = 1.0 - e2 * s * s;
+    final m = a * (1.0 - e2) / (w * math.sqrt(w));
+    return m * math.pi / 180.0;
   }
 
-  Map<String, double> toJson() => {
-        'minLon': minLon,
-        'minLat': minLat,
-        'maxLon': maxLon,
-        'maxLat': maxLat,
-      };
-
-  Wgs84Coord get center => Wgs84Coord(
-        lon: (minLon + maxLon) * 0.5,
-        lat: (minLat + maxLat) * 0.5,
-      );
-
-  bool contains(double lon, double lat) {
-    return lon >= minLon && lon <= maxLon && lat >= minLat && lat <= maxLat;
-  }
-
-  bool intersects(GeoBoundingBox other) {
-    return !(other.minLon > maxLon ||
-        other.maxLon < minLon ||
-        other.minLat > maxLat ||
-        other.maxLat < minLat);
+  /// Length of one degree of longitude (metres) at [latDeg]; prime-vertical radius times cos(lat).
+  static double metersPerDegreeLon(double latDeg) {
+    final phi = _rad(latDeg);
+    final s = math.sin(phi);
+    final n = a / math.sqrt(1.0 - e2 * s * s);
+    return n * math.cos(phi) * math.pi / 180.0;
   }
 }
 
-/// National Geographical Coordinate System for Uzbekistan.
+/// Earth-centred Earth-fixed vector (metres).
+class _Ecef {
+  final double x;
+  final double y;
+  final double z;
+  const _Ecef(this.x, this.y, this.z);
+}
+
+/// Legacy Tashkent map frame (units of the original RoadFlow City world).
+///
+/// x = east, y = south, centre (3200, 3200) = Amir Temur xiyoboni.
+/// [metersPerUnit] follows from the basemap (3200 px at 2 m/px over a 6400-unit world => 1 m per unit).
+/// It was checked against 79 independent OpenStreetMap node positions: the manifest reports
+/// `verified_approximate` (21 anchors within 10 km: median 17.7 m, max 23.1 m; error grows ~0.2% with
+/// distance). That is **not survey-grade**; the anchors are OSM place nodes, not control points.
+class LegacyTashkentFrame {
+  static const double worldCenter = 3200.0;
+  static const double metersPerUnit = 1.0;
+
+  static LocalEnuCoord unitsToEnu(double x, double y) =>
+      LocalEnuCoord(eastMeters: (x - worldCenter) * metersPerUnit, northMeters: -(y - worldCenter) * metersPerUnit);
+
+  /// Full double precision (use this for data/IO). [enuToUnits] returns a Flame [Vector2], which stores
+  /// float32 and therefore loses ~5e-4 units of precision at x ~ 6000.
+  static ({double x, double y}) enuToUnitsExact(LocalEnuCoord enu) =>
+      (x: worldCenter + enu.eastMeters / metersPerUnit, y: worldCenter - enu.northMeters / metersPerUnit);
+
+  static Vector2 enuToUnits(LocalEnuCoord enu) {
+    final e = enuToUnitsExact(enu);
+    return Vector2(e.x, e.y);
+  }
+}
+
+/// Result of a floating-origin rebase.
+class FloatingOriginRebase {
+  /// The new WGS84 origin.
+  final Wgs84Coord newOrigin;
+
+  /// Displacement of the new origin relative to the old one, in the old ENU frame.
+  final LocalEnuCoord shift;
+
+  /// The rebased position expressed relative to [newOrigin] (zero after a rebase).
+  final LocalEnuCoord newLocalPosition;
+  const FloatingOriginRebase({required this.newOrigin, required this.shift, required this.newLocalPosition});
+}
+
 class NationalCoordinateSystem {
-  static const double wgs84SemiMajorAxis = 6378137.0;
-  static const double wgs84FirstEccentricitySq = 0.00669437999014;
-  static const double defaultRebaseThresholdMeters = 2000.0;
-
-  static const Wgs84Coord legacyTashkentOrigin = Wgs84Coord(
-    lon: 69.279737,
-    lat: 41.311081,
-    alt: 475.0,
-  );
-
+  static const Wgs84Coord legacyTashkentOrigin = Wgs84Coord(lon: 69.279737, lat: 41.311081, alt: 475.0);
   static const GeoBoundingBox uzbekistanNationalBbox = GeoBoundingBox(
     minLon: 55.997,
     minLat: 37.172,
@@ -140,124 +180,154 @@ class NationalCoordinateSystem {
     maxLat: 45.590,
   );
 
-  Wgs84Coord _floatingOrigin;
-  double _metersPerDegLon = 85390.0;
-  double _metersPerDegLat = 111060.0;
-  final double pixelsPerMeter;
+  /// Horizontal distance from the floating origin after which the origin is rebased.
+  static const double rebaseThresholdMeters = 2000.0;
 
-  NationalCoordinateSystem({
-    Wgs84Coord? initialOrigin,
-    this.pixelsPerMeter = 1.0,
-  }) : _floatingOrigin = initialOrigin ?? legacyTashkentOrigin {
-    _recomputeEllipsoidScale(_floatingOrigin.lat);
-  }
+  /// Mean Earth radius used for geodesic (haversine) distance, metres.
+  static const double meanEarthRadiusMeters = 6371008.8;
 
+  Wgs84Coord _floatingOrigin = legacyTashkentOrigin;
   Wgs84Coord get floatingOrigin => _floatingOrigin;
-  double get metersPerDegLon => _metersPerDegLon;
-  double get metersPerDegLat => _metersPerDegLat;
 
-  void _recomputeEllipsoidScale(double latDeg) {
-    final double phi = latDeg * math.pi / 180.0;
-    final double sinPhi = math.sin(phi);
-    final double cosPhi = math.cos(phi);
-    final double denom =
-        math.sqrt(1.0 - wgs84FirstEccentricitySq * sinPhi * sinPhi);
-
-    final double primeVerticalRadiusN = wgs84SemiMajorAxis / denom;
-    final double meridionalRadiusM =
-        (wgs84SemiMajorAxis * (1.0 - wgs84FirstEccentricitySq)) /
-            (denom * denom * denom);
-
-    _metersPerDegLon = (primeVerticalRadiusN * cosPhi * math.pi) / 180.0;
-    _metersPerDegLat = (meridionalRadiusM * math.pi) / 180.0;
-  }
-
-  LocalEnuCoord setFloatingOrigin(Wgs84Coord newOrigin) {
-    final LocalEnuCoord shift = wgs84ToLocalEnu(newOrigin);
+  void setFloatingOrigin(Wgs84Coord newOrigin) {
+    _requireValid(newOrigin);
     _floatingOrigin = newOrigin;
-    _recomputeEllipsoidScale(_floatingOrigin.lat);
-    return shift;
   }
 
-  LocalEnuCoord? checkAndRebaseIfNeeded(
-    Wgs84Coord cameraWgs84, {
-    double thresholdMeters = defaultRebaseThresholdMeters,
-  }) {
-    final LocalEnuCoord local = wgs84ToLocalEnu(cameraWgs84);
-    final double distSq = local.eastMeters * local.eastMeters +
-        local.northMeters * local.northMeters;
-    if (distSq > thresholdMeters * thresholdMeters) {
-      return setFloatingOrigin(cameraWgs84);
+  static void _requireValid(Wgs84Coord c) {
+    if (!c.isValid) {
+      throw GeoCoordinateException('Invalid WGS84 coordinate lon=${c.lon} lat=${c.lat} alt=${c.alt}');
     }
-    return null;
   }
 
-  LocalEnuCoord wgs84ToLocalEnu(Wgs84Coord coord) {
-    final double dLon = coord.lon - _floatingOrigin.lon;
-    final double dLat = coord.lat - _floatingOrigin.lat;
+  static double _rad(double deg) => deg * math.pi / 180.0;
+  static double _deg(double rad) => rad * 180.0 / math.pi;
+
+  static _Ecef _geodeticToEcef(Wgs84Coord c) {
+    final phi = _rad(c.lat);
+    final lam = _rad(c.lon);
+    final sinPhi = math.sin(phi);
+    final cosPhi = math.cos(phi);
+    final n = Wgs84Ellipsoid.a / math.sqrt(1.0 - Wgs84Ellipsoid.e2 * sinPhi * sinPhi);
+    return _Ecef(
+      (n + c.alt) * cosPhi * math.cos(lam),
+      (n + c.alt) * cosPhi * math.sin(lam),
+      (n * (1.0 - Wgs84Ellipsoid.e2) + c.alt) * sinPhi,
+    );
+  }
+
+  static Wgs84Coord _ecefToGeodetic(_Ecef p) {
+    final lon = math.atan2(p.y, p.x);
+    final r = math.sqrt(p.x * p.x + p.y * p.y);
+    const e2 = Wgs84Ellipsoid.e2;
+    double lat = math.atan2(p.z, r * (1.0 - e2));
+    double alt = 0.0;
+    for (var i = 0; i < 12; i++) {
+      final sinLat = math.sin(lat);
+      final n = Wgs84Ellipsoid.a / math.sqrt(1.0 - e2 * sinLat * sinLat);
+      final cosLat = math.cos(lat);
+      if (cosLat.abs() > 1e-9) {
+        alt = r / cosLat - n;
+      } else {
+        alt = p.z.abs() / sinLat.abs() - n * (1.0 - e2);
+      }
+      lat = math.atan2(p.z, r * (1.0 - e2 * n / (n + alt)));
+    }
+    return Wgs84Coord(lon: _deg(lon), lat: _deg(lat), alt: alt);
+  }
+
+  /// WGS84 point -> Local ENU metres relative to [origin].
+  static LocalEnuCoord wgs84ToEnu(Wgs84Coord point, Wgs84Coord origin) {
+    _requireValid(point);
+    _requireValid(origin);
+    final p = _geodeticToEcef(point);
+    final o = _geodeticToEcef(origin);
+    final dx = p.x - o.x;
+    final dy = p.y - o.y;
+    final dz = p.z - o.z;
+    final phi = _rad(origin.lat);
+    final lam = _rad(origin.lon);
+    final sinPhi = math.sin(phi);
+    final cosPhi = math.cos(phi);
+    final sinLam = math.sin(lam);
+    final cosLam = math.cos(lam);
     return LocalEnuCoord(
-      eastMeters: dLon * _metersPerDegLon,
-      northMeters: dLat * _metersPerDegLat,
-      upMeters: coord.alt - _floatingOrigin.alt,
+      eastMeters: -sinLam * dx + cosLam * dy,
+      northMeters: -sinPhi * cosLam * dx - sinPhi * sinLam * dy + cosPhi * dz,
+      upMeters: cosPhi * cosLam * dx + cosPhi * sinLam * dy + sinPhi * dz,
     );
   }
 
-  Wgs84Coord localEnuToWgs84(LocalEnuCoord metric) {
-    return Wgs84Coord(
-      lon: _floatingOrigin.lon + (metric.eastMeters / _metersPerDegLon),
-      lat: _floatingOrigin.lat + (metric.northMeters / _metersPerDegLat),
-      alt: _floatingOrigin.alt + metric.upMeters,
+  /// Local ENU metres relative to [origin] -> WGS84 point.
+  static Wgs84Coord enuToWgs84(LocalEnuCoord enu, Wgs84Coord origin) {
+    _requireValid(origin);
+    if (!enu.isFinite) {
+      throw GeoCoordinateException('Invalid ENU coordinate e=${enu.eastMeters} n=${enu.northMeters} u=${enu.upMeters}');
+    }
+    final o = _geodeticToEcef(origin);
+    final phi = _rad(origin.lat);
+    final lam = _rad(origin.lon);
+    final sinPhi = math.sin(phi);
+    final cosPhi = math.cos(phi);
+    final sinLam = math.sin(lam);
+    final cosLam = math.cos(lam);
+    final dx = -sinLam * enu.eastMeters - sinPhi * cosLam * enu.northMeters + cosPhi * cosLam * enu.upMeters;
+    final dy = cosLam * enu.eastMeters - sinPhi * sinLam * enu.northMeters + cosPhi * sinLam * enu.upMeters;
+    final dz = cosPhi * enu.northMeters + sinPhi * enu.upMeters;
+    final result = _ecefToGeodetic(_Ecef(o.x + dx, o.y + dy, o.z + dz));
+    _requireValid(result);
+    return result;
+  }
+
+  /// Legacy Tashkent map units (x east, y south) -> WGS84, using [legacyTashkentOrigin].
+  static Wgs84Coord legacyUnitsToWgs84(double x, double y) {
+    if (!x.isFinite || !y.isFinite) {
+      throw GeoCoordinateException('Invalid legacy coordinate x=$x y=$y');
+    }
+    return enuToWgs84(LegacyTashkentFrame.unitsToEnu(x, y), legacyTashkentOrigin);
+  }
+
+  /// WGS84 -> legacy Tashkent map units as a Flame [Vector2] (float32 storage, ~5e-4 units precision).
+  static Vector2 wgs84ToLegacyUnits(Wgs84Coord point) =>
+      LegacyTashkentFrame.enuToUnits(wgs84ToEnu(point, legacyTashkentOrigin));
+
+  /// WGS84 -> legacy Tashkent map units in full double precision.
+  static ({double x, double y}) wgs84ToLegacyUnitsExact(Wgs84Coord point) =>
+      LegacyTashkentFrame.enuToUnitsExact(wgs84ToEnu(point, legacyTashkentOrigin));
+
+  /// Position of [point] relative to the current floating origin.
+  LocalEnuCoord toLocal(Wgs84Coord point) => wgs84ToEnu(point, _floatingOrigin);
+
+  /// WGS84 position of a local coordinate expressed relative to the current floating origin.
+  Wgs84Coord fromLocal(LocalEnuCoord local) => enuToWgs84(local, _floatingOrigin);
+
+  /// If [localPosition] is at least [rebaseThresholdMeters] away horizontally from the floating
+  /// origin, moves the origin onto that position and returns the shift; otherwise returns null.
+  FloatingOriginRebase? rebaseIfNeeded(LocalEnuCoord localPosition, {double thresholdMeters = rebaseThresholdMeters}) {
+    if (!localPosition.isFinite) {
+      throw GeoCoordinateException('Invalid local position for rebase');
+    }
+    if (localPosition.horizontalMeters < thresholdMeters) return null;
+    final newOrigin = enuToWgs84(localPosition, _floatingOrigin);
+    _floatingOrigin = newOrigin;
+    return FloatingOriginRebase(
+      newOrigin: newOrigin,
+      shift: localPosition,
+      newLocalPosition: const LocalEnuCoord(eastMeters: 0.0, northMeters: 0.0, upMeters: 0.0),
     );
   }
 
-  Vector2 wgs84ToFlameWorld(Wgs84Coord coord) {
-    return wgs84ToLocalEnu(coord).toFlameWorld(pixelsPerMeter: pixelsPerMeter);
-  }
-
-  Wgs84Coord flameWorldToWgs84(Vector2 worldPos, {double alt = 0.0}) {
-    final enu = LocalEnuCoord.fromFlameWorld(
-      worldPos,
-      pixelsPerMeter: pixelsPerMeter,
-      upMeters: alt,
-    );
-    return localEnuToWgs84(enu);
-  }
-
+  /// Great-circle (haversine) distance in metres on a sphere of [meanEarthRadiusMeters].
+  /// Accurate to roughly 0.5% compared with the ellipsoid. Throws for invalid input.
   static double geodesicDistanceMeters(Wgs84Coord a, Wgs84Coord b) {
-    const double r = 6371008.8;
-    final double dLat = (b.lat - a.lat) * math.pi / 180.0;
-    final double dLon = (b.lon - a.lon) * math.pi / 180.0;
-    final double lat1 = a.lat * math.pi / 180.0;
-    final double lat2 = b.lat * math.pi / 180.0;
-
-    final double sinDLat = math.sin(dLat * 0.5);
-    final double sinDLon = math.sin(dLon * 0.5);
-    final double h = sinDLat * sinDLat +
-        math.cos(lat1) * math.cos(lat2) * sinDLon * sinDLon;
-    return 2.0 * r * math.asin(math.min(1.0, math.sqrt(h)));
-  }
-
-  static Wgs84Coord legacyTashkentToWgs84(
-    double legacyX,
-    double legacyY, {
-    double legacyZ = 0.0,
-    double pixelsPerMeter = 1.0,
-  }) {
-    final sys = NationalCoordinateSystem(
-      initialOrigin: legacyTashkentOrigin,
-      pixelsPerMeter: pixelsPerMeter,
-    );
-    return sys.flameWorldToWgs84(Vector2(legacyX, legacyY), alt: legacyZ);
-  }
-
-  static Vector2 wgs84ToLegacyTashkent(
-    Wgs84Coord coord, {
-    double pixelsPerMeter = 1.0,
-  }) {
-    final sys = NationalCoordinateSystem(
-      initialOrigin: legacyTashkentOrigin,
-      pixelsPerMeter: pixelsPerMeter,
-    );
-    return sys.wgs84ToFlameWorld(coord);
+    _requireValid(a);
+    _requireValid(b);
+    final dLat = _rad(b.lat - a.lat);
+    final dLon = _rad(b.lon - a.lon);
+    final sLat = math.sin(dLat * 0.5);
+    final sLon = math.sin(dLon * 0.5);
+    final h = sLat * sLat + math.cos(_rad(a.lat)) * math.cos(_rad(b.lat)) * sLon * sLon;
+    final clamped = h < 0.0 ? 0.0 : (h > 1.0 ? 1.0 : h);
+    return 2.0 * meanEarthRadiusMeters * math.asin(math.sqrt(clamped));
   }
 }

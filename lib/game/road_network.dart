@@ -99,10 +99,7 @@ class RoadNetwork {
 
   static Offset _bez(Offset a, Offset b, Offset c, double t) {
     final u = 1 - t;
-    return Offset(
-      u * u * a.dx + 2 * u * t * c.dx + t * t * b.dx,
-      u * u * a.dy + 2 * u * t * c.dy + t * t * b.dy,
-    );
+    return Offset(u * u * a.dx + 2 * u * t * c.dx + t * t * b.dx, u * u * a.dy + 2 * u * t * c.dy + t * t * b.dy);
   }
 
   static List<Offset> sample(Offset a, Offset b, Offset? c) {
@@ -178,8 +175,15 @@ class RoadNetwork {
 
   RoadNode _nodeAt(Offset p) => nodeNear(p, 1.0) ?? _newNode(p);
 
-  Road? _addNodes(List<Offset> pts, RoadNode na, RoadNode nb,
-      {bool oneWay = false, int type = 0, int layer = 0, double? cost}) {
+  Road? _addNodes(
+    List<Offset> pts,
+    RoadNode na,
+    RoadNode nb, {
+    bool oneWay = false,
+    int type = 0,
+    int layer = 0,
+    double? cost,
+  }) {
     final p = List<Offset>.of(_dedupe(pts));
     if (p.length < 2) return null;
     p[0] = na.pos;
@@ -320,10 +324,8 @@ class RoadNetwork {
       final a = k / 24 * 2 * pi;
       if (blocked(c + Offset(cos(a), sin(a)) * (radius + 4))) return "Aylana uchun joy band";
     }
-    final need = 150 +
-        2 * pi * radius * costPerUnit +
-        arms.length * 16 * costPerUnit -
-        arms.length * cutDist * costPerUnit;
+    final need =
+        150 + 2 * pi * radius * costPerUnit + arms.length * 16 * costPerUnit - arms.length * cutDist * costPerUnit;
     if (need > budget) return "Mablag' yetarli emas";
 
     var spent = 150.0;
@@ -342,9 +344,7 @@ class RoadNetwork {
         removeRoad(stubId);
       }
     }
-    final ringNodes = <RoadNode>[
-      for (final a in arms) _newNode(c + Offset(cos(a.ang), sin(a.ang)) * radius)
-    ];
+    final ringNodes = <RoadNode>[for (final a in arms) _newNode(c + Offset(cos(a.ang), sin(a.ang)) * radius)];
     for (var i = 0; i < arms.length; i++) {
       final conn = _addNodes([cutNodes[i].pos, ringNodes[i].pos], cutNodes[i], ringNodes[i]);
       if (conn != null) spent += conn.cost;
@@ -378,7 +378,8 @@ class RoadNetwork {
       if (r.a == drop.id) pts[0] = keep.pos;
       if (r.b == drop.id) pts[pts.length - 1] = keep.pos;
       _detach(r);
-      if (na.id != nb.id) _addNodes(pts, na, nb, oneWay: r.oneWay, type: r.type, layer: r.layer, cost: r.cost <= 0 ? 0.0 : null);
+      if (na.id != nb.id)
+        _addNodes(pts, na, nb, oneWay: r.oneWay, type: r.type, layer: r.layer, cost: r.cost <= 0 ? 0.0 : null);
     }
     nodes.remove(drop.id);
   }

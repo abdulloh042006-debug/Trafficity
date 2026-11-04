@@ -132,11 +132,7 @@ class Terrain {
 
   List<int> _mix(List<int> a, List<int> b, double t) {
     t = t.clamp(0.0, 1.0);
-    return [
-      (a[0] + (b[0] - a[0]) * t).round(),
-      (a[1] + (b[1] - a[1]) * t).round(),
-      (a[2] + (b[2] - a[2]) * t).round(),
-    ];
+    return [(a[0] + (b[0] - a[0]) * t).round(), (a[1] + (b[1] - a[1]) * t).round(), (a[2] + (b[2] - a[2]) * t).round()];
   }
 
   List<int> _colorAt(double h) {

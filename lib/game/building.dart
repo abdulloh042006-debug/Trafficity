@@ -36,29 +36,35 @@ class Building {
   }
 
   static const List<Color> roofPalette = [
-    Color(0xFFC9694F), Color(0xFF7FA66B), Color(0xFFD9A441), Color(0xFF8C6E5D),
-    Color(0xFF5B8DD6), Color(0xFF4F7FC4), Color(0xFF9A9DA3), Color(0xFF8B8F96),
+    Color(0xFFC9694F),
+    Color(0xFF7FA66B),
+    Color(0xFFD9A441),
+    Color(0xFF8C6E5D),
+    Color(0xFF5B8DD6),
+    Color(0xFF4F7FC4),
+    Color(0xFF9A9DA3),
+    Color(0xFF8B8F96),
   ];
 
   Map<String, dynamic> toJson() => {
-        't': type.index,
-        'x': pos.dx,
-        'y': pos.dy,
-        'a': angle,
-        'w': size.width,
-        'h': size.height,
-        'r': max(0, roofPalette.indexOf(roof)),
-        's': stock,
-      };
+    't': type.index,
+    'x': pos.dx,
+    'y': pos.dy,
+    'a': angle,
+    'w': size.width,
+    'h': size.height,
+    'r': max(0, roofPalette.indexOf(roof)),
+    's': stock,
+  };
 
   static Building fromJson(int id, Map<String, dynamic> m) => Building(
-        id: id,
-        type: BuildingType.values[m['t'] as int],
-        pos: Offset((m['x'] as num).toDouble(), (m['y'] as num).toDouble()),
-        angle: (m['a'] as num).toDouble(),
-        size: Size((m['w'] as num).toDouble(), (m['h'] as num).toDouble()),
-        roof: roofPalette[(m['r'] as int).clamp(0, roofPalette.length - 1)],
-      )..stock = (m['s'] as num?)?.toDouble() ?? 60;
+    id: id,
+    type: BuildingType.values[m['t'] as int],
+    pos: Offset((m['x'] as num).toDouble(), (m['y'] as num).toDouble()),
+    angle: (m['a'] as num).toDouble(),
+    size: Size((m['w'] as num).toDouble(), (m['h'] as num).toDouble()),
+    roof: roofPalette[(m['r'] as int).clamp(0, roofPalette.length - 1)],
+  )..stock = (m['s'] as num?)?.toDouble() ?? 60;
 
   void draw(Canvas c) {
     c.save();
