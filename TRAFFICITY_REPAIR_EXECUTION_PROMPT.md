@@ -456,7 +456,7 @@ Last updated at the end of the rev. 3 execution. A push, commit title, mock, or 
 
 **What is left (as of the last push):**
 
-1. ~~CI for `c7f9f2e` and `7fced4b`~~ — done: runs [41799584199](https://github.com/abdulloh042006-debug/Trafficity/actions/runs/41799584199) and [41799158077](https://github.com/abdulloh042006-debug/Trafficity/actions/runs/41799158077) both **success**. The newest commit (the `load()` fix and the menu-load test) has its own CI run; read its conclusion for the exact final SHA before calling it CI-PASS.
+1. ~~CI for `c7f9f2e` and `7fced4b`~~ — done: runs [41799584199](https://github.com/abdulloh042006-debug/Trafficity/actions/runs/41799584199) and [41799158077](https://github.com/abdulloh042006-debug/Trafficity/actions/runs/41799158077) both **success**. Commit `511b916` (the `load()` fix and the menu-load test): run [41801020928](https://github.com/abdulloh042006-debug/Trafficity/actions/runs/41801020928) concluded **success** (CI-PASS for that exact SHA; later docs-only commits carry `[skip ci]`).
 2. Nothing was run on a phone/emulator: the save `nat` key, the region restore after loading and the overview-card profile line are tested headlessly only (`test/national_wiring_test.dart`, `test/uzbekistan_selector_widget_test.dart`).
 3. Local APK build stays BLOCKED (no Android SDK here); CI builds it.
 4. No in-app region downloader or server; 13 regions stay `OVERVIEW_ONLY`; region borders are bounding-box envelopes; SOATO codes unverified; no profile-specific building visuals (`visualsImplemented: false`).
