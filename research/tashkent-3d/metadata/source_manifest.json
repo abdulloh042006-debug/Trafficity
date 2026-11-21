@@ -1,0 +1,114 @@
+{
+  "project": "Tashkent 3D City",
+  "checked_at": "2026-11-22",
+  "initial_bbox_wsen": [
+    69.1,
+    41.18,
+    69.45,
+    41.46
+  ],
+  "bbox_status": "Approximate search envelope only; not the official city boundary.",
+  "sources": [
+    {
+      "id": "osm_geofabrik",
+      "name": "Geofabrik Uzbekistan OSM",
+      "url": "https://download.geofabrik.de/asia/uzbekistan/",
+      "license": "ODbL-1.0",
+      "formats": [
+        "PBF",
+        "SHP",
+        "GeoPackage"
+      ],
+      "note": "Country extract; clip with a verified Tashkent polygon."
+    },
+    {
+      "id": "overture",
+      "name": "Overture Maps",
+      "url": "https://docs.overturemaps.org/",
+      "license": "Theme-specific; several themes ODbL",
+      "formats": [
+        "GeoParquet",
+        "GeoJSON"
+      ],
+      "note": "Use the Python CLI; record theme attribution."
+    },
+    {
+      "id": "microsoft_buildings",
+      "name": "Microsoft Global ML Building Footprints",
+      "url": "https://github.com/microsoft/GlobalMLBuildingFootprints/",
+      "license": "CDLA-Permissive-2.0",
+      "note": "Confirm Tashkent tile coverage before use."
+    },
+    {
+      "id": "green_tashkent",
+      "name": "Green Tashkent tree inventory",
+      "url": "https://green.tashkent.uz/en",
+      "license": "Export and redistribution terms to be confirmed",
+      "note": "Tree attributes and images described by the project; public map visibility is not bulk-export permission."
+    },
+    {
+      "id": "ngis",
+      "name": "National Geoinformation Portal",
+      "url": "https://open.ngis.uz/",
+      "license": "Portal terms / official request may apply",
+      "note": "Cadastre and land-plot context; do not collect personal owner data."
+    },
+    {
+      "id": "tashkent_open_data",
+      "name": "Open Data Tashkent",
+      "url": "https://opendata.tashkent.uz/",
+      "license": "Per dataset",
+      "note": "Inspect each dataset's metadata and terms."
+    },
+    {
+      "id": "worldcover",
+      "name": "ESA WorldCover 2021 v200",
+      "url": "https://esa-worldcover.org/en/data-access",
+      "license": "CC-BY-4.0",
+      "resolution_m": 10
+    },
+    {
+      "id": "jrc_water",
+      "name": "JRC Global Surface Water 1984-2024",
+      "url": "https://global-surface-water.appspot.com/download",
+      "license": "Copernicus; acknowledgement required"
+    },
+    {
+      "id": "copernicus_dem",
+      "name": "Copernicus DEM GLO-30/GLO-90",
+      "url": "https://doi.org/10.5270/esa-c5d3d65",
+      "license": "Copernicus terms; GLO-30 access category restrictions may apply",
+      "note": "DSM includes buildings and vegetation."
+    },
+    {
+      "id": "sentinel2",
+      "name": "Copernicus Sentinel-2",
+      "url": "https://dataspace.copernicus.eu/browser/",
+      "license": "Copernicus terms; attribution required"
+    },
+    {
+      "id": "mapillary",
+      "name": "Mapillary street images",
+      "url": "https://www.mapillary.com/app/",
+      "license": "CC-BY-SA; attribute each image"
+    },
+    {
+      "id": "yandex",
+      "name": "Yandex Maps panoramas",
+      "url": "https://yandex.com/maps/10335/tashkent/",
+      "license": "Provider terms; visual reference only unless separately licensed"
+    },
+    {
+      "id": "google",
+      "name": "Google Maps/Street View",
+      "url": "https://www.google.com/maps/@41.2995,69.2401,14z",
+      "license": "Google Maps Platform terms; no bulk copying without permission"
+    },
+    {
+      "id": "city_geoserver",
+      "name": "Tashkent GeoServer",
+      "url": "https://geoserver.mahalla.tashkent.uz/geoserver",
+      "license": "Terms to be confirmed"
+    }
+  ]
+}
