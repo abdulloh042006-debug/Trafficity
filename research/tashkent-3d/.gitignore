@@ -1,0 +1,9 @@
+data/raw/
+data/processed/
+data/exports/
+*.osm.pbf
+*.gpkg
+*.tif
+*.tiff
+*.geoparquet
+*.mbtiles
