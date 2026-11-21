@@ -1,0 +1,16 @@
+layer,candidate_sources,examples,format,license_notes,quality_notes,priority
+Buildings,OSM / Overture / Microsoft footprints,"building; building_part",vector polygon,ODbL / theme-specific / CDLA-Permissive-2.0,Height often missing,Primary
+Addresses,OSM / Overture / NGIS,"address; addr:*",vector point/polygon,ODbL / Overture theme / portal terms,Check personal data and export terms,Primary
+Shops and POI,OSM / Overture Places / 2GIS,"shop; amenity; office; place",vector point/polygon,ODbL / source-specific / 2GIS terms,Validate duplicates and live business status,Primary
+Roads and paths,OSM / Overture Transportation,"highway; segment; footway; path",vector line,ODbL / theme-specific,Add bridges tunnels and sidewalks,Primary
+Parks and gardens,Green Tashkent / OSM / Overture,"leisure=park; leisure=garden",vector polygon,Local terms unknown / ODbL,Use official park geometry if permitted,High local value
+Individual trees,Green Tashkent / OSM,"natural=tree",vector point,Local terms unknown / ODbL,Local inventory may include species and size,High local value
+Tree rows and woods,OSM / ESA WorldCover,"natural=tree_row; natural=wood",vector + raster,ODbL / CC BY 4.0,10m raster not individual-tree inventory,Supplement
+Water areas,OSM / Overture / JRC,"natural=water; water=*",vector + raster,ODbL / theme-specific / Copernicus,Current shoreline needs recent imagery,Primary
+Canals rivers ditches,OSM / GeoServer / HydroRIVERS,"waterway=canal; river; ditch; drain",vector line,ODbL / local terms unknown,Small urban waterways may be missing,Primary local
+Terrain,Copernicus DEM / SRTM,DSM/DEM,GeoTIFF,Copernicus / NASA-USGS terms,30/90m not survey-grade,Regional
+Land cover,ESA WorldCover / Sentinel-2,land cover / NDVI,raster,CC BY 4.0 / Copernicus terms,Useful for broad vegetation validation,Primary raster
+Street imagery,Mapillary / Yandex / Google / 2GIS,panorama / photo,image/service,CC BY-SA / provider terms,Do not bulk copy restricted imagery,Visual QA
+Building age,Tashkent Building Age Map,construction period / heritage,web map,Terms to verify,Historic/heritage context,Local reference
+Master plan,Tashkent Genplan FeatureServer,approved planning polygons,FeatureServer,Copyright terms unclear,Use as reference pending permission,Reference
+District/mahalla boundary,NGIS / Green Tashkent GeoServer / OSM,administrative polygons,vector polygon,terms vary / ODbL,Official boundary is critical,Required
